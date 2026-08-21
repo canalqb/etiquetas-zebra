@@ -11,9 +11,9 @@
   <meta property="og:type" content="website">
   
   <!-- Favicons & Web Manifest (PWA) -->
-  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/favicon-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico?v=2">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/favicon-192.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=2">
 
   
   <!-- Google AdSense -->
@@ -643,7 +643,7 @@
   </div>
 
   <!-- Offcanvas Mobile: Painel de Configuração -->
-  <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileConfigOffcanvas" aria-labelledby="mobileConfigOffcanvasLabel" style="width: min(340px, 92vw);">
+  <aside class="offcanvas offcanvas-start" tabindex="-1" id="mobileConfigOffcanvas" aria-labelledby="mobileConfigOffcanvasLabel" style="width: min(340px, 92vw);">
     <div class="offcanvas-header bg-dark text-white py-2 px-3">
       <h6 class="offcanvas-title d-flex align-items-center gap-2 mb-0" id="mobileConfigOffcanvasLabel">
         <i class="bi bi-gear-fill text-warning"></i> Painel de Configuração
@@ -654,7 +654,7 @@
       <div class="accordion" id="accordionControlsMobile">
 
         <!-- Seção 1: Configuração -->
-        <div class="accordion-item">
+        <section class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button fw-bold text-dark bg-light py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mCollapseConfig">
               <i class="bi bi-gear-fill me-2 text-primary"></i> 1. Configuração da Etiqueta
@@ -694,10 +694,10 @@
               </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Seção 2: Salvar / Exportar -->
-        <div class="accordion-item">
+        <!-- Seção 2: Salvar / Exportar (.BIN) -->
+        <section class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed fw-bold text-dark bg-light py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mCollapseTemplates">
               <i class="bi bi-folder-check me-2 text-primary"></i> 2. Salvar / Exportar (.BIN)
@@ -709,10 +709,10 @@
               Use a versão desktop para salvar e exportar modelos completos.
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- Seção 3: Lote Duplo -->
-        <div class="accordion-item">
+        <section class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed fw-bold text-dark bg-light py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mCollapseBatchSpecial">
               <i class="bi bi-diagram-3 me-2 text-primary"></i> 3. Geração em Lote
@@ -724,11 +724,11 @@
               Disponível na versão desktop.
             </div>
           </div>
-        </div>
+        </section>
 
       </div>
     </div>
-  </div>
+  </aside>
 
   <!-- Main Workspace -->
   <main class="container my-3">
@@ -740,7 +740,7 @@
         <div class="accordion card-custom overflow-hidden" id="accordionControls">
           
           <!-- Section 2: Modelos Salvos & Exportar .BIN -->
-          <div class="accordion-item card-custom overflow-hidden">
+          <section class="accordion-item card-custom overflow-hidden">
             <h2 class="accordion-header" id="headingTemplates">
               <button class="accordion-button collapsed fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTemplates" aria-expanded="false" aria-controls="collapseTemplates">
 <i class="bi bi-folder-check me-2 text-primary"></i> 1. Salvar / Exportar (.BIN)
@@ -781,10 +781,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           <!-- Section 4: Geração em Lote (Dupla Sequencial Especial) -->
-          <div class="accordion-item card-custom overflow-hidden">
+          <section class="accordion-item card-custom overflow-hidden">
             <h2 class="accordion-header" id="headingBatchSpecial">
               <button class="accordion-button collapsed fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBatchSpecial" aria-expanded="false" aria-controls="collapseBatchSpecial">
                 <i class="bi bi-diagram-3 me-2 text-primary"></i> 2. Geração em Lote
@@ -816,7 +816,7 @@
                 </form>
               </div>
             </div>
-          </div>
+          </section>
 
         </div>
       </div>
@@ -828,7 +828,8 @@
           <div class="card-header card-header-custom d-flex flex-wrap align-items-center justify-content-between gap-2">
             
             <!-- Navigation Tabs -->
-            <ul class="nav nav-pills card-header-pills" id="studio-tabs" role="tablist">
+            <nav aria-label="Abas do Studio">
+              <ul class="nav nav-pills card-header-pills" id="studio-tabs" role="tablist">
               <li class="nav-item" role="presentation">
                 <button class="nav-link active py-1 px-3 fw-semibold small" id="tab-canvas-link" data-bs-toggle="tab" data-bs-target="#tab-canvas" type="button" role="tab">
                   <i class="bi bi-eye me-1"></i> Studio Visual
