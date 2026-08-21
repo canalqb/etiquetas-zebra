@@ -12,7 +12,7 @@ Registro de problemas ativos e sugestões. Atualizado em **2026-08-20**.
 
 ## Sugestões de melhorias (referência a sites/sistemas similares)
 
-1. **Desempenho do editor (prioridade)** — separar preview do resto do `renderStudio()`, coalescer com `requestAnimationFrame` e cachear QR/barcode por hash. Editores de etiqueta do mercado (Canva, Sticker Mule, Label Studio) não reconstroem tudo a cada mousemove.
+1. **Desempenho do editor (prioridade)** — ✅ parcial: `renderStudio()` agora usa `scheduleRenderPreview()` (coalescência via `requestAnimationFrame`, máx. 1 reconstrução de preview por frame durante digitação/arraste/seleção). Restam: cachear QR/barcode por hash e evitar rebuild completo da tabela de elementos em mousemove.
 2. **Exportação universal** — além de `.BIN`/`.VIP`/ZPL, exportar o preview como PNG/SVG/PDF (imagem da etiqueta renderizada), como fazem os geradores ZPL online.
 3. **Print preview fiel** — simular rotação e densidade no preview para mostrar exatamente o que sairá na impressora física (alinhar com o bug de impressão vertical).
 4. **Múltiplos modelos em abas** — trabalhar com várias etiquetas abertas ao mesmo tempo.
@@ -21,7 +21,7 @@ Registro de problemas ativos e sugestões. Atualizado em **2026-08-20**.
 7. **Mobile** — habilitar salvar/exportar também no offcanvas (hoje são placeholders "use a versão desktop").
 8. **Contador de etiquetas por rolo + estimativa** — dado o tamanho (W×H) e comprimento do rolo, calcular quantas etiquetas cabem e custo aproximado.
 9. **ZPL avançado a partir dos PDFs** (ver seção abaixo): já aplicados `^SN`, `^FB` e `^PQ`; restam `^FH`/`^FE`, `^CI` (encodings), `^MD`/`^SD` (densidade por tonalidade), `^PM`/`^LR` (espelho/reverso), fontes TrueType `^A@`.
-10. **Acessibilidade/qualidade** — aplicar `master_rules` (ARIA, contraste, semântica `section/article/nav`), lazy-load de fontes/ícones e tema claro/escuro.
+10. **Acessibilidade/qualidade** — ✅ concluído (2026-08-20): todos os 9 modais com `role="dialog"` + `aria-modal="true"` + `aria-labelledby`; todos os `btn-close` com `aria-label="Fechar"` (incl. `#modal-limpar`, que não tinha botão de fechar, e `#insp-btn-deselect`); semântica aplicada (`<main>`, `<header>`, `<aside>` no offcanvas mobile, 5× `<section class="accordion-item">`, `<nav aria-label="Abas do Studio">` nos tabs); sem `console.log/warn/error` no app. Validado em Chrome headless: 0 erros de página do app, tags balanceadas, ZPL gerado corretamente. Ruído externo conhecido: `adsbygoogle.push() error` (script de anúncios do Google, fora do controle do app). Restam: lazy-load de fontes/ícones e tema claro/escuro.
 
 ## Recursos disponíveis para desenvolvimento ZPL (PDFs no projeto)
 
