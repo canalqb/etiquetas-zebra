@@ -699,6 +699,16 @@
                   </div>
                 </div>
 
+                <!-- Galeria de Templates -->
+                <div class="mb-2">
+                  <label class="form-label fw-semibold">Galeria de Templates</label>
+                  <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="tpl-caixa"><i class="bi bi-box-seam me-1"></i>Envio/Caixa</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="tpl-estoque"><i class="bi bi-tags me-1"></i>Estoque</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="tpl-serie"><i class="bi bi-qr-code me-1"></i>Série/QR</button>
+                  </div>
+                </div>
+
                 <div class="d-flex gap-2 justify-content-center">
                   <button type="button" class="icon-btn icon-btn-muted" id="btn-export-bin" title="Exportar ZPL (.BIN)">
                     <i class="fas fa-file-download"></i>
@@ -707,6 +717,9 @@
                     <i class="fas fa-file-upload"></i>
                     <input type="file" id="input-import-bin" accept=".bin,.json" class="d-none">
                   </label>
+                  <button type="button" class="icon-btn icon-btn-muted" id="btn-share-link" title="Copiar Link do Modelo (compartilhar por URL)">
+                    <i class="fas fa-link"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1247,6 +1260,21 @@
             <option value="custom">Personalizado (Digitar mm)...</option>
           </select>
           <div class="form-text small mt-2">Selecione um tamanho pré-definido ou escolha "Personalizado" para digitar suas próprias dimensões.</div>
+          <div class="border-top pt-2 mt-3">
+            <label class="form-label small fw-semibold mb-1" for="rolo-len"><i class="bi bi-calculator me-1 text-primary"></i>Estimativa por rolo</label>
+            <div class="row g-1 align-items-center">
+              <div class="col-5">
+                <input type="number" min="1" step="1" id="rolo-len" class="form-control form-control-sm" placeholder="Rolo (m)" title="Comprimento do rolo em metros">
+              </div>
+              <div class="col-3">
+                <input type="number" min="0" step="0.5" id="rolo-gap" class="form-control form-control-sm" value="3" title="Espaço entre etiquetas (mm)">
+              </div>
+              <div class="col-4">
+                <span class="badge text-bg-light border w-100 text-wrap" id="rolo-out">— etiquetas</span>
+              </div>
+            </div>
+            <div class="form-text small mt-1">Comprimento do rolo (m) + espaço entre etiquetas (mm). Contagem aproximada para mídia die-cut.</div>
+          </div>
         </div>
         <div class="modal-footer py-2">
           <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -3851,6 +3879,108 @@
       }
     });
 
+    /* ---------------- GALERIA DE TEMPLATES ---------------- */
+    function aplicarModelo(t) {
+      tamAtualKey = SIZES[t.tamanho] ? t.tamanho : "100x50";
+      $("tamanho").value = tamAtualKey;
+      rotAtual = ROT_SEQ.indexOf(t.rotacao) >= 0 ? t.rotacao : 0;
+      elements = JSON.parse(JSON.stringify(t.elements));
+      selectedElId = null;
+      selectedElIds = [];
+      autoFitCanvas();
+      renderStudio();
+      salvarHistorico();
+    }
+
+    var TEMPLATES_GALERIA = {
+      "tpl-caixa": {
+        nome: "Envio-Caixa", tamanho: "100x50", rotacao: 0,
+        elements: [
+          { id: "el_g1", tipo: "texto", texto: "DESTINATÁRIO", x: 40, y: 30, fonte: 30, classe: "sub" },
+          { id: "el_g2", tipo: "texto", texto: "João da Silva", x: 40, y: 70, fonte: 42, classe: "nome", bold: true },
+          { id: "el_g3", tipo: "texto", texto: "Rua das Flores, 123 - Centro", x: 40, y: 125, fonte: 26 },
+          { id: "el_g4", tipo: "texto", texto: "São Paulo/SP - CEP 01234-567", x: 40, y: 160, fonte: 26 },
+          { id: "el_g5", tipo: "linha", x: 40, y: 210, w: 500, espessura: 4 },
+          { id: "el_g6", tipo: "qr", texto: "https://rastreio.exemplo/BR123456789", x: 580, y: 60, w: 170, h: 170 },
+          { id: "el_g7", tipo: "barcode", texto: "BR123456789BR", x: 40, y: 250, w: 480, h: 110 }
+        ]
+      },
+      "tpl-estoque": {
+        nome: "Estoque-Peca", tamanho: "100x50", rotacao: 0,
+        elements: [
+          { id: "el_e1", tipo: "texto", texto: "PEÇA / COMPONENTE", x: 40, y: 30, fonte: 28, classe: "sub" },
+          { id: "el_e2", tipo: "texto", texto: "Parafuso M8 x 40", x: 40, y: 70, fonte: 38, classe: "nome", bold: true },
+          { id: "el_e3", tipo: "texto", texto: "QTD: 250   |   PRATELEIRA A12", x: 40, y: 120, fonte: 26 },
+          { id: "el_e4", tipo: "linha", x: 40, y: 165, w: 720, espessura: 4 },
+          { id: "el_e5", tipo: "barcode", texto: "ESTQ-0000250-A12", x: 40, y: 200, w: 600, h: 130 }
+        ]
+      },
+      "tpl-serie": {
+        nome: "Serie-QR", tamanho: "100x50", rotacao: 0,
+        elements: [
+          { id: "el_s1", tipo: "texto", texto: "CONTROLE DE SÉRIE", x: 40, y: 30, fonte: 28, classe: "sub" },
+          { id: "el_s2", tipo: "texto", texto: "SN-000123", x: 40, y: 80, fonte: 48, classe: "serie", bold: true },
+          { id: "el_s3", tipo: "texto", texto: "Fabricado: 20/08/2026", x: 40, y: 150, fonte: 24 },
+          { id: "el_s4", tipo: "qr", texto: "SN-000123", x: 590, y: 50, w: 180, h: 180 },
+          { id: "el_s5", tipo: "linha", x: 40, y: 200, w: 500, espessura: 4 },
+          { id: "el_s6", tipo: "texto", texto: "GARANTIA 12 MESES", x: 40, y: 230, fonte: 22 }
+        ]
+      }
+    };
+
+    Object.keys(TEMPLATES_GALERIA).forEach(function (tid) {
+      var btn = $(tid);
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        var tpl = TEMPLATES_GALERIA[tid];
+        aplicarModelo(tpl);
+        $("tmpl-name-input").value = tpl.nome;
+        notify("Template '" + tpl.nome + "' carregado! Edite os textos à vontade.", "success");
+      });
+    });
+
+    /* ---------------- COMPARTILHAR MODELO POR LINK (#modelo=BASE64URL) ---------------- */
+    $("btn-share-link").addEventListener("click", function () {
+      try {
+        var payload = {
+          nome: $("tmpl-name-input").value.trim() || "modelo",
+          tamanho: tamAtualKey,
+          rotacao: rotAtual,
+          elements: elements
+        };
+        var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        var url = location.origin + location.pathname + "#modelo=" + b64;
+        if (url.length > 8000) { notify("Modelo muito grande para virar link. Use o arquivo .BIN.", "warning"); return; }
+        navigator.clipboard.writeText(url).then(function () {
+          notify("Link copiado! Cole em qualquer navegador para abrir este modelo.", "success");
+        }).catch(function () {
+          prompt("Copie o link do modelo (Ctrl+C):", url);
+        });
+      } catch (e) {
+        notify("Não foi possível gerar o link.", "danger");
+      }
+    });
+
+    /* ---------------- ESTIMATIVA POR ROLO ---------------- */
+    function atualizarEstimativaRolo() {
+      var out = $("rolo-out");
+      if (!out) return;
+      var lenM = parseFloat(($("rolo-len") || {}).value);
+      var gapMm = parseFloat(($("rolo-gap") || {}).value);
+      if (isNaN(gapMm) || gapMm < 0) gapMm = 3;
+      var szR = SIZES[tamAtualKey] || SIZES["100x50"];
+      if (isNaN(lenM) || lenM <= 0) { out.textContent = "— etiquetas"; return; }
+      /* Altura da etiqueta na ORIENTAÇÃO DE SAÍDA (rotação 90/270 troca W/H) */
+      var hOut = (rotAtual === 90 || rotAtual === 270) ? szR.w : szR.h;
+      var passoMm = dotsToMm(hOut) + gapMm;
+      if (passoMm <= 0) { out.textContent = "— etiquetas"; return; }
+      var n = Math.floor((lenM * 1000) / passoMm);
+      out.textContent = n > 0 ? ("≈ " + n.toLocaleString("pt-BR") + " etiquetas") : "— etiquetas";
+    }
+    if ($("rolo-len")) $("rolo-len").addEventListener("input", atualizarEstimativaRolo);
+    if ($("rolo-gap")) $("rolo-gap").addEventListener("input", atualizarEstimativaRolo);
+
     // EXPORTAR ARQUIVO .BIN (Comandos ZPL)
     $("btn-export-bin").addEventListener("click", function () {
       var name = getModelName();
@@ -5131,6 +5261,34 @@
     renderBatchSpecialTreeUI();
     /* Semeia o histórico com o estado carregado para o 1º Ctrl+Z funcionar */
     salvarHistorico();
+
+    /* Modelo compartilhado via URL (#modelo=BASE64URL) — sobrepõe a sessão */
+    if (location.hash.indexOf("#modelo=") === 0) {
+      try {
+        var b64h = location.hash.slice(8).replace(/-/g, "+").replace(/_/g, "/");
+        while (b64h.length % 4) b64h += "=";
+        var modH = JSON.parse(decodeURIComponent(escape(atob(b64h))));
+        if (modH && Array.isArray(modH.elements)) {
+          aplicarModelo(modH);
+          if (modH.nome) $("tmpl-name-input").value = modH.nome;
+          notify("Modelo carregado do link compartilhado!", "success");
+        }
+      } catch (e) {}
+      /* Limpeza do hash: confiável em http/https (GitHub Pages). Em file:// o
+         Chrome pode restaurar o fragmento após reload — hash residual é
+         inofensivo (recarregar apenas reaplica o mesmo modelo). */
+      if (location.protocol === "https:" || location.protocol === "http:") {
+        /* window.history explicito: "history" aqui é a pilha de undo do editor */
+        (function limparHashModelo(n) {
+          if (location.hash.indexOf("#modelo=") !== 0 || n <= 0) return;
+          try { window.history.replaceState(null, "", location.pathname + location.search); } catch (e2) { }
+          setTimeout(function () { limparHashModelo(n - 1); }, 250);
+        })(20);
+      }
+    }
+
+    /* Estimativa de rolo acompanha mudanças de tamanho */
+    if ($("tamanho")) $("tamanho").addEventListener("change", atualizarEstimativaRolo);
 
     /* Garante réguas APÓS o browser pintar a etiqueta.
        getBoundingClientRect() retorna 0 antes do primeiro paint. */
