@@ -848,6 +848,8 @@
 
                   <!-- Configurar IP & Imprimir -->
                   <button type="button" class="icon-btn icon-btn-muted" id="btn-config-ip" title="Configurar IP da impressora"><i class="fas fa-network-wired"></i></button>
+                  <button type="button" class="icon-btn icon-btn-primary" id="btn-print-preview" title="Pré-visualizar Impressão (fiel ao desenho)"><i class="bi bi-eye"></i></button>
+                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-imgprint" title="Imprimir como Imagem ^GF — envia a etiqueta rasterizada exatamente como desenhada (à prova de reposicionamento)"><i class="bi bi-image"></i></button>
                   <button type="button" class="icon-btn icon-btn-success" id="btn-imprimir" title="Imprimir Etiqueta"><i class="fas fa-print"></i></button>
 
                   <div class="vr mx-1" style="height:20px;"></div>
@@ -1088,6 +1090,10 @@
                   <div class="d-flex gap-1">
                     <button type="button" class="icon-btn icon-btn-primary" id="btn-copiar-zpl" title="Copiar ZPL para a área de transferência"><i class="fas fa-clipboard"></i></button>
                     <button type="button" class="icon-btn icon-btn-muted" id="btn-download-zpl" title="Baixar arquivo .ZPL"><i class="fas fa-file-download"></i></button>
+                    <div class="vr mx-1"></div>
+                    <button type="button" class="icon-btn icon-btn-success" id="btn-export-png" title="Exportar etiqueta como PNG (fiel ao desenho)"><i class="bi bi-filetype-png"></i></button>
+                    <button type="button" class="icon-btn icon-btn-success" id="btn-export-svg" title="Exportar etiqueta como SVG"><i class="bi bi-filetype-svg"></i></button>
+                    <button type="button" class="icon-btn icon-btn-success" id="btn-export-pdf" title="Exportar etiqueta como PDF"><i class="bi bi-filetype-pdf"></i></button>
                   </div>
                 </div>
                 <textarea id="zpl" class="zpl-code" placeholder="Digite ou cole comandos ZPL II ou SGD aqui para atualizar a etiqueta visualmente..."></textarea>
@@ -1350,6 +1356,27 @@
         </div>
         <div class="modal-footer py-2 justify-content-center bg-light">
           <span class="small text-muted text-center"><i class="bi bi-info-circle me-1"></i> Clique no botão acima para abrir a Chrome Web Store e instalar a extensão.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pré-visualização de Impressão (fiel ao desenho) -->
+  <div class="modal fade" id="modal-print-preview" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalPrevLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 px-3">
+          <h6 class="modal-title fw-bold mb-0" id="modalPrevLabel"><i class="bi bi-eye me-2 text-primary"></i>Pré-visualização de Impressão — exatamente como será enviado</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body text-center bg-secondary-subtle py-3">
+          <canvas id="canvas-print-preview" class="img-fluid border border-secondary bg-white rounded-1" style="max-height:58vh; image-rendering: pixelated;"></canvas>
+          <div class="small text-muted mt-2" id="prev-info"></div>
+        </div>
+        <div class="modal-footer py-2 px-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btn-prev-download"><i class="bi bi-download me-1"></i>Baixar PNG</button>
+          <button type="button" class="btn btn-sm btn-success" id="btn-prev-imprimir"><i class="fas fa-print me-1"></i>Imprimir Agora</button>
         </div>
       </div>
     </div>
@@ -2147,30 +2174,16 @@
         } else if (el.tipo === "qr") {
           if (!el.texto || el.texto.trim() === "") return;
           var _qSide = el.w || 200;
-          var _qMods = 33;
-          if (typeof window.qrcode === "function") {
-            try {
-              var _qTmp = window.qrcode(0, "Q");
-              _qTmp.addData(el.texto || "123");
-              _qTmp.make();
-              _qMods = _qTmp.getModuleCount() || 33;
-            } catch (e) { _qMods = 33; }
-          }
+          var _cachedQr = qrObter(el.texto);
+          var _qMods = _cachedQr ? _cachedQr.count : 33;
           var _qMag = Math.max(1, Math.min(10, Math.round(_qSide / _qMods)));
           var szMm = dotsToMm(Math.round(_qMag * _qMods));
           div.style.width = szMm + "mm";
           div.style.height = szMm + "mm";
-          if (typeof window.qrcode === "function") {
-            try {
-              var qr = window.qrcode(0, "Q");
-              qr.addData(el.texto || "123");
-              qr.make();
-              div.innerHTML = qr.createSvgTag({ cellSize: 2, margin: 0 });
-              var svg = div.querySelector("svg");
-              if (svg) { svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%"); }
-            } catch (e) {
-              div.textContent = "[QR CODE]";
-            }
+          if (_cachedQr) {
+            div.innerHTML = _cachedQr.svg;
+            var svg = div.querySelector("svg");
+            if (svg) { svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%"); }
           } else {
             div.textContent = "[QR]";
           }
@@ -2181,13 +2194,12 @@
           var bcH = dotsToMm(el.h || 100);
           div.style.width = bcW + "mm";
           div.style.height = bcH + "mm";
-          var svgBc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-          div.appendChild(svgBc);
-          try {
-            JsBarcode(svgBc, el.texto || "12345678", { format: "CODE128", displayValue: true, margin: 0, height: 40 });
-            svgBc.setAttribute("width", "100%");
-            svgBc.setAttribute("height", "100%");
-          } catch (e) {
+          var bcHtml = barcodeObter(el.texto);
+          if (bcHtml) {
+            div.innerHTML = bcHtml;
+            var svgBc = div.querySelector("svg");
+            if (svgBc) { svgBc.setAttribute("width", "100%"); svgBc.setAttribute("height", "100%"); }
+          } else {
             div.textContent = "[BARCODE]";
           }
         } else if (el.tipo === "linha") {
@@ -3206,15 +3218,8 @@
         } else if (it.tipo === "qr") {
           if (!it.texto || it.texto.trim() === "") return;
           var _qSide = Math.min(it.w || 200, it.h || 200);
-          var _qMods = 33;
-          if (typeof window.qrcode === "function") {
-            try {
-              var _qrTmp = window.qrcode(0, "Q");
-              _qrTmp.addData(it.texto);
-              _qrTmp.make();
-              _qMods = _qrTmp.getModuleCount() || 33;
-            } catch (e) { _qMods = 33; }
-          }
+          var _cachedQrZ = qrObter(it.texto);
+          var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
           var mag = Math.max(1, Math.min(10, Math.round(_qSide / _qMods)));
           p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + ",Q^FDLA," + sanitizar(it.texto) + "^FS");
         } else if (it.tipo === "barcode") {
@@ -3240,6 +3245,328 @@
 
       p.push("^XZ");
       return p.join("\n");
+    }
+
+    /* ---------------- RASTERIZADOR / CACHE QR-BARCODE / EXPORTAÇÃO ---------------- */
+    var _qrCache = {}, _qrCacheKeys = [];
+    function qrObter(texto) {
+      var key = "" + texto;
+      if (_qrCache[key]) return _qrCache[key];
+      var out = null;
+      if (typeof window.qrcode === "function") {
+        try {
+          var qr = window.qrcode(0, "Q");
+          qr.addData(key || "123");
+          qr.make();
+          out = { count: qr.getModuleCount() || 33, qr: qr, svg: qr.createSvgTag({ cellSize: 2, margin: 0 }) };
+        } catch (e) { out = null; }
+      }
+      if (out) {
+        if (_qrCacheKeys.length > 40) delete _qrCache[_qrCacheKeys.shift()];
+        _qrCache[key] = out; _qrCacheKeys.push(key);
+      }
+      return out;
+    }
+
+    var _bcCache = {}, _bcCacheKeys = [];
+    function barcodeObter(texto) {
+      var key = "" + texto;
+      if (_bcCache[key]) return _bcCache[key];
+      if (typeof JsBarcode !== "function") return null;
+      try {
+        var svgBc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        JsBarcode(svgBc, key || "12345678", { format: "CODE128", displayValue: true, margin: 0, height: 40 });
+        var html = svgBc.outerHTML;
+        if (html.indexOf("xmlns") === -1) html = html.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+        if (_bcCacheKeys.length > 40) delete _bcCache[_bcCacheKeys.shift()];
+        _bcCache[key] = html; _bcCacheKeys.push(key);
+        return html;
+      } catch (e) { return null; }
+    }
+
+    var _imgCache = {};
+    function imagemObter(dataUrl) {
+      if (!dataUrl) return null;
+      var im = _imgCache[dataUrl];
+      if (!im) {
+        try { im = new Image(); im.src = dataUrl; _imgCache[dataUrl] = im; } catch (e) { return null; }
+      }
+      return (im.complete && im.naturalWidth > 0) ? im : null;
+    }
+
+    /* Desenha um elemento no contexto 2D usando a MESMA semântica de gerarZPLBloco
+       (coordenadas em dots, rotação em torno do centro da caixa). */
+    function desenharElementoCanvas(ctx, el, dW, dH) {
+      var x = el.x || 0, y = el.y || 0;
+
+      var vw, vh;
+      if (el.tipo === "texto" || el.tipo === "sub" || el.tipo === "nome" || el.tipo === "serie") {
+        var f0 = el.fonte || 30;
+        ctx.font = f0 + 'px Arial, Helvetica, sans-serif';
+        vw = el.multiline ? Math.max(10, Math.round(el.fbWidth || 100)) : Math.ceil(ctx.measureText(el.texto || "").width);
+        vh = el.multiline ? Math.round(f0 * 1.1 * Math.max(1, (el.texto || "").split("\n").length)) : f0;
+      } else if (el.tipo === "barcode") { vw = el.w || 300; vh = el.h || 80; }
+      else if (el.tipo === "qr") { vw = el.w || 200; vh = el.h || 200; }
+      else if (el.tipo === "linha") { vw = el.w || dW; vh = el.espessura || el.h || 3; }
+      else if (el.tipo === "borda") { vw = el.w || dW; vh = el.h || dH; }
+      else if (el.tipo === "imagem") { vw = el.w || 200; vh = el.h || 200; }
+      else return;
+
+      ctx.save();
+      var rotEl = el.rotacao || 0;
+      if (rotEl) {
+        ctx.translate(x + vw / 2, y + vh / 2);
+        ctx.rotate(rotEl * Math.PI / 180);
+        ctx.translate(-vw / 2, -vh / 2);
+      } else {
+        ctx.translate(x, y);
+      }
+
+      if (el.tipo === "texto" || el.tipo === "sub" || el.tipo === "nome" || el.tipo === "serie") {
+        var f = el.fonte || 30;
+        var isBold = el.bold || el.classe === "nome" || el.classe === "sub" || el.tipo === "nome" || el.tipo === "sub";
+        ctx.fillStyle = "#000";
+        ctx.textBaseline = "top";
+        ctx.font = (isBold ? "bold " : "") + (el.italic ? "italic " : "") + f + 'px Arial, Helvetica, sans-serif';
+        if (el.multiline) {
+          var align = parseInt(el.fbAlign, 10) || 0;
+          ctx.textAlign = ["left", "center", "right"][Math.min(2, align)];
+          var lx = align === 1 ? vw / 2 : (align === 2 ? vw : 0);
+          var lhMl = Math.round(f * 1.1), lyMl = 0;
+          (el.texto || "").split("\n").forEach(function (line) {
+            ctx.fillText(line, lx, lyMl);
+            lyMl += lhMl;
+          });
+        } else {
+          ctx.textAlign = "left";
+          ctx.fillText(el.texto || "", 0, 0);
+          if (el.underline) {
+            var twU = ctx.measureText(el.texto || "").width;
+            ctx.fillRect(0, f + Math.max(1, Math.round(f * 0.06)), twU, Math.max(2, Math.round(f * 0.08)));
+          }
+        }
+      } else if (el.tipo === "qr") {
+        var cachedQr = qrObter(el.texto);
+        if (cachedQr && cachedQr.qr) {
+          var sideQ = Math.min(vw, vh);
+          var magQ = Math.max(1, Math.min(10, Math.round(sideQ / cachedQr.count)));
+          var sizeQ = magQ * cachedQr.count;
+          ctx.fillStyle = "#000";
+          for (var rr = 0; rr < cachedQr.count; rr++) {
+            for (var cc = 0; cc < cachedQr.count; cc++) {
+              if (cachedQr.qr.isDark(rr, cc)) ctx.fillRect(cc * magQ, rr * magQ, magQ, magQ);
+            }
+          }
+        }
+      } else if (el.tipo === "barcode") {
+        var modWb = Math.max(1, Math.min(10, Math.round(vw / 120)));
+        try {
+          var tcv = document.createElement("canvas");
+          JsBarcode(tcv, el.texto || "12345678", { format: "CODE128", displayValue: true, margin: 0, height: 40, width: modWb });
+          ctx.drawImage(tcv, 0, 0, vw, vh);
+        } catch (e) {}
+      } else if (el.tipo === "linha") {
+        var espL = el.espessura || el.h || 3;
+        var lsL = el.lineStyle || "solid";
+        ctx.fillStyle = "#000"; ctx.strokeStyle = "#000";
+        if (lsL === "dashed" || lsL === "dotted") {
+          ctx.lineWidth = espL;
+          ctx.setLineDash(lsL === "dashed" ? [espL * 3, espL * 2] : [espL, espL]);
+          ctx.beginPath();
+          ctx.moveTo(0, espL / 2); ctx.lineTo(vw, espL / 2);
+          ctx.stroke();
+        } else if (lsL === "double") {
+          ctx.fillRect(0, 0, vw, espL);
+          ctx.fillRect(0, espL * 2, vw, espL);
+        } else if (lsL === "gradient") {
+          var g = ctx.createLinearGradient(0, 0, vw, 0);
+          g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.3, "#000"); g.addColorStop(0.7, "#000"); g.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, vw, espL);
+        } else {
+          ctx.fillRect(0, 0, vw, lsL === "thick" ? espL * 2 : espL);
+        }
+      } else if (el.tipo === "borda") {
+        var espB = el.espessura || 3;
+        var fsB = el.frameStyle || "solid";
+        ctx.strokeStyle = "#000"; ctx.fillStyle = "#000"; ctx.lineWidth = espB;
+        if (fsB === "shadow") ctx.fillRect(espB * 1.5, espB * 1.5, vw - espB, vh - espB);
+        if (fsB === "dashed" || fsB === "dotted") ctx.setLineDash(fsB === "dashed" ? [espB * 3, espB * 2] : [espB, espB]);
+        if (fsB === "rounded") {
+          var rB = Math.min(16, vw / 4, vh / 4);
+          ctx.beginPath();
+          ctx.moveTo(rB, espB / 2);
+          ctx.arcTo(vw - espB / 2, espB / 2, vw - espB / 2, vh - espB / 2, rB);
+          ctx.arcTo(vw - espB / 2, vh - espB / 2, espB / 2, vh - espB / 2, rB);
+          ctx.arcTo(espB / 2, vh - espB / 2, espB / 2, espB / 2, rB);
+          ctx.arcTo(espB / 2, espB / 2, vw - espB / 2, espB / 2, rB);
+          ctx.closePath();
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(espB / 2, espB / 2, vw - espB, vh - espB);
+        }
+      } else if (el.tipo === "imagem") {
+        var imI = imagemObter(el.dataUrl);
+        if (imI) {
+          var scaleI = Math.min(vw / imI.naturalWidth, vh / imI.naturalHeight);
+          var wI = imI.naturalWidth * scaleI, hI = imI.naturalHeight * scaleI;
+          ctx.drawImage(imI, (vw - wI) / 2, (vh - hI) / 2, wI, hI);
+        }
+      }
+      ctx.restore();
+    }
+
+    /* Renderiza a etiqueta inteira num canvas 1 dot = 1 px.
+       saidaOrientada=true devolve o canvas na ORIENTAÇÃO DE SAÍDA (igual ao ^PW/^LL),
+       aplicando a rotação global com a mesma matemática do gerarZPLBloco. */
+    function renderizarEtiquetaCanvas(saidaOrientada) {
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var W = sz.w, H = sz.h;
+      var dispW = (rotAtual === 90 || rotAtual === 270) ? H : W;
+      var dispH = (rotAtual === 90 || rotAtual === 270) ? W : H;
+
+      var c1 = document.createElement("canvas");
+      c1.width = dispW; c1.height = dispH;
+      var ctx = c1.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, dispW, dispH);
+      elements.forEach(function (el) { desenharElementoCanvas(ctx, el, dispW, dispH); });
+
+      if (!saidaOrientada || !rotAtual || rotAtual === 0) return c1;
+
+      var c2 = document.createElement("canvas");
+      c2.width = W; c2.height = H;
+      var ctx2 = c2.getContext("2d");
+      ctx2.fillStyle = "#ffffff";
+      ctx2.fillRect(0, 0, W, H);
+      /* Mesma transformação de centro usada nos ^FO:
+         rot90:  X=y, Y=H-x   |   rot180: X=W-x, Y=H-y   |   rot270: X=W-y, Y=x */
+      if (rotAtual === 90) ctx2.setTransform(0, -1, 1, 0, 0, H);
+      else if (rotAtual === 180) ctx2.setTransform(-1, 0, 0, -1, W, H);
+      else ctx2.setTransform(0, 1, -1, 0, W, 0);
+      ctx2.drawImage(c1, 0, 0);
+      return c2;
+    }
+
+    /* Converte canvas 1-bit-izado em comando ^GFA (ASCII hex). */
+    function canvasParaGF(cv) {
+      var w = cv.width, h = cv.height;
+      var rowBytes = Math.ceil(w / 8);
+      var d = cv.getContext("2d").getImageData(0, 0, w, h).data;
+      var linhas = [];
+      for (var yy = 0; yy < h; yy++) {
+        var hexRow = "", byteV = 0, bit = 7;
+        for (var xx = 0; xx < w; xx++) {
+          var idx = (yy * w + xx) * 4;
+          var lum = 0.299 * d[idx] + 0.587 * d[idx + 1] + 0.114 * d[idx + 2];
+          if (lum < 128) byteV |= (1 << bit);
+          bit--;
+          if (bit < 0) {
+            hexRow += (byteV < 16 ? "0" : "") + byteV.toString(16).toUpperCase();
+            byteV = 0; bit = 7;
+          }
+        }
+        if (bit !== 7) hexRow += (byteV < 16 ? "0" : "") + byteV.toString(16).toUpperCase();
+        linhas.push(hexRow);
+      }
+      var total = rowBytes * h;
+      return "^GFA," + total + "," + total + "," + rowBytes + "," + linhas.join("");
+    }
+
+    /* ZPL de impressão por IMAGEM: a etiqueta sai exatamente como desenhada,
+       sem reposicionamento/reinterpretacao de fontes pela impressora. */
+    function gerarZPLImagem() {
+      var cv = renderizarEtiquetaCanvas(true);
+      var ribbon = getRibbonMode(), darkness = getTonalidade();
+      var p = [
+        "^XA",
+        "^CI28",
+        "^JMA",
+        "^PW" + cv.width,
+        "^LL" + cv.height,
+        "^MT" + (ribbon === "Y" ? "T" : "D"),
+        "^MD" + darkness
+      ];
+      p.push("^FO0,0" + canvasParaGF(cv) + "^FS");
+      p.push("^XZ");
+      return p.join("\n");
+    }
+
+    /* ---------------- EXPORTAÇÃO PNG / SVG / PDF ---------------- */
+    function baixarBlob(blob, nome) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    }
+    function nomeBaseArquivo() {
+      var n = ($("tmpl-name-input") && $("tmpl-name-input").value) ? $("tmpl-name-input").value : "etiqueta";
+      return n + "-" + tamAtualKey;
+    }
+    function exportarPNG() {
+      renderizarEtiquetaCanvas(true).toBlob(function (b) {
+        if (b) baixarBlob(b, nomeBaseArquivo() + ".png");
+      }, "image/png");
+    }
+    function exportarSVG() {
+      renderizarEtiquetaCanvas(true).toBlob(function (b) {
+        if (!b) return;
+        var fr = new FileReader();
+        fr.onload = function () {
+          var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+          var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + sz.w + '" height="' + sz.h + '" viewBox="0 0 ' + sz.w + ' ' + sz.h + '">' +
+            '<image width="' + sz.w + '" height="' + sz.h + '" href="' + fr.result + '"/></svg>';
+          baixarBlob(new Blob([svg], { type: "image/svg+xml" }), nomeBaseArquivo() + ".svg");
+        };
+        fr.readAsDataURL(b);
+      }, "image/png");
+    }
+    function exportarPDF() {
+      var cv = renderizarEtiquetaCanvas(true);
+      var b64 = cv.toDataURL("image/jpeg", 0.92).split(",")[1];
+      var bin = atob(b64);
+      var jpg = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) jpg[i] = bin.charCodeAt(i);
+
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var ptW = (sz.mmW * 72 / 25.4).toFixed(2), ptH = (sz.mmH * 72 / 25.4).toFixed(2);
+
+      var enc = new TextEncoder();
+      var partes = [], offset = 0;
+      function push(strOuBytes) {
+        var bytes = (typeof strOuBytes === "string") ? enc.encode(strOuBytes) : strOuBytes;
+        partes.push({ off: offset, bytes: bytes });
+        offset += bytes.length;
+      }
+      var xrefPos = [];
+      push("%PDF-1.4\n");
+      function obj(num, corpoStr, streamBytes) {
+        xrefPos[num] = offset;
+        push(num + " 0 obj\n" + corpoStr);
+        if (streamBytes) {
+          push("\nstream\n"); push(streamBytes); push("\nendstream");
+        }
+        push("\nendobj\n");
+      }
+      obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+      obj(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+      obj(3, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + ptW + " " + ptH + "] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>");
+      obj(4, "<< /Type /XObject /Subtype /Image /Width " + cv.width + " /Height " + cv.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpg.length + " >>", jpg);
+      var conteudo = "q " + ptW + " 0 0 " + ptH + " 0 0 cm /Im0 Do Q";
+      obj(5, "<< /Length " + conteudo.length + " >>", conteudo);
+
+      var xrefOff = offset;
+      var xr = "xref\n0 6\n0000000000 65535 f \n";
+      for (var o = 1; o <= 5; o++) xr += ("0000000000" + xrefPos[o]).slice(-10) + " 00000 n \n";
+      xr += "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xrefOff + "\n%%EOF";
+      push(xr);
+
+      var total = new Uint8Array(offset);
+      var pos = 0;
+      partes.forEach(function (pt) { total.set(pt.bytes, pos); pos += pt.bytes.length; });
+      baixarBlob(new Blob([total], { type: "application/pdf" }), nomeBaseArquivo() + ".pdf");
     }
 
     var isEditingZpl = false;
@@ -4288,7 +4615,8 @@
       var baseZpl = $("zpl").value;
       if (!baseZpl) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
 
-      var zpl = renderZPL();
+      /* Modo Imagem (^GF): envia a etiqueta rasterizada exatamente como desenhada. */
+      var zpl = (localStorage.getItem("etiquetasZebra.printAsImage") === "1") ? gerarZPLImagem() : renderZPL();
 
       var ip = localStorage.getItem(CHAVE_IP);
       if (!ip) {
@@ -4347,6 +4675,57 @@
     });
 
     $("btn-imprimir").addEventListener("click", imprimirFTP);
+
+    /* Toggle: Imprimir como Imagem (^GF) — persistente */
+    var btnImgPrint = $("btn-toggle-imgprint");
+    function atualizarBtnImgPrint() {
+      var ativo = localStorage.getItem("etiquetasZebra.printAsImage") === "1";
+      if (btnImgPrint) {
+        btnImgPrint.classList.toggle("icon-btn-success", ativo);
+        btnImgPrint.classList.toggle("icon-btn-muted", !ativo);
+        btnImgPrint.style.opacity = ativo ? "1" : "0.75";
+      }
+    }
+    if (btnImgPrint) {
+      btnImgPrint.addEventListener("click", function () {
+        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
+        localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
+        atualizarBtnImgPrint();
+        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada (^GF)." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
+      });
+      atualizarBtnImgPrint();
+    }
+
+    /* Pré-visualização de Impressão fiel */
+    var modalPrevEl = $("modal-print-preview");
+    var bsModalPrev = modalPrevEl ? new bootstrap.Modal(modalPrevEl) : null;
+    function abrirPreviewImpressao() {
+      if (!bsModalPrev) return;
+      var cvFonte = renderizarEtiquetaCanvas(true);
+      var cvTela = $("canvas-print-preview");
+      cvTela.width = cvFonte.width;
+      cvTela.height = cvFonte.height;
+      cvTela.getContext("2d").drawImage(cvFonte, 0, 0);
+      var szP = SIZES[tamAtualKey] || SIZES["100x50"];
+      var dpiP = parseInt((($("badge-dpi") || {}).textContent) || "", 10) || 203;
+      $("prev-info").textContent = szP.mmW + " × " + szP.mmH + " mm • Saída: " + ((rotAtual === 90 || rotAtual === 270) ? "Vertical" : "Horizontal") +
+        " (" + cvFonte.width + "×" + cvFonte.height + " dots) • Tonalidade ^MD" + getTonalidade() + " • ~" + dpiP + " DPI";
+      bsModalPrev.show();
+    }
+    if ($("btn-print-preview")) $("btn-print-preview").addEventListener("click", abrirPreviewImpressao);
+    if ($("btn-prev-download")) $("btn-prev-download").addEventListener("click", exportarPNG);
+    if ($("btn-prev-imprimir")) {
+      $("btn-prev-imprimir").addEventListener("click", function () {
+        var ipP = localStorage.getItem(CHAVE_IP);
+        if (!ipP) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+        enviarImpressao(ipP, gerarZPLImagem());
+      });
+    }
+
+    /* Exportação PNG / SVG / PDF */
+    if ($("btn-export-png")) $("btn-export-png").addEventListener("click", exportarPNG);
+    if ($("btn-export-svg")) $("btn-export-svg").addEventListener("click", exportarSVG);
+    if ($("btn-export-pdf")) $("btn-export-pdf").addEventListener("click", exportarPDF);
 
     /* Modal Limpar Canvas (Centralizado) */
     var modalLimparEl = $("modal-limpar");

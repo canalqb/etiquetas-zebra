@@ -12,9 +12,9 @@ Registro de problemas ativos e sugestões. Atualizado em **2026-08-20**.
 
 ## Sugestões de melhorias (referência a sites/sistemas similares)
 
-1. **Desempenho do editor (prioridade)** — cachear QR/barcode por hash e evitar rebuild completo da tabela de elementos em mousemove (a coalescência do preview via `requestAnimationFrame` já foi aplicada em `renderStudio()`).
-2. **Exportação universal** — além de `.BIN`/`.VIP`/ZPL, exportar o preview como PNG/SVG/PDF (imagem da etiqueta renderizada), como fazem os geradores ZPL online.
-3. **Print preview fiel** — simular rotação e densidade no preview para mostrar exatamente o que sairá na impressora física (alinhar com o bug de impressão vertical).
+1. **Desempenho do editor (prioridade)** — ⚠️ parcial (2026-08-20): caches LRU de QR/barcode aplicados no preview e na geração ZPL (`qrObter()`/`barcodeObter()`, cap 40 entradas); coalescência do preview via `requestAnimationFrame` em `renderStudio()`. Restam: evitar rebuild completo da tabela de elementos em mousemove.
+2. ~~**Exportação universal**~~ ✅ **Resolvido (2026-08-20)**: botões **PNG / SVG / PDF** na toolbar da aba ZPL (`btn-export-png/svg/pdf`). O PNG/SVG/PDF são gerados pelo novo rasterizador canvas fiel ao desenho (PDF minimal com JPEG DCTDecode, MediaBox em mm→pt). Validado headless: exports rodam sem erros de página.
+3. ~~**Print preview fiel**~~ ✅ **Resolvido (2026-08-20)**: botão **Pré-visualizar Impressão** (`btn-print-preview`) abre `#modal-print-preview` com o raster exato que será enviado (`renderizarEtiquetaCanvas(true)` aplica a rotação de saída 0/90/180/270 por transformação de pixels) + botão **Imprimir como Imagem ^GF** (`btn-toggle-imgprint`, persistente): converte o raster em `^GFA` (limiar luminância <128) e envia exatamente como desenhado — resolve definitivamente o reposicionamento na impressão vertical. Validado: `^GFA,total,total,rowBytes` consistente (total=100×400=40000, hex=total×2), mapeamento vertical confirmado por pixels (elemento do topo-esquerdo do design aparece no fundo-esquerdo da saída rot90), preview modal + info de tamanho/orientação/tonalidade.
 4. **Múltiplos modelos em abas** — trabalhar com várias etiquetas abertas ao mesmo tempo.
 5. **Galeria de templates prontos** — padrões de caixa, envio, estoque, série; acelera a criação e serve de vitrine.
 6. **Backup/compartilhamento em nuvem** — `localStorage` é frágil (perde tudo ao limpar dados do navegador). Sugestão: serializar o modelo em URL/Base64 para compartilhar por link e/ou IndexedDB com exportação JSON de todos os modelos.
