@@ -8,3 +8,5 @@ node_modules/
 # OS
 Thumbs.db
 Desktop.ini
+# Regras internas (nunca publicar)
+regras/

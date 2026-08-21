@@ -642,91 +642,20 @@
     </button>
   </div>
 
-  <!-- Offcanvas Mobile: Painel de Configuração -->
+  <!-- Offcanvas Mobile: espelho do painel de controle do desktop.
+       As seções REAIS (#accordionControls) são movidas para os slots abaixo
+       em telas < lg pelo script "Mobile Panel Mirror" no fim da página —
+       mesmo DOM, mesmos IDs, mesmos listeners. -->
   <aside class="offcanvas offcanvas-start" tabindex="-1" id="mobileConfigOffcanvas" aria-labelledby="mobileConfigOffcanvasLabel" style="width: min(340px, 92vw);">
     <div class="offcanvas-header bg-dark text-white py-2 px-3">
       <h6 class="offcanvas-title d-flex align-items-center gap-2 mb-0" id="mobileConfigOffcanvasLabel">
-        <i class="bi bi-gear-fill text-warning"></i> Painel de Configuração
+        <i class="bi bi-sliders text-warning"></i> Controles do Editor
       </h6>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
     </div>
-    <div class="offcanvas-body p-0 overflow-auto">
-      <div class="accordion" id="accordionControlsMobile">
-
-        <!-- Seção 1: Configuração -->
-        <section class="accordion-item">
-          <h2 class="accordion-header">
-            <button class="accordion-button fw-bold text-dark bg-light py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mCollapseConfig">
-              <i class="bi bi-gear-fill me-2 text-primary"></i> 1. Configuração da Etiqueta
-            </button>
-          </h2>
-          <div id="mCollapseConfig" class="accordion-collapse collapse show" role="region">
-            <div class="accordion-body">
-              <div class="mb-2">
-                <label class="form-label fw-semibold small">Tamanho da Etiqueta</label>
-                <select class="form-select form-select-sm" id="m-tamanho">
-                  <option value="40x25">40 × 25 mm (320 × 200 dots)</option>
-                  <option value="100x50" selected>100 × 50 mm (800 × 400 dots)</option>
-                  <option value="100x100">100 × 100 mm (800 × 800 dots)</option>
-                  <option value="100x150">100 × 150 mm (800 × 1200 dots)</option>
-                </select>
-              </div>
-              <div class="mb-1">
-                <label class="form-label fw-semibold small">Nome / Produto</label>
-                <input type="text" class="form-control form-control-sm" id="m-nome" value="Impressora" placeholder="Ex.: Impressora">
-              </div>
-              <div class="mb-1">
-                <label class="form-label fw-semibold small">Valor do QR Code / Barcode</label>
-                <input type="text" class="form-control form-control-sm" id="m-qrcode" value="https://canalqb.com.br" placeholder="Ex.: https://canalqb.com.br">
-              </div>
-              <div class="row g-1 mb-2">
-                <div class="col-6">
-                  <label class="form-label fw-semibold small">Série</label>
-                  <input type="text" class="form-control form-control-sm" id="m-serie" value="SN-000123" placeholder="Ex.: SN-000123">
-                </div>
-                <div class="col-6">
-                  <label class="form-label fw-semibold small">Subtítulo</label>
-                  <input type="text" class="form-control form-control-sm" id="m-subtitulo" value="SHIPPING" placeholder="Ex.: Shipping">
-                </div>
-              </div>
-              <button type="button" class="btn btn-primary btn-sm w-100" id="btn-mobile-apply" data-bs-dismiss="offcanvas">
-                <i class="fas fa-check me-1"></i> Aplicar e Fechar
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- Seção 2: Salvar / Exportar (.BIN) -->
-        <section class="accordion-item">
-          <h2 class="accordion-header">
-            <button class="accordion-button collapsed fw-bold text-dark bg-light py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mCollapseTemplates">
-              <i class="bi bi-folder-check me-2 text-primary"></i> 2. Salvar / Exportar (.BIN)
-            </button>
-          </h2>
-          <div id="mCollapseTemplates" class="accordion-collapse collapse" role="region">
-            <div class="accordion-body text-center text-muted small py-3">
-              <i class="fas fa-desktop fa-2x mb-2 d-block text-secondary"></i>
-              Use a versão desktop para salvar e exportar modelos completos.
-            </div>
-          </div>
-        </section>
-
-        <!-- Seção 3: Lote Duplo -->
-        <section class="accordion-item">
-          <h2 class="accordion-header">
-            <button class="accordion-button collapsed fw-bold text-dark bg-light py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mCollapseBatchSpecial">
-              <i class="bi bi-diagram-3 me-2 text-primary"></i> 3. Geração em Lote
-            </button>
-          </h2>
-          <div id="mCollapseBatchSpecial" class="accordion-collapse collapse" role="region">
-            <div class="accordion-body text-center text-muted small py-3">
-              <i class="fas fa-sitemap fa-2x mb-2 d-block text-secondary"></i>
-              Disponível na versão desktop.
-            </div>
-          </div>
-        </section>
-
-      </div>
+    <div class="offcanvas-body p-2 overflow-auto">
+      <div id="mSlotTemplates"></div>
+      <div id="mSlotBatch"></div>
     </div>
   </aside>
 
@@ -5140,53 +5069,34 @@
     </div>
   </div>
 
-  <!-- Mobile Offcanvas: Sync script -->
+  <!-- Mobile Panel Mirror: em telas < lg, move as seções reais do desktop
+       (#accordionControls) para dentro do offcanvas; em lg+, devolve.
+       Mesmo DOM => salvar/exportar e geração em lote funcionam no mobile. -->
   <script>
   (function () {
-    var fieldMap = {
-      "m-nome":      "nome",
-      "m-qrcode":    "qrcode",
-      "m-serie":     "serie",
-      "m-subtitulo": "subtitulo",
-      "m-tamanho":   "tamanho"
-    };
-    function $id(id) { return document.getElementById(id); }
-
-    function syncToMobile() {
-      Object.keys(fieldMap).forEach(function(mId) {
-        var d = $id(fieldMap[mId]), m = $id(mId);
-        if (d && m) m.value = d.value;
+    var mq = window.matchMedia("(min-width: 992px)");
+    var map = [
+      { collapse: "collapseTemplates", slot: "mSlotTemplates" },
+      { collapse: "collapseBatchSpecial", slot: "mSlotBatch" }
+    ];
+    function syncPanel() {
+      var home = document.getElementById("accordionControls");
+      if (!home) return;
+      map.forEach(function (item) {
+        var col = document.getElementById(item.collapse);
+        var sec = col ? col.closest(".accordion-item") : null;
+        var slot = document.getElementById(item.slot);
+        if (!sec || !slot) return;
+        var dest = mq.matches ? home : slot;
+        if (sec.parentElement !== dest) dest.appendChild(sec);
       });
     }
-    function syncToDesktop() {
-      Object.keys(fieldMap).forEach(function(mId) {
-        var d = $id(fieldMap[mId]), m = $id(mId);
-        if (!d || !m || d.value === m.value) return;
-        d.value = m.value;
-        d.dispatchEvent(new Event(d.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
-      });
-    }
-
-    var oc = $id("mobileConfigOffcanvas");
-    if (oc) {
-      oc.addEventListener("show.bs.offcanvas", syncToMobile);
-      oc.addEventListener("hide.bs.offcanvas", syncToDesktop);
-    }
-    var applyBtn = $id("btn-mobile-apply");
-    if (applyBtn) applyBtn.addEventListener("click", syncToDesktop);
-
-    Object.keys(fieldMap).forEach(function(mId) {
-      var m = $id(mId);
-      if (!m) return;
-      var evType = m.tagName === "SELECT" ? "change" : "input";
-      m.addEventListener(evType, function() {
-        var d = $id(fieldMap[mId]);
-        if (d && d.value !== m.value) {
-          d.value = m.value;
-          d.dispatchEvent(new Event(evType, { bubbles: true }));
-        }
-      });
-    });
+    var oc = document.getElementById("mobileConfigOffcanvas");
+    if (oc) oc.addEventListener("show.bs.offcanvas", syncPanel);
+    if (mq.addEventListener) mq.addEventListener("change", syncPanel);
+    else if (mq.addListener) mq.addListener(syncPanel);
+    window.addEventListener("resize", syncPanel);
+    syncPanel();
   })();
   </script>
 
