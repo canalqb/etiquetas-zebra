@@ -45,6 +45,26 @@
       --zebra-muted: #64748b;
     }
 
+    /* Tema Escuro (Bootstrap 5.3 data-bs-theme) */
+    [data-bs-theme="dark"] {
+      --zebra-primary: #3b82f6;
+      --zebra-primary-hover: #60a5fa;
+      --zebra-accent: #38bdf8;
+      --zebra-bg: #0b1220;
+      --zebra-card-bg: #151e2e;
+      --zebra-border: #2a3648;
+      --zebra-text: #e2e8f0;
+      --zebra-muted: #94a3b8;
+      color-scheme: dark;
+    }
+    [data-bs-theme="dark"] .text-dark { color: var(--zebra-text) !important; }
+    [data-bs-theme="dark"] .canvas-toolbar { background: var(--zebra-card-bg); }
+    [data-bs-theme="dark"] .ruler-track-top,
+    [data-bs-theme="dark"] .ruler-track-left { background: #1a2436; border-color: #2a3648; }
+    [data-bs-theme="dark"] .ruler-tick-h { border-left-color: #7d8ca3; }
+    [data-bs-theme="dark"] .ruler-tick-v { border-top-color: #7d8ca3; }
+    [data-bs-theme="dark"] #modal-ajuda .modal-body { background-color: var(--zebra-card-bg) !important; }
+
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background-color: var(--zebra-bg);
@@ -859,6 +879,13 @@
 
                   <div class="vr mx-1" style="height:20px;"></div>
 
+                  <!-- Tema claro/escuro -->
+                  <button type="button" class="icon-btn icon-btn-muted" id="btn-tema" title="Alternar tema claro/escuro"><i class="bi bi-moon-stars" id="icon-tema"></i></button>
+
+                  <!-- Espelho (^PM) e Reverso (^LR) -->
+                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-espelho" title="Espelhar etiqueta na impressão (^PM) — útil para transferência térmica por trás"><i class="bi bi-flip-horizontal"></i></button>
+                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-reverso" title="Reverso branco-sobre-preto (^LR) — inverte cores de toda a etiqueta"><i class="bi bi-circle-half"></i></button>
+
                   <!-- Configurar IP & Imprimir -->
                   <button type="button" class="icon-btn icon-btn-muted" id="btn-config-ip" title="Configurar IP da impressora"><i class="fas fa-network-wired"></i></button>
                   <button type="button" class="icon-btn icon-btn-primary" id="btn-print-preview" title="Pré-visualizar Impressão (fiel ao desenho)"><i class="bi bi-eye"></i></button>
@@ -909,6 +936,9 @@
 
                 <div class="d-flex align-items-center justify-content-between mt-2 px-1">
                 </div>
+
+                <!-- Abas de Modelos (multi-etiquetas abertas via cache) -->
+                <div id="tabs-modelos" class="d-flex flex-wrap align-items-center gap-1 mt-2 px-1" role="tablist" aria-label="Modelos salvos"></div>
 
                 <!-- Canvas Control Bar (below stage) -->
                 <div class="canvas-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2">
@@ -3110,7 +3140,9 @@
         "^PW" + W,
         "^LL" + H,
         "^MT" + (ribbon === "Y" ? "T" : "D"),
-        "^MD" + darkness
+        "^MD" + darkness,
+        "^PM" + (localStorage.getItem("etiquetasZebra.espelho") === "1" ? "Y" : "N"),
+        "^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N")
       ];
 
       /* Injeta deslocamento de hardware ^LH (Label Home) se houver margens de ajuste de impressora */
@@ -3513,7 +3545,9 @@
         "^PW" + cv.width,
         "^LL" + cv.height,
         "^MT" + (ribbon === "Y" ? "T" : "D"),
-        "^MD" + darkness
+        "^MD" + darkness,
+        "^PM" + (localStorage.getItem("etiquetasZebra.espelho") === "1" ? "Y" : "N"),
+        "^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N")
       ];
       p.push("^FO0,0" + canvasParaGF(cv) + "^FS");
       p.push("^XZ");
@@ -3844,28 +3878,77 @@
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
       updateTemplateDropdown();
+      renderTabsModelos();
       notify("Modelo '" + name + "' salvo no cache local!", "success");
     });
 
     $("btn-load-cache").addEventListener("click", function () {
       var name = $("tmpl-select").value;
       if (!name) { notify("Selecione um modelo para carregar.", "danger"); return; }
+      carregarModeloPorNome(name);
+    });
+
+    function carregarModeloPorNome(name) {
       var tmpls = getSavedTemplates();
       if (tmpls[name]) {
         var t = tmpls[name];
         tamAtualKey = t.tamanho || "100x50";
         $("tamanho").value = tamAtualKey;
         rotAtual = t.rotacao || 0;
-        elements = t.elements || [];
+        elements = JSON.parse(JSON.stringify(t.elements || []));
         $("tmpl-name-input").value = name;
         selectedElId = null;
         selectedElIds = [];
         autoFitCanvas();
         renderStudio();
         salvarHistorico();
+        renderTabsModelos();
         notify("Modelo '" + name + "' carregado!", "success");
+        return true;
       }
-    });
+      return false;
+    }
+
+    /* ---------------- ABAS DE MODELOS ---------------- */
+    function renderTabsModelos() {
+      var cont = $("tabs-modelos");
+      if (!cont) return;
+      var tmpls = getSavedTemplates();
+      var atual = ($("tmpl-name-input").value || "").trim();
+      cont.innerHTML = "";
+      Object.keys(tmpls).forEach(function (name) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn btn-sm rounded-pill px-3 " + (name === atual ? "btn-primary" : "btn-outline-secondary");
+        b.setAttribute("role", "tab");
+        b.setAttribute("aria-selected", name === atual ? "true" : "false");
+        b.title = "Abrir modelo: " + name;
+        b.textContent = name;
+        b.addEventListener("click", function () { carregarModeloPorNome(name); });
+        cont.appendChild(b);
+      });
+      var novo = document.createElement("button");
+      novo.type = "button";
+      novo.className = "btn btn-sm btn-outline-primary rounded-circle px-2";
+      novo.title = "Nova etiqueta em branco";
+      novo.setAttribute("aria-label", "Nova etiqueta em branco");
+      var ic = document.createElement("i");
+      ic.className = "bi bi-plus-lg";
+      novo.appendChild(ic);
+      novo.addEventListener("click", function () {
+        if (elements.length && !confirm("Começar uma etiqueta em branco? O desenho atual não salvo será perdido.")) return;
+        elements = [];
+        selectedElId = null;
+        selectedElIds = [];
+        $("tmpl-name-input").value = "";
+        renderStudio();
+        salvarHistorico();
+        renderTabsModelos();
+        notify("Nova etiqueta em branco pronta.", "dark");
+      });
+      cont.appendChild(novo);
+    }
+    if ($("tmpl-name-input")) $("tmpl-name-input").addEventListener("change", renderTabsModelos);
 
     $("btn-del-cache").addEventListener("click", function () {
       var name = $("tmpl-select").value;
@@ -3875,6 +3958,7 @@
         delete tmpls[name];
         localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
         updateTemplateDropdown();
+        renderTabsModelos();
         notify("Modelo excluído.", "dark");
       }
     });
@@ -3935,6 +4019,7 @@
         var tpl = TEMPLATES_GALERIA[tid];
         aplicarModelo(tpl);
         $("tmpl-name-input").value = tpl.nome;
+        renderTabsModelos();
         notify("Template '" + tpl.nome + "' carregado! Edite os textos à vontade.", "success");
       });
     });
@@ -4826,6 +4911,48 @@
       atualizarBtnImgPrint();
     }
 
+    /* Tema claro/escuro */
+    var btnTema = $("btn-tema");
+    function aplicarTema() {
+      var escuro = localStorage.getItem("etiquetasZebra.tema") === "dark";
+      document.documentElement.setAttribute("data-bs-theme", escuro ? "dark" : "light");
+      var ic = $("icon-tema");
+      if (ic) ic.className = escuro ? "bi bi-sun" : "bi bi-moon-stars";
+    }
+    if (btnTema) {
+      btnTema.addEventListener("click", function () {
+        localStorage.setItem("etiquetasZebra.tema", localStorage.getItem("etiquetasZebra.tema") === "dark" ? "light" : "dark");
+        aplicarTema();
+      });
+      aplicarTema();
+    }
+
+    /* Espelho (^PM) e Reverso (^LR) — persistem em localStorage, entram no prologue ZPL */
+    function ligarToggleFlag(btnId, chave, msgOn, msgOff) {
+      var b = $(btnId);
+      if (!b) return;
+      function atualizar() {
+        var ativo = localStorage.getItem(chave) === "1";
+        b.classList.toggle("icon-btn-success", ativo);
+        b.classList.toggle("icon-btn-muted", !ativo);
+        b.style.opacity = ativo ? "1" : "0.75";
+      }
+      b.addEventListener("click", function () {
+        var novo = !(localStorage.getItem(chave) === "1");
+        localStorage.setItem(chave, novo ? "1" : "0");
+        atualizar();
+        notify(novo ? msgOn : msgOff, novo ? "success" : "dark");
+        renderZPL();
+      });
+      atualizar();
+    }
+    ligarToggleFlag("btn-toggle-espelho", "etiquetasZebra.espelho",
+      "Espelhamento ^PM ativado — a impressora imprime a etiqueta espelhada.",
+      "Espelhamento ^PM desativado.");
+    ligarToggleFlag("btn-toggle-reverso", "etiquetasZebra.reverso",
+      "Reverso ^LR ativado — branco-sobre-preto em toda a etiqueta.",
+      "Reverso ^LR desativado.");
+
     /* Pré-visualização de Impressão fiel */
     var modalPrevEl = $("modal-print-preview");
     var bsModalPrev = modalPrevEl ? new bootstrap.Modal(modalPrevEl) : null;
@@ -5255,6 +5382,7 @@
     var sessionRestored = loadFieldsFromSession();
     refreshIpDisplay();
     updateTemplateDropdown();
+    renderTabsModelos();
     autoFitCanvas();
     if (sessionRestored) renderStudio();
     else gerarPresetLayout();
@@ -5271,6 +5399,7 @@
         if (modH && Array.isArray(modH.elements)) {
           aplicarModelo(modH);
           if (modH.nome) $("tmpl-name-input").value = modH.nome;
+          renderTabsModelos();
           notify("Modelo carregado do link compartilhado!", "success");
         }
       } catch (e) {}
