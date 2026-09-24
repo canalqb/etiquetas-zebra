@@ -2016,7 +2016,7 @@
   <footer class="container mt-auto mb-3">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.8</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.9</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -4651,6 +4651,26 @@
     });
 
     /* ---------------- Conversor de Imagem para ZPL ^GFA ---------------- */
+    /* Bitmap pré-rotacionado (90/180/270 CW). ^GF não tem parâmetro de
+       orientação: para o conteúdo girar junto com a etiqueta, gira-se o
+       bitmap na geração e escolhe a variante pela composição (vrot - rot). */
+    function gerarGFARotacao(fonte, w, h, rotDeg) {
+      var swap = (rotDeg === 90 || rotDeg === 270);
+      var cv = document.createElement("canvas");
+      cv.width = Math.max(8, swap ? h : w);
+      cv.height = Math.max(8, swap ? w : h);
+      var ctx = cv.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.save();
+      if (rotDeg === 90) { ctx.translate(cv.width, 0); ctx.rotate(Math.PI / 2); }
+      else if (rotDeg === 180) { ctx.translate(cv.width, cv.height); ctx.rotate(Math.PI); }
+      else if (rotDeg === 270) { ctx.translate(0, cv.height); ctx.rotate(-Math.PI / 2); }
+      ctx.drawImage(fonte, 0, 0, w, h);
+      ctx.restore();
+      return canvasParaGF(cv);
+    }
+
     function generateGFAForElement(el, callback) {
       if (!el.dataUrl) return;
       var img = new Image();
@@ -4691,6 +4711,10 @@
           }
         }
         el.gfaZpl = "^GFA," + totalBytes + "," + totalBytes + "," + rowBytes + "," + hexData;
+        /* Variantes giradas p/ impressão com a etiqueta em vertical (prot) */
+        el.gfaZplR = gerarGFARotacao(img, targetW, targetH, 90);
+        el.gfaZplI = gerarGFARotacao(img, targetW, targetH, 180);
+        el.gfaZplB = gerarGFARotacao(img, targetW, targetH, 270);
         if (typeof callback === "function") callback();
       };
       img.src = el.dataUrl;
@@ -4713,6 +4737,10 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       desenharElementoCanvas(ctx, tmp, canvas.width, canvas.height);
       el.gfaZpl = canvasParaGF(canvas);
+      /* A curva já embute vrot no bitmap; as variantes cobrem o giro da etiqueta */
+      el.gfaZplR = gerarGFARotacao(canvas, canvas.width, canvas.height, 90);
+      el.gfaZplI = gerarGFARotacao(canvas, canvas.width, canvas.height, 180);
+      el.gfaZplB = gerarGFARotacao(canvas, canvas.width, canvas.height, 270);
     }
 
     function abrirImportadorImagem() {
@@ -4814,6 +4842,9 @@
       return c2;
     }
 
+    /* Contexto único p/ medir texto na geração ZPL (linha-a-linha da vertical) */
+    var __ctxFonteZPL = document.createElement("canvas").getContext("2d");
+
     function gerarZPLBloco(elementosList, tamKey, rot) {
       var sz = SIZES[tamKey] || SIZES["100x50"];
       var W = sz.w, H = sz.h;
@@ -4878,7 +4909,13 @@
          }
 
         var vrot = it.rotacao || 0;
-        var prot = (vrot + rot) % 360;
+        /* O conteúdo gira JUNTO com a etiqueta — analogia do papel: virar a
+           folha vira a escrita junto. Orientação física do campo = rotação do
+           elemento MENOS a rotação da etiqueta. As âncoras ^FO abaixo não
+           mudam: todo campo (^A0N/R/I/B, ^BQ, ^BC) cresce +x/+y a partir do
+           ^FO (verificado empiricamente no Labelary) — só o conteúdo da caixa
+           muda de sentido. Em rot=0/180 o resultado é idêntico ao antigo. */
+        var prot = ((vrot - rot) % 360 + 360) % 360;
 
         var rC = "N";
         if (prot === 90) rC = "R";
@@ -4912,55 +4949,103 @@
 
         if (it.tipo === "texto" || it.tipo === "sub" || it.tipo === "nome" || it.tipo === "serie") {
           var f = it.fonte || 30;
-          var zplText;
-          if (it.snData) {
-            zplText = "^SN" + it.snData + ",1,Y^FS";
-          } else {
-            /* Quebra automática universal: \n vira \& sempre e todo texto sai com
-               ^FB (fbWidth explícito ou o resto da etiqueta até a margem direita). */
-            var fdBody = sanitizar(it.texto).replace(/\n/g, "\\&");
-            if ((parseInt(it.fbAlign, 10) || 0) === 1 && fdBody.slice(-2) !== "\\&") fdBody += "\\&";
-            zplText = "^FD" + fdBody + "^FS";
-          }
           var isBold = it.bold || (it.classe === "nome" || it.classe === "sub" || it.tipo === "nome" || it.tipo === "sub");
 
-          var fbWz = Math.max(1, Math.round(larguraQuebraTexto(it, dispW)));
-          var fbLz = Math.max(1, Math.round(it.fbLines || 99));
-          var fbSpz = Math.max(0, Math.round(it.fbSpacing || Math.round(f * 0.2)));
-          var fbAz = ["L", "C", "R", "J"][Math.min(3, Math.max(0, parseInt(it.fbAlign, 10) || 0))];
-          var fbCmd = "^FB" + fbWz + "," + fbLz + "," + fbSpz + "," + fbAz;
+          if ((rot === 90 || rot === 270) && !it.snData && !vrot) {
+            /* Etiqueta VERTICAL: ^FB muda de âncora sob campo girado entre
+               renderizadores/impressoras (verificado: texto desloca pro fim
+               do bloco ou some). Cada linha sai como campo próprio — quebra,
+               alinhamento e avanço calculados no app, idênticos ao modo
+               imagem (raster). Caixa de tinta: sempre +x/+y a partir do ^FO. */
+            var alignRot = Math.min(3, Math.max(0, parseInt(it.fbAlign, 10) || 0));
+            __ctxFonteZPL.font = (isBold ? "700 " : "600 ") + (it.italic ? "italic " : "") + f + 'px Arial, Helvetica, sans-serif';
+            var wQzRot = larguraQuebraTexto(it, dispW);
+            var linhasRot = quebrarTextoMultilinha(it.texto || "", wQzRot, __ctxFonteZPL);
+            var lhRot = Math.round(f * 1.1);
+            var spRot = it.fbSpacing ? Math.round(it.fbSpacing) : 0;
+            var maxLinRot = Math.max(1, Math.round(it.fbLines || 99));
+            for (var lr = 0; lr < linhasRot.length && lr < maxLinRot; lr++) {
+              var lnRot = Math.ceil(__ctxFonteZPL.measureText(linhasRot[lr]).width);
+              var dxIniRot = alignRot === 2 ? vx + vw - lnRot
+                : (alignRot === 1 ? vx + Math.round((vw - lnRot) / 2) : vx);
+              var fdRot = "^FD" + sanitizar(linhasRot[lr]) + "^FS";
+              var foxRot, foyRot;
+              if (rot === 90) {
+                foxRot = Math.round(vy + lr * (lhRot + spRot));
+                foyRot = Math.round(H - dxIniRot - lnRot);
+              } else {
+                foxRot = Math.round(W - (vy + lr * (lhRot + spRot)) - lhRot);
+                foyRot = Math.round(dxIniRot);
+              }
+              p.push("^FO" + foxRot + "," + foyRot + "^A0" + rC + "," + f + "," + f + fdRot);
+              if (isBold) {
+                var bxR2 = foxRot, byR2 = foyRot;
+                if (rC === "N") bxR2 += 1;
+                else if (rC === "R") byR2 += 1;
+                else if (rC === "I") bxR2 -= 1;
+                else byR2 -= 1;
+                p.push("^FO" + bxR2 + "," + byR2 + "^A0" + rC + "," + f + "," + f + fdRot);
+              }
+              if (it.underline && linhasRot.length === 1) {
+                var tWR = larguraTexto(it.texto, f);
+                var tHR = f;
+                var thickR = Math.max(2, Math.round(f * 0.08));
+                var uxR = foxRot, uyR = foyRot, uwR = tWR, uhR = thickR;
+                if (rC === "R") { uxR = foxRot - thickR; uwR = thickR; uhR = tWR; }
+                else if (rC === "B") { uxR = foxRot + tHR; uwR = thickR; uhR = tWR; }
+                p.push("^FO" + uxR + "," + uyR + "^GB" + uwR + "," + uhR + "," + thickR + "^FS");
+              }
+            }
+          } else {
+            var zplText;
+            if (it.snData) {
+              zplText = "^SN" + it.snData + ",1,Y^FS";
+            } else {
+              /* Quebra automática universal: \n vira \& sempre e todo texto sai com
+                 ^FB (fbWidth explícito ou o resto da etiqueta até a margem direita). */
+              var fdBody = sanitizar(it.texto).replace(/\n/g, "\\&");
+              if ((parseInt(it.fbAlign, 10) || 0) === 1 && fdBody.slice(-2) !== "\\&") fdBody += "\\&";
+              zplText = "^FD" + fdBody + "^FS";
+            }
 
-          p.push("^FO" + px + "," + py + fbCmd + "^A0" + rC + "," + f + "," + f + zplText);
-          
-          if (isBold) {
-             var bx = px, by = py;
-             if (rC === "N") bx += 1;
-             else if (rC === "R") by += 1;
-             else if (rC === "I") bx -= 1;
-             else if (rC === "B") by -= 1;
-             p.push("^FO" + bx + "," + by + fbCmd + "^A0" + rC + "," + f + "," + f + zplText);
-          }
-          
-          if (it.underline) {
-             var tW = larguraTexto(it.texto, f);
-             var tH = f;
-             var thick = Math.max(2, Math.round(f * 0.08)); 
-             var ux = px, uy = py, uw = tW, uh = thick;
-             /* Sublinhado acompanha a rotacao: fica do lado dos "pes" dos caracteres.
-                R (90 CW): pes para a esquerda; B (270): pes para a direita; I (180): pes para cima. */
-             if (rC === "N") {
+            var fbWz = Math.max(1, Math.round(larguraQuebraTexto(it, dispW)));
+            var fbLz = Math.max(1, Math.round(it.fbLines || 99));
+            var fbSpz = Math.max(0, Math.round(it.fbSpacing || Math.round(f * 0.2)));
+            var fbAz = ["L", "C", "R", "J"][Math.min(3, Math.max(0, parseInt(it.fbAlign, 10) || 0))];
+            var fbCmd = "^FB" + fbWz + "," + fbLz + "," + fbSpz + "," + fbAz;
+
+            p.push("^FO" + px + "," + py + fbCmd + "^A0" + rC + "," + f + "," + f + zplText);
+
+            if (isBold) {
+              var bx = px, by = py;
+              if (rC === "N") bx += 1;
+              else if (rC === "R") by += 1;
+              else if (rC === "I") bx -= 1;
+              else if (rC === "B") by -= 1;
+              p.push("^FO" + bx + "," + by + fbCmd + "^A0" + rC + "," + f + "," + f + zplText);
+            }
+
+            if (it.underline) {
+              var tW = larguraTexto(it.texto, f);
+              var tH = f;
+              var thick = Math.max(2, Math.round(f * 0.08));
+              var ux = px, uy = py, uw = tW, uh = thick;
+              /* Sublinhado acompanha a rotacao: fica do lado dos "pes" dos caracteres.
+                 R (90 CW): pes para a esquerda; B (270): pes para a direita; I (180): pes para cima. */
+              if (rC === "N") {
                 uy = py + tH;
-             } else if (rC === "R") {
+              } else if (rC === "R") {
                 ux = px - thick;
                 uw = thick; uh = tW;
-             } else if (rC === "I") {
+              } else if (rC === "I") {
                 uy = py - thick;
                 uw = tW; uh = thick;
-             } else if (rC === "B") {
+              } else if (rC === "B") {
                 ux = px + tH;
                 uw = thick; uh = tW;
-             }
-             p.push("^FO" + ux + "," + uy + "^GB" + uw + "," + uh + "," + thick + "^FS");
+              }
+              p.push("^FO" + ux + "," + uy + "^GB" + uw + "," + uh + "," + thick + "^FS");
+            }
           }
         } else if (it.tipo === "qr") {
           if (!it.texto || it.texto.trim() === "") return;
@@ -5000,9 +5085,15 @@
         } else if (it.tipo === "curva") {
           /* Linha curva não tem primitiva ZPL: rasteriza a quadrática num
              mini-canvas (mesmo pipeline monocromático das imagens) → ^GFA.
-             Regenera sempre: curvatura/espessura/tamanho podem ter mudado. */
+             Regenera sempre: curvatura/espessura/tamanho podem ter mudado.
+             O bitmap já embute vrot; o giro restante é o da etiqueta. */
           gerarGFACurva(it);
-          p.push("^FO" + px + "," + py + it.gfaZpl + "^FS");
+          var rotGfCurva = (360 - rot) % 360;
+          var gfaCurva = rotGfCurva === 90 ? (it.gfaZplR || it.gfaZpl)
+            : rotGfCurva === 180 ? (it.gfaZplI || it.gfaZpl)
+            : rotGfCurva === 270 ? (it.gfaZplB || it.gfaZpl)
+            : it.gfaZpl;
+          p.push("^FO" + px + "," + py + gfaCurva + "^FS");
         } else if (it.tipo === "raio") {
           var raW = Math.round((prot === 90 || prot === 270) ? (it.h || 150) : (it.w || 300));
           var raH = Math.round((prot === 90 || prot === 270) ? (it.w || 300) : (it.h || 150));
@@ -5010,8 +5101,13 @@
           var raioRa = Math.max(0, Math.min(8, Math.round(it.raio === undefined ? 8 : it.raio)));
           p.push("^FO" + px + "," + py + "^GB" + raW + "," + raH + "," + espRa + ",B," + raioRa + "^FS");
         } else if (it.tipo === "imagem") {
-          if (it.gfaZpl) {
-            p.push("^FO" + px + "," + py + it.gfaZpl + "^FS");
+          /* ^GF não tem orientação: escolhe a variante pré-rotacionada (prot) */
+          var gfaImg = prot === 90 ? (it.gfaZplR || it.gfaZpl)
+            : prot === 180 ? (it.gfaZplI || it.gfaZpl)
+            : prot === 270 ? (it.gfaZplB || it.gfaZpl)
+            : it.gfaZpl;
+          if (gfaImg) {
+            p.push("^FO" + px + "," + py + gfaImg + "^FS");
           }
         }
 
