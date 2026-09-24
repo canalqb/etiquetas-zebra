@@ -2016,7 +2016,7 @@
   <footer class="container mt-auto mb-3">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.7</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.8</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -3249,6 +3249,13 @@
             imgTag.style.height = "100%";
             imgTag.style.objectFit = "contain";
             imgTag.style.display = "block";
+            /* <img> é arrastável nativamente por padrão: o DnD do navegador rouba
+               o gesto (mousemove para de chegar) e o drop sobre o stage criava
+               elementos-lixo com o dataUrl como tipo. Fora do evento = zero DnD. */
+            imgTag.draggable = false;
+            imgTag.style.pointerEvents = "none";
+            imgTag.style.userSelect = "none";
+            imgTag.style.webkitUserDrag = "none";
             div.appendChild(imgTag);
           } else {
             // Placeholder enquanto nenhuma imagem foi carregada
@@ -4771,11 +4778,15 @@
     });
 
     var stageEl = $("stage");
+    /* Tipos válidos da paleta: drops nativos (imagens do canvas, texto arrastado,
+       URLs) carregam text/plain com conteúdo arbitrário — só cria elemento
+       quando o tipo é um dos botões reais da paleta. */
+    var TIPOS_PALETA = ["texto", "sub", "nome", "qr", "barcode", "imagem", "linha", "borda", "elipse", "diagonal", "raio", "retas", "curva"];
     stageEl.addEventListener("dragover", function (e) { e.preventDefault(); });
     stageEl.addEventListener("drop", function (e) {
       e.preventDefault();
       var tipo = e.dataTransfer.getData("text/plain");
-      if (tipo) {
+      if (tipo && TIPOS_PALETA.indexOf(tipo) !== -1) {
         adicionarElemento(tipo);
       }
     });
