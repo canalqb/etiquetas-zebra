@@ -761,9 +761,15 @@
         border-radius: 10px; font-weight: 700;
       }
       .btn-acoes-mobile {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 8px 12px; border-radius: 10px; font-weight: 700;
+        display: inline-flex; align-items: center;
+        padding: 8px 11px; border-radius: 10px; font-size: 1rem;
       }
+      /* Content encosta nas bordas da tela: menos respiro lateral no mobile
+         (o canvas ganha ~30px úteis de largura em um telefone de 390px). */
+      main.container { padding-left: .375rem; padding-right: .375rem; }
+      main.container > .row { --bs-gutter-x: .5rem; }
+      main.container .card-custom > .card-body { padding-left: .5rem; padding-right: .5rem; }
+      main.container .card-custom > .card-header { padding-left: .5rem; padding-right: .5rem; }
       .ribbons-bar {
         position: fixed; top: 0; left: 0; bottom: 0; z-index: 1085;
         width: min(320px, 88vw);
@@ -963,13 +969,25 @@
                     <i class="fas fa-bars" aria-hidden="true"></i> Ferramentas
                   </button>
                   <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-lote" title="Gerar Lote (sequências e importação de dados)" aria-label="Gerar lote">
-                    <i class="fas fa-layer-group" aria-hidden="true"></i> Lote
+                    <i class="fas fa-layer-group" aria-hidden="true"></i>
                   </button>
                   <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-importar" title="Importar Dados (Excel, CSV, Google Sheets, Webhook, Banco/API, Pasta, ODBC)" aria-label="Importar dados">
-                    <i class="fas fa-file-import" aria-hidden="true"></i> Importar
+                    <i class="fas fa-file-import" aria-hidden="true"></i>
                   </button>
                   <button type="button" class="btn btn-success btn-acoes-mobile" id="btn-mobile-imprimir" title="Imprimir etiqueta / lote" aria-label="Imprimir">
-                    <i class="fas fa-print" aria-hidden="true"></i> Imprimir
+                    <i class="fas fa-print" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-danger btn-acoes-mobile" id="btn-mobile-novo" title="Nova etiqueta em branco (limpa tudo)" aria-label="Nova etiqueta">
+                    <i class="fas fa-file-circle-plus" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-salvar" title="Salvar etiqueta como arquivo .bin (1ª etiqueta + árvore do lote + conexões de importação)" aria-label="Salvar etiqueta em bin">
+                    <i class="fas fa-floppy-disk" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-carregar" title="Carregar etiqueta salva (.bin de modelo ou de lote/ZPL)" aria-label="Carregar etiqueta">
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-acoes-mobile d-none" id="btn-mobile-salvar-lote" title="Salvar lote de etiquetas como .bin (ZPL concatenado)" aria-label="Salvar lote de etiquetas">
+                    <i class="fas fa-box" aria-hidden="true"></i>
                   </button>
                 </div>
                 <div class="ribbons-backdrop" id="ribbons-backdrop" aria-hidden="true"></div>
@@ -2244,9 +2262,17 @@
         if (e.key === "Escape") abrirMenuRibbons(false);
       });
       ribbonsBar.addEventListener("click", function (e) {
-        if (e.target.closest(".palette-item") && ribbonsBar.classList.contains("mobile-open")) {
-          setTimeout(function () { abrirMenuRibbons(false); }, 150);
-        }
+        if (!ribbonsBar.classList.contains("mobile-open")) return;
+        /* Qualquer botão de ação fecha o menu (inclusive os que abrem modal):
+           inserir elemento, gerar lote, importar, imprimir, salvar, zoom...
+           Exceções: cabeçalhos do acordeão (.ribbon-toggle) e os controles
+           de liga/desliga (labels/inputs btn-check — régua, snap, grade), que
+           o usuário costuma alternar vários seguidos. */
+        var alvo = e.target.closest("button, .palette-item");
+        if (!alvo) return;
+        if (alvo.closest(".ribbon-toggle")) return;
+        if (e.target.closest('label[for^="toggle-"], .btn-check')) return;
+        setTimeout(function () { abrirMenuRibbons(false); }, 150);
       });
     })();
 
@@ -2261,6 +2287,15 @@
       encaminhar("btn-mobile-lote", "btn-batch-special-generate");
       encaminhar("btn-mobile-importar", "btn-import-dados");
       encaminhar("btn-mobile-imprimir", "btn-imprimir");
+      encaminhar("btn-mobile-novo", "btn-novo-etiqueta");
+      encaminhar("btn-mobile-salvar", "btn-export-modelo-atual");
+      (function () {
+        var b = $("btn-mobile-carregar");
+        var alvo = $("input-import-bin");
+        if (b && alvo) b.addEventListener("click", function () { alvo.click(); });
+      })();
+      var bl = $("btn-mobile-salvar-lote");
+      if (bl) bl.addEventListener("click", salvarLoteBin);
     })();
 
     /* ---------------- IP & Protocol Management & Modal ---------------- */
@@ -3286,14 +3321,14 @@
         });
 
         // Toque (mobile): segurar e arrastar move; 2 dedos = pinça expande/contrai;
-        // toque longo (~0,5s parado) abre o Editor de Elemento; toque duplo edita.
+        // toque duplo edita. O Editor de Elemento é o card fixo que aparece ao
+        // selecionar — nenhum modal interrompe o arraste.
         div.addEventListener("touchstart", function (e) {
           if (e.touches.length > 1) return; /* 2º dedo entra no gesto já ativo (pinça) */
           /* Placeholder de imagem precisa do clique normal para abrir o seletor de arquivo */
           if (el.tipo === "imagem" && !el.dataUrl) return;
           e.preventDefault();
           e.stopPropagation();
-          touchGestureAbort = false;
           if (selectedElIds.indexOf(el.id) === -1) {
             selectedElIds = [el.id];
             selectedElId = el.id;
@@ -3301,22 +3336,13 @@
           }
           var sx = e.touches[0].clientX, sy = e.touches[0].clientY;
           var moveu = false, acabou = false;
-          /* Toque longo → Editor de Elemento (equivale ao botão direito) */
-          var lpTimer = setTimeout(function () {
-            if (!moveu && !acabou) {
-              touchGestureAbort = true; /* cancela o arraste por baixo */
-              abrirEditorElementoModal(el);
-            }
-          }, 500);
           function vigiaMovimento(tm) {
-            if (tm.touches.length > 1 || Math.abs(tm.touches[0].clientX - sx) > 9 || Math.abs(tm.touches[0].clientY - sy) > 9) {
-              moveu = true;
-              clearTimeout(lpTimer);
+            if (Math.abs(tm.touches[0].clientX - sx) > 4 || Math.abs(tm.touches[0].clientY - sy) > 4) {
+              moveu = true; /* só para o toque duplo: dedo deslocou, não foi um toque */
             }
           }
           function fimToque() {
             acabou = true;
-            clearTimeout(lpTimer);
             window.removeEventListener("touchmove", vigiaMovimento);
             window.removeEventListener("touchend", fimToque);
             window.removeEventListener("touchcancel", fimToque);
@@ -3578,7 +3604,6 @@
 
     /* ---------------- Movimentação E Redimensionamento (Ctrl + Drag / Touch) ---------------- */
     /* Toque (mobile): normaliza mouse↔touch para um único sistema de arraste */
-    var touchGestureAbort = false; /* toque longo abriu o editor: cancela o gesto ativo */
     var _ultimoToqueEl = null, _ultimoToqueT = 0; /* detector de toque duplo */
     function pontoDeEvento(ev) {
       var t = (ev.touches && ev.touches.length) ? ev.touches[0]
@@ -3778,7 +3803,6 @@
          expande/contrai o elemento (texto escala a fonte, QR/linha/forms
          escalam w/h, sempre limitados pela etiqueta). */
       function onTouchMove(te) {
-        if (touchGestureAbort) return;
         te.preventDefault();
         if (te.touches.length === 2 && targetElements.length) {
           var itemP = targetElements[0];
@@ -3825,7 +3849,6 @@
         /* Clique simples/duplo clique (sem alteração): não reconstrói o DOM e
             não gravam passos fantasmas no histórico — reconstruir aqui quebrava
             o dblclick da edição in-loco. */
-        if (touchGestureAbort) { touchGestureAbort = false; return; }
         if (!houveAlteracao) return;
         salvarHistorico();
         targetElements.forEach(function (item) {
@@ -5964,14 +5987,69 @@
       a.click();
       notify("Modelo '" + (modelo.name || "modelo") + "' salvo como arquivo .bin!", "success");
     }
+    /* Conexões do Importar Dados (origem + URLs/credenciais preenchidas no modal)
+       viajam dentro do modelo .bin — "Carregar etiqueta" restaura tudo. */
+    var IMPORT_CAMPOS_CONEXAO = [
+      "import-url", "import-gs-clientid",
+      "webhook-url", "webhook-metodo", "webhook-headers",
+      "banco-url", "banco-tabela", "banco-token",
+      "ponte-tipo", "ponte-host", "ponte-porta", "ponte-usuario", "ponte-senha",
+      "ponte-banco", "ponte-sql"
+    ];
+    function coletarConexoesImport() {
+      var tipoEl = document.querySelector("input[name='import-tipo']:checked");
+      var conex = { tipo: tipoEl ? tipoEl.value : "csv", campos: {} };
+      IMPORT_CAMPOS_CONEXAO.forEach(function (id) {
+        var c = $(id);
+        if (c && c.value) conex.campos[id] = c.value;
+      });
+      return conex;
+    }
+    function aplicarConexoesImport(conex) {
+      if (!conex || !conex.tipo) return;
+      var radio = document.querySelector("input[name='import-tipo'][value='" + conex.tipo + "']");
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      Object.keys(conex.campos || {}).forEach(function (id) {
+        var c = $(id);
+        if (c) c.value = conex.campos[id];
+      });
+    }
+    /* Salvar Lote de Etiquetas (.bin): o ZPL concatenado de todas as etiquetas
+       do lote/importação — exatamente o que a impressora recebe. */
+    function salvarLoteBin() {
+      var zplLote = null;
+      var multi = gerarZPLTodasLinhas();
+      if (multi && multi.zpl) zplLote = multi.zpl;
+      else if (loteEspecialAtivo && $("zpl") && $("zpl").value.indexOf("^XA") !== -1) zplLote = $("zpl").value;
+      if (!zplLote) { notify("Nada para salvar — gere o lote ou importe os dados primeiro.", "warning"); return; }
+      var fileBase = sanitizarFilename(getModelName() || "lote-etiquetas");
+      var blob = new Blob([zplLote], { type: "application/octet-stream" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fileBase + "-lote.bin";
+      a.click();
+      var blocos = zplLote.split("^XA").length - 1;
+      notify("Lote salvo como '" + fileBase + "-lote.bin' (" +
+        (blocos > 1 ? blocos + " etiquetas concatenadas" : "serialização ^SN em 1 bloco") + ").", "success");
+    }
     $("btn-export-modelo-atual").addEventListener("click", function () {
+      var mapaSalvo = null;
+      try { mapaSalvo = JSON.parse(localStorage.getItem(IMPORT_MAP_STORAGE_KEY) || "null"); } catch (e) {}
       exportarModeloBin({
         name: getModelName(),
         tamanho: tamAtualKey,
         rotacao: rotAtual,
         elements: JSON.parse(JSON.stringify(elements)),
         batchSpecialTree: JSON.parse(JSON.stringify(batchSpecialTree)),
-        loteEspecialAtivo: loteEspecialAtivo
+        loteEspecialAtivo: loteEspecialAtivo,
+        /* Mesmo em lote, salva a 1ª etiqueta (elements) + a estrutura do Gerar
+           Lote + os dados/mapeamento/conexões do Importar Dados. */
+        importDados: (importDados && importDados.linhas && importDados.linhas.length) ? JSON.parse(JSON.stringify(importDados)) : null,
+        importMap: mapaSalvo,
+        importConexao: coletarConexoesImport()
       });
     });
     $("btn-exportar-modelo").addEventListener("click", function () {
@@ -5993,7 +6071,18 @@
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
       updateTemplateDropdown();
+      /* Restaura os dados/mapeamento/conexões do Importar Dados quando o
+         modelo .bin os trouxer (modelos antigos seguem funcionando). */
+      if (m.importDados && m.importDados.linhas && m.importDados.linhas.length) {
+        importDados = m.importDados;
+      }
+      if (m.importMap) {
+        try { localStorage.setItem(IMPORT_MAP_STORAGE_KEY, JSON.stringify(m.importMap)); } catch (e) {}
+      }
       carregarModeloPorNome(nome);
+      aplicarConexoesImport(m.importConexao);
+      if (importDados.linhas && importDados.linhas.length) importRenderMapeamento();
+      atualizarBarraStatusLote();
     }
 
     // IMPORTAR ARQUIVO .BIN (Comandos ZPL)
@@ -6309,8 +6398,14 @@
 
       /* A barra só aparece quando há mesmo um lote/importação ativo — mesmo com
          1 única etiqueta; em modo normal o rodapé fica limpo. */
-      if (!origem) { barra.style.display = "none"; return; }
+      var btnSalvarLote = $("btn-mobile-salvar-lote");
+      if (!origem) {
+        barra.style.display = "none";
+        if (btnSalvarLote) btnSalvarLote.classList.add("d-none");
+        return;
+      }
       barra.style.display = "flex";
+      if (btnSalvarLote) btnSalvarLote.classList.remove("d-none");
       texto.textContent = (total === 1) ? "1 etiqueta será gerada" : total + " etiquetas serão geradas";
       /* "Testar 1" só faz sentido com várias etiquetas: com 1 única, imprimir
          já testa a etiqueta inteira — o botão fica oculto. */
@@ -7265,6 +7360,7 @@
                 tab2.show();
               }
               notify("Lote Especial de " + snCount + " etiquetas via serialização nativa ^SN + ^PQ (1 bloco).", "success");
+              atualizarBarraStatusLote();
               return;
             }
           }
@@ -7302,6 +7398,7 @@
         }
 
         notify("Lote Especial de " + stepBindings.length + " etiquetas gerado em ZPL com sucesso!", "success");
+        atualizarBarraStatusLote();
       });
     }
 
