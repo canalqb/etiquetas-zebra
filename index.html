@@ -732,9 +732,12 @@
     .ribbon-exibicao input.btn-check:focus-visible + label.icon-btn { outline: 2px solid var(--rb-accent); outline-offset: 1px; }
 
     /* Toque: os elementos do canvas tratam o gesto eles mesmos (arraste de 1 dedo,
-       pinça de 2 dedos, toque longo) — o navegador não pode interpretá-lo como
-       scroll/zoom da página. */
+       pinça de 2 dedos) — o navegador não pode interpretá-lo como scroll/zoom. */
     .canvas-el, .canvas-el .resize-handle { touch-action: none; }
+    /* Bug do Chromium: com `zoom` no #preview o navegador ignora o touch-action
+       dos FILHOS e rouba o gesto (scroll) no meio do arraste — o elemento "perde
+       contato" com o dedo. O touch-action tem de vir no próprio #preview. */
+    #preview { touch-action: none; }
 
     /* Abas do Studio: o painel ativo NUNCA pode ficar invisível. O Bootstrap só
        tira a opacidade 0 quando a classe "show" chega (callback pós-transição);
@@ -774,7 +777,7 @@
          elástico/pull-to-refresh vertical, e o painel do canvas para de ser
          redimensionável (a alça "resize" alargava a página no toque) e encolhe
          a altura mínima — o footer volta para logo após o conteúdo. */
-      html, body { overflow-x: hidden; }
+      html, body { overflow-x: hidden; overflow-x: clip; }
       body { overscroll-behavior-y: none; }
       .preview-stage-wrap { min-height: 300px; resize: none; }
       .preview-stage { min-height: 260px; }
@@ -2011,9 +2014,12 @@
 
   <!-- Footer (aligned to container) -->
   <footer class="container mt-auto mb-3">
-    <div class="card card-custom bg-white border py-2 text-center text-muted small">
-      <div>CanalQb - Designer de Etiquetas Zebra</div>
-      <div class="mt-1"><a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a></div>
+    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
+      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+        <span>CanalQb - Designer de Etiquetas Zebra</span>
+        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
+        <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
+      </div>
     </div>
   </footer>
 
@@ -3663,6 +3669,14 @@
         };
       }).filter(Boolean);
 
+      /* Divs alvos em cache: durante o arraste o elemento é reposicionado com
+         left/top diretos (barato) — sem reconstruir o canvas inteiro por frame,
+         que no mobile dava engasgo e sensação de "perder o contato". */
+      var prevRoot = document.getElementById("preview");
+      targetElements.forEach(function (item) {
+        item.div = prevRoot ? prevRoot.querySelector('.canvas-el[data-id="' + item.el.id + '"]') : null;
+      });
+
       var sz = SIZES[tamAtualKey] || SIZES["100x50"];
       var W = sz.w, H = sz.h;
       var dispW = (rotAtual === 90 || rotAtual === 270) ? H : W;
@@ -3800,7 +3814,21 @@
           });
         }
 
-        scheduleRenderPreview();
+        /* Movimento puro: reposiciona os divs em cache (left/top) — muito mais
+           barato que reconstruir o canvas e mantém o elemento "colado" no dedo.
+           Redimensionar/rotacionar (alça, Ctrl/Shift) segue com render completo,
+           e o finalizarGesto reconstrói tudo e sincroniza inspetor/ZPL. */
+        if (!me.ctrlKey && !isResizeHandle && !me.shiftKey) {
+          var divsOk = targetElements.length > 0;
+          targetElements.forEach(function (item) {
+            if (!item.div) { divsOk = false; return; }
+            item.div.style.left = dotsToMm(item.el.x) + "mm";
+            item.div.style.top = dotsToMm(item.el.y) + "mm";
+          });
+          if (!divsOk) scheduleRenderPreview();
+        } else {
+          scheduleRenderPreview();
+        }
       }
 
       function onMouseMove(me) {
@@ -8270,6 +8298,21 @@
       }
     }
 
+    /* Mobile: a etiqueta começa sempre ajustada (fit) à largura da tela — sem
+       necessidade de arrasto lateral dentro do painel do canvas. */
+    (function () {
+      var mqMob = window.matchMedia("(max-width: 991.98px)");
+      function ajustarZoomMobile() {
+        if (!mqMob.matches) return;
+        autoFitCanvas();
+        renderStudio();
+        requestAnimationFrame(renderRulerTracks);
+      }
+      window.addEventListener("resize", ajustarZoomMobile);
+      window.addEventListener("orientationchange", ajustarZoomMobile);
+      ajustarZoomMobile();
+    })();
+
     // Zoom Controls
     $("zoom-in").addEventListener("click", function () { scaleZoom = Math.min(2.5, scaleZoom + 0.15); renderStudio(); $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%"; requestAnimationFrame(renderRulerTracks); });
     $("zoom-out").addEventListener("click", function () { scaleZoom = Math.max(0.4, scaleZoom - 0.15); renderStudio(); $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%"; requestAnimationFrame(renderRulerTracks); });
@@ -8463,9 +8506,9 @@
       if (canvasAreaEl) ro.observe(canvasAreaEl);
     }
 
-    // Central de Ajuda: Botão Flutuante e Tecla F1
+    // Central de Ajuda: Botão Flutuante, botão do footer e Tecla F1
     document.addEventListener("click", function (e) {
-      var btn = e.target.closest("#btn-floating-help");
+      var btn = e.target.closest("#btn-floating-help, #btn-footer-ajuda");
       if (btn) {
         var modalEl = document.getElementById("modal-ajuda");
         if (modalEl) {
