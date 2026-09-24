@@ -770,6 +770,14 @@
       main.container > .row { --bs-gutter-x: .5rem; }
       main.container .card-custom > .card-body { padding-left: .5rem; padding-right: .5rem; }
       main.container .card-custom > .card-header { padding-left: .5rem; padding-right: .5rem; }
+      /* Layout travado na tela: nenhum arrasto lateral (overflow cortado), sem
+         elástico/pull-to-refresh vertical, e o painel do canvas para de ser
+         redimensionável (a alça "resize" alargava a página no toque) e encolhe
+         a altura mínima — o footer volta para logo após o conteúdo. */
+      html, body { overflow-x: hidden; }
+      body { overscroll-behavior-y: none; }
+      .preview-stage-wrap { min-height: 300px; resize: none; }
+      .preview-stage { min-height: 260px; }
       .ribbons-bar {
         position: fixed; top: 0; left: 0; bottom: 0; z-index: 1085;
         width: min(320px, 88vw);
