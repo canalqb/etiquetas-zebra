@@ -748,11 +748,21 @@
        tela para o canvas. No desktop (≥992px) nada muda. */
     .btn-ribbons-mobile { display: none; }
     .ribbons-backdrop { display: none; }
+    .mobile-acoes-bar { display: none; }
+    .btn-acoes-mobile { display: none; }
     @media (max-width: 991.98px) {
+      .mobile-acoes-bar {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        margin: 0 0 10px 0;
+      }
       .btn-ribbons-mobile {
         display: inline-flex; align-items: center; gap: 8px;
-        margin: 0 0 10px 0; padding: 8px 14px;
+        margin: 0; padding: 8px 14px;
         border-radius: 10px; font-weight: 700;
+      }
+      .btn-acoes-mobile {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 12px; border-radius: 10px; font-weight: 700;
       }
       .ribbons-bar {
         position: fixed; top: 0; left: 0; bottom: 0; z-index: 1085;
@@ -947,10 +957,21 @@
               <!-- Tab 1: Visual Studio Canvas -->
               <div class="tab-pane fade show active" id="tab-canvas" role="tabpanel">
 
-                <!-- Mobile: abre o menu lateral esquerdo com os ribbons (grupos de ícones por seção) -->
-                <button type="button" class="btn btn-primary btn-ribbons-mobile" id="btn-ribbons-mobile" aria-controls="canvas-elements-palette" aria-expanded="false" title="Ferramentas: Elementos, Formas, Impressora, Modelos, Configuração e Exibição" aria-label="Abrir menu lateral de ferramentas">
-                  <i class="fas fa-bars" aria-hidden="true"></i> Ferramentas
-                </button>
+                <!-- Mobile: barra de ações ao lado de Ferramentas (lote, importar, imprimir) -->
+                <div class="mobile-acoes-bar" id="mobile-acoes-bar">
+                  <button type="button" class="btn btn-primary btn-ribbons-mobile" id="btn-ribbons-mobile" aria-controls="canvas-elements-palette" aria-expanded="false" title="Ferramentas: Elementos, Formas, Impressora, Modelos, Configuração e Exibição" aria-label="Abrir menu lateral de ferramentas">
+                    <i class="fas fa-bars" aria-hidden="true"></i> Ferramentas
+                  </button>
+                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-lote" title="Gerar Lote (sequências e importação de dados)" aria-label="Gerar lote">
+                    <i class="fas fa-layer-group" aria-hidden="true"></i> Lote
+                  </button>
+                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-importar" title="Importar Dados (Excel, CSV, Google Sheets, Webhook, Banco/API, Pasta, ODBC)" aria-label="Importar dados">
+                    <i class="fas fa-file-import" aria-hidden="true"></i> Importar
+                  </button>
+                  <button type="button" class="btn btn-success btn-acoes-mobile" id="btn-mobile-imprimir" title="Imprimir etiqueta / lote" aria-label="Imprimir">
+                    <i class="fas fa-print" aria-hidden="true"></i> Imprimir
+                  </button>
+                </div>
                 <div class="ribbons-backdrop" id="ribbons-backdrop" aria-hidden="true"></div>
 
                 <!-- Barra Horizontal de Elementos (Paleta) -->
@@ -2227,6 +2248,19 @@
           setTimeout(function () { abrirMenuRibbons(false); }, 150);
         }
       });
+    })();
+
+    /* Mobile: botões de ação rápida ao lado de Ferramentas — reaproveitam os
+       mesmos fluxos do desktop (Gerar Lote, Importar Dados, Imprimir). */
+    (function () {
+      function encaminhar(idBotao, idAlvo) {
+        var b = $(idBotao);
+        var alvo = $(idAlvo);
+        if (b && alvo) b.addEventListener("click", function () { alvo.click(); });
+      }
+      encaminhar("btn-mobile-lote", "btn-batch-special-generate");
+      encaminhar("btn-mobile-importar", "btn-import-dados");
+      encaminhar("btn-mobile-imprimir", "btn-imprimir");
     })();
 
     /* ---------------- IP & Protocol Management & Modal ---------------- */
