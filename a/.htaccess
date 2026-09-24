@@ -1,5 +1,0 @@
-# Charset UTF-8 para todos os arquivos de texto servidos por este diretório
-# Corrige a exibição de "SoluÃ§Ãµes â€”" ao abrir arquivos .md/.txt no navegador (XAMPP/Apache)
-AddDefaultCharset UTF-8
-AddType 'text/markdown; charset=UTF-8' .md
-AddType 'text/plain; charset=UTF-8' .txt

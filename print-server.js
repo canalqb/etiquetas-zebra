@@ -11,6 +11,13 @@
  * assim visitantes do GitHub Pages (ou da rede local) NÃO conseguem
  * usar este servidor para enviar impressões.
  *
+ * Consultas de dados (ponte local — "Opção B" do plano de fontes de dados):
+ *   POST /query-odbc { dsn, usuario, senha, sql }
+ *   POST /query-db   { tipo: "mysql|postgres|sqlserver", host, porta, usuario, senha, banco, sql }
+ *   Resposta: { ok: true, colunas: [...], linhas: [[...]] } ou { ok: false, error: "mensagem" }
+ *   Módulos opcionais (instale só o que for usar): npm install odbc | mysql2 | pg | mssql
+ *   Credenciais trafegam apenas nesta máquina e NUNCA são gravadas em disco.
+ *
  * Uso: node print-server.js   (escuta na porta 3001)
  */
 "use strict";
@@ -172,6 +179,113 @@ function enviarTCP(ip, zpl, cb) {
   });
 }
 
+/* ---------------- Consulta a bancos/ODBC (ponte local — Opção B) ----------------
+   O navegador não fala socket de banco nem ODBC; estas rotas usam módulos
+   Node (opcionais, instalados via npm) para executar a consulta e devolver
+   JSON no mesmo formato {colunas, linhas} do importador. Respostas nunca
+   fatais: qualquer falha vira { ok: false, error: "mensagem legível" }. */
+
+function carregarModulo(nome) {
+  try { return require(nome); } catch (e) { return null; }
+}
+
+function respostaConsulta(res, err, colunas, linhas) {
+  if (err) {
+    responder(res, 200, { ok: false, error: String(err && err.message ? err.message : err) });
+    return;
+  }
+  responder(res, 200, { ok: true, colunas: colunas, linhas: linhas });
+}
+
+function consultarODBC(dados, res) {
+  var odbc = carregarModulo("odbc");
+  if (!odbc) { respostaConsulta(res, "Módulo 'odbc' não instalado nesta ponte. Rode no terminal: npm install odbc", null, null); return; }
+  var connStr = "DSN=" + String(dados.dsn || "");
+  if (dados.usuario) connStr += ";UID=" + String(dados.usuario);
+  if (dados.senha) connStr += ";PWD=" + String(dados.senha);
+  odbc.connect(connStr, function (err, conn) {
+    if (err) { respostaConsulta(res, err, null, null); return; }
+    conn.query(String(dados.sql || ""), function (err2, resultado, campos) {
+      try { conn.close(); } catch (e) {}
+      if (err2) { respostaConsulta(res, err2, null, null); return; }
+      var colunas = (campos || []).map(function (c) { return (c && c.name) ? c.name : "Coluna"; });
+      var linhas = (resultado || []).map(function (l) {
+        return colunas.map(function (_, i) { return l[i] == null ? "" : String(l[i]); });
+      });
+      respostaConsulta(res, null, colunas, linhas);
+    });
+  });
+}
+
+function consultarDB(dados, res) {
+  var tipo = String(dados.tipo || "").toLowerCase();
+  if (tipo === "mysql") {
+    var mysql = carregarModulo("mysql2");
+    if (!mysql) { respostaConsulta(res, "Módulo 'mysql2' não instalado nesta ponte. Rode no terminal: npm install mysql2", null, null); return; }
+    var connM = mysql.createConnection({
+      host: dados.host, port: parseInt(dados.porta, 10) || 3306,
+      user: dados.usuario, password: dados.senha, database: dados.banco
+    });
+    connM.query(String(dados.sql || ""), function (err, rows, fields) {
+      try { connM.end(); } catch (e) {}
+      if (err) { respostaConsulta(res, err, null, null); return; }
+      var colunas = (fields || []).map(function (f) { return f.name; });
+      var linhas = (rows || []).map(function (r) {
+        return colunas.map(function (c) { return r[c] == null ? "" : String(r[c]); });
+      });
+      respostaConsulta(res, null, colunas, linhas);
+    });
+    return;
+  }
+  if (tipo === "postgres") {
+    var pg = carregarModulo("pg");
+    if (!pg) { respostaConsulta(res, "Módulo 'pg' não instalado nesta ponte. Rode no terminal: npm install pg", null, null); return; }
+    var cliente = new pg.Client({
+      host: dados.host, port: parseInt(dados.porta, 10) || 5432,
+      user: dados.usuario, password: dados.senha, database: dados.banco
+    });
+    cliente.connect(function (err) {
+      if (err) { respostaConsulta(res, err, null, null); return; }
+      cliente.query(String(dados.sql || ""), function (err2, resultado) {
+        try { cliente.end(); } catch (e) {}
+        if (err2) { respostaConsulta(res, err2, null, null); return; }
+        var rows = (resultado && resultado.rows) || [];
+        var colunas = rows.length ? Object.keys(rows[0]) : [];
+        var linhas = rows.map(function (r) {
+          return colunas.map(function (c) { return r[c] == null ? "" : String(r[c]); });
+        });
+        respostaConsulta(res, null, colunas, linhas);
+      });
+    });
+    return;
+  }
+  if (tipo === "sqlserver") {
+    var mssql = carregarModulo("mssql");
+    if (!mssql) { respostaConsulta(res, "Módulo 'mssql' não instalado nesta ponte. Rode no terminal: npm install mssql", null, null); return; }
+    var cfg = {
+      server: dados.host, port: parseInt(dados.porta, 10) || 1433,
+      user: dados.usuario, password: dados.senha, database: dados.banco,
+      options: { encrypt: false }
+    };
+    mssql.connect(cfg).then(function (pool) {
+      return pool.request().query(String(dados.sql || ""));
+    }).then(function (resultado) {
+      try { mssql.close(); } catch (e) {}
+      var rows = (resultado && resultado.recordset) || [];
+      var colunas = rows.length ? Object.keys(rows[0]) : [];
+      var linhas = rows.map(function (r) {
+        return colunas.map(function (c) { return r[c] == null ? "" : String(r[c]); });
+      });
+      respostaConsulta(res, null, colunas, linhas);
+    }).catch(function (err) {
+      try { mssql.close(); } catch (e) {}
+      respostaConsulta(res, err, null, null);
+    });
+    return;
+  }
+  respostaConsulta(res, "Tipo de banco não suportado nesta ponte: use mysql, postgres ou sqlserver (para Access/ODBC use a rota /query-odbc).", null, null);
+}
+
 /* ---------------- Servidor HTTP ---------------- */
 
 function responder(res, status, obj) {
@@ -189,12 +303,36 @@ var servidor = http.createServer(function (req, res) {
   if (req.method === "OPTIONS") { responder(res, 204, {}); return; }
 
   if (req.method === "GET" && req.url === "/") {
-    responder(res, 200, { ok: true, servico: "print-server Zebra (FTP porta 21 & TCP porta 9100)" });
+    responder(res, 200, { ok: true, servico: "print-server Zebra (FTP porta 21, TCP porta 9100, consultas /query-odbc e /query-db)" });
+    return;
+  }
+
+  /* Rotas da ponte de dados: o navegador manda os parâmetros, esta ponte
+     executa a consulta (ODBC/banco tradicional) e devolve {colunas, linhas}. */
+  if (req.method === "POST" && (req.url === "/query-odbc" || req.url === "/query-db")) {
+    var corpoQ = "";
+    req.on("data", function (d) {
+      corpoQ += d;
+      if (corpoQ.length > 4e6) req.destroy();
+    });
+    req.on("end", function () {
+      var dadosQ;
+      try { dadosQ = JSON.parse(corpoQ || "{}"); }
+      catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
+      if (!String(dadosQ.sql || "").trim()) { responder(res, 400, { ok: false, error: "SQL vazio — envie uma consulta SELECT" }); return; }
+      if (req.url === "/query-odbc") {
+        if (!String(dadosQ.dsn || "").trim()) { responder(res, 400, { ok: false, error: "DSN ausente" }); return; }
+        consultarODBC(dadosQ, res);
+      } else {
+        if (!String(dadosQ.host || "").trim()) { responder(res, 400, { ok: false, error: "Host do banco ausente" }); return; }
+        consultarDB(dadosQ, res);
+      }
+    });
     return;
   }
 
   if (req.method !== "POST" || req.url !== "/print") {
-    responder(res, 404, { ok: false, error: "Use POST /print com {ip, zpl, protocol}" });
+    responder(res, 404, { ok: false, error: "Use POST /print com {ip, zpl, protocol} ou POST /query-odbc|/query-db com {sql}" });
     return;
   }
 

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teste de Impressora — Zebra Designer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8fafc; }
+    .diag-ok { color: #16a34a; font-weight: 600; }
+    .diag-no { color: #dc2626; font-weight: 600; }
+    #log-area { max-height: 320px; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 8px; }
+    #log-area .log-err { color: #f87171; }
+    #log-area .log-ok { color: #4ade80; }
+    .usb-box { outline: 1px dashed #94a3b8; outline-offset: 4px; }
+  </style>
+</head>
+<body class="py-4">
+  <div class="container" style="max-width: 720px;">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white d-flex align-items-center gap-2">
+        <i class="fas fa-print"></i>
+        <strong>TESTE DE IMPRESSORA</strong>
+        <span class="ms-auto small opacity-75">WebUSB / Web Serial / window.print</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Diagnóstico do navegador -->
+        <h6 class="fw-bold mb-2"><i class="fas fa-magnifying-glass me-1 text-secondary"></i>Diagnóstico</h6>
+        <ul class="list-unstyled small mb-3" id="diagnostico">
+          <li id="diag-context">Contexto seguro (https/localhost): …</li>
+          <li id="diag-usb">WebUSB: …</li>
+          <li id="diag-serial">Web Serial: …</li>
+          <li id="diag-hid">WebHID: …</li>
+          <li id="diag-ua" class="text-muted">…</li>
+        </ul>
+
+        <!-- Conexão -->
+        <div class="row g-3">
+          <div class="col-md-6 usb-box p-3 rounded">
+            <h6 class="fw-bold mb-2"><i class="fas fa-usb me-1 text-primary"></i>WebUSB</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary me-1" id="btn-usb-check"><i class="fas fa-magnifying-glass me-1"></i>Verificar</button>
+            <button type="button" class="btn btn-sm btn-primary" id="btn-usb-connect"><i class="fas fa-plug me-1"></i>Conectar WebUSB</button>
+            <div class="small mt-2" id="usb-status">Não conectado.</div>
+          </div>
+          <div class="col-md-6 usb-box p-3 rounded">
+            <h6 class="fw-bold mb-2"><i class="fas fa-plug-circle-bolt me-1 text-success"></i>Web Serial</h6>
+            <div class="input-group input-group-sm mb-2" style="max-width: 240px;">
+              <label class="input-group-text" for="serial-baud">Baud</label>
+              <select class="form-select" id="serial-baud">
+                <option value="9600" selected>9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="57600">57600</option>
+                <option value="115200">115200</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="btn-serial-connect"><i class="fas fa-plug me-1"></i>Conectar Web Serial</button>
+            <div class="small mt-2" id="serial-status">Não conectado.</div>
+          </div>
+        </div>
+
+        <!-- Filtro Zebra + ação -->
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="usb-so-zebra" checked>
+          <label class="form-check-label small" for="usb-so-zebra">
+            Listar apenas impressoras Zebra (Vendor ID <code>0x0A5F</code>) ao conectar via WebUSB
+          </label>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button type="button" class="btn btn-success" id="btn-print-test"><i class="fas fa-print me-1"></i>Imprimir teste</button>
+          <button type="button" class="btn btn-outline-secondary" id="btn-disconnect"><i class="fas fa-xmark me-1"></i>Desconectar</button>
+          <button type="button" class="btn btn-outline-dark" id="btn-window-print" title="Fallback: imprimir via spooler do sistema (driver Generic / Text Only)"><i class="fas fa-window-maximize me-1"></i>window.print()</button>
+        </div>
+
+        <div class="mt-2 small text-muted" id="status-geral">Status: aguardando…</div>
+
+        <!-- Log -->
+        <h6 class="fw-bold mt-3 mb-2"><i class="fas fa-terminal me-1 text-secondary"></i>Log</h6>
+        <pre id="log-area" class="p-3 small mb-0"><span id="log-lines"></span></pre>
+      </div>
+      <div class="card-footer small text-muted">
+        Abra esta página em <b>Chrome/Edge via http(s)</b> (WebUSB/Web Serial exigem contexto seguro). O resultado define o caminho do PrinterManager
+        (§18 do plano): Serial → USB → window.print().
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    "use strict";
+    var ZEBRA_VID = 0x0A5F;
+    var usbDevice = null, usbIface = null, usbEndpoint = null;
+    var serialPort = null;
+    var encoder = new TextEncoder();
+
+    var ZPL_TESTE =
+      "^XA\n" +
+      "^CI28\n" +
+      "^PW406\n" +
+      "^LL203\n" +
+      "^FO15,15^GB376,173,2^FS\n" +
+      "^FO30,35^A0N,28,28^FDTESTE DE IMPRESSORA^FS\n" +
+      "^FO30,75^A0N,24,24^FDZebra Designer — WebUSB/Web Serial^FS\n" +
+      "^FO30,110^A0N,24,24^FD1234567890^FS\n" +
+      "^FO300,60^BQN,2,4^FDQA,TESTE-1234567890^FS\n" +
+      "^FO30,150^A0N,20,20^FD" + new Date().toLocaleString("pt-BR") + "^FS\n" +
+      "^XZ\n";
+
+    function log(msg, tipo) {
+      var linha = document.createElement("div");
+      linha.textContent = "[" + new Date().toLocaleTimeString("pt-BR") + "] " + msg;
+      if (tipo === "err") linha.className = "log-err";
+      if (tipo === "ok") linha.className = "log-ok";
+      document.getElementById("log-lines").appendChild(linha);
+      var area = document.getElementById("log-area");
+      area.scrollTop = area.scrollHeight;
+    }
+    function status(msg) { document.getElementById("status-geral").textContent = "Status: " + msg; }
+
+    /* ---------- Diagnóstico (§20: navegador, APIs, dispositivo, interfaces, endpoints) ---------- */
+    function setDiag(id, ok, extra) {
+      var li = document.getElementById(id);
+      li.innerHTML = (ok ? '<span class="diag-ok">✔ SIM</span>' : '<span class="diag-no">✘ NÃO</span>') + (extra ? " — " + extra : "");
+    }
+    function executarDiagnostico() {
+      var seguro = window.isSecureContext;
+      setDiag("diag-context", seguro, seguro ? "página servida via http(s)" : "abra via http(s) — file:// bloqueia as APIs");
+      setDiag("diag-usb", "usb" in navigator);
+      setDiag("diag-serial", "serial" in navigator);
+      setDiag("diag-hid", "hid" in navigator);
+      document.getElementById("diag-ua").textContent = navigator.userAgent;
+      log("Diagnóstico: secureContext=" + seguro + " usb=" + ("usb" in navigator) + " serial=" + ("serial" in navigator) + " hid=" + ("hid" in navigator));
+    }
+    if (document.getElementById("btn-usb-check")) {
+      document.getElementById("btn-usb-check").addEventListener("click", executarDiagnostico);
+    }
+    window.addEventListener("load", executarDiagnostico);
+
+    /* ---------- WebUSB ---------- */
+    function usbDesc(device) {
+      var info = [];
+      info.push("produto: " + (device.productName || "?"));
+      info.push("fabricante: " + (device.manufacturerName || "?"));
+      info.push("serial: " + (device.serialNumber || "?"));
+      info.push("vendorId: 0x" + device.vendorId.toString(16).padStart(4, "0") + " / productId: 0x" + device.productId.toString(16).padStart(4, "0"));
+      return info.join(" · ");
+    }
+    function dumpInterfaces(device) {
+      (device.configuration ? device.configuration.interfaces : []).forEach(function (iface) {
+        iface.alternates.forEach(function (alt) {
+          log("USB interface " + iface.interfaceNumber + " classe " + alt.interfaceClass + " (" + (alt.interfaceClass === 7 ? "printer" : "outra") + ")");
+          alt.endpoints.forEach(function (ep) {
+            log("  endpoint " + ep.endpointNumber + " " + ep.direction + "/" + ep.type);
+          });
+        });
+      });
+    }
+    async function conectarWebUSB() {
+      if (!("usb" in navigator)) { log("WebUSB indisponível neste navegador.", "err"); return; }
+      var filtros = document.getElementById("usb-so-zebra").checked ? [{ vendorId: ZEBRA_VID }] : [];
+      try {
+        usbDevice = await navigator.usb.requestDevice({ filters: filtros });
+      } catch (e) {
+        log("Seleção WebUSB cancelada/falhou: " + e.message, "err");
+        return;
+      }
+      log("Dispositivo escolhido — " + usbDesc(usbDevice), "ok");
+      try {
+        await usbDevice.open();
+        if (!usbDevice.configuration) await usbDevice.selectConfiguration(1);
+        dumpInterfaces(usbDevice);
+        /* Preferir interface de classe printer (7); senão a 1ª com endpoint bulk OUT */
+        usbIface = null; usbEndpoint = null;
+        usbDevice.configuration.interfaces.forEach(function (iface) {
+          iface.alternates.forEach(function (alt) {
+            alt.endpoints.forEach(function (ep) {
+              if (ep.direction === "out" && ep.type === "bulk") {
+                if (!usbIface || (alt.interfaceClass === 7 && usbDevice.configuration.interfaces[usbIface].alternates[0].interfaceClass !== 7)) {
+                  usbIface = iface.interfaceNumber;
+                  usbEndpoint = ep.endpointNumber;
+                }
+              }
+            });
+          });
+        });
+        if (usbIface === null) { log("Nenhum endpoint bulk OUT encontrado — impressora não compatível.", "err"); usbDevice.close(); usbDevice = null; return; }
+        await usbDevice.claimInterface(usbIface);
+        document.getElementById("usb-status").innerHTML = "<b>Conectado:</b> " + usbDesc(usbDevice) + " (iface " + usbIface + ", ep " + usbEndpoint + ")";
+        status("WebUSB conectado.");
+        log("WebUSB conectado — interface " + usbIface + ", endpoint OUT " + usbEndpoint, "ok");
+      } catch (e) {
+        log("Falha ao abrir/claimar dispositivo: " + e.message, "err");
+        usbDevice = null;
+      }
+    }
+    async function imprimirWebUSB() {
+      await usbDevice.transferOut(usbEndpoint, encoder.encode(ZPL_TESTE));
+      log("ZPL de teste enviado via WebUSB (" + ZPL_TESTE.length + " bytes).", "ok");
+    }
+
+    /* ---------- Web Serial ---------- */
+    async function conectarWebSerial() {
+      if (!("serial" in navigator)) { log("Web Serial indisponível neste navegador.", "err"); return; }
+      try {
+        serialPort = await navigator.serial.requestPort();
+      } catch (e) {
+        log("Seleção de porta serial cancelada/falhou: " + e.message, "err");
+        return;
+      }
+      try {
+        var baud = parseInt(document.getElementById("serial-baud").value, 10) || 9600;
+        await serialPort.open({ baudRate: baud });
+        document.getElementById("serial-status").innerHTML = "<b>Conectado</b> a " + (baud + " baud") + ".";
+        status("Web Serial conectado (" + baud + " baud).");
+        log("Web Serial aberto com baudRate " + baud, "ok");
+      } catch (e) {
+        log("Falha ao abrir porta serial: " + e.message, "err");
+        serialPort = null;
+      }
+    }
+    async function imprimirWebSerial() {
+      var writer = serialPort.writable.getWriter();
+      await writer.write(encoder.encode(ZPL_TESTE));
+      writer.releaseLock();
+      log("ZPL de teste enviado via Web Serial (" + ZPL_TESTE.length + " bytes).", "ok");
+    }
+
+    /* ---------- Ações ---------- */
+    document.getElementById("btn-usb-connect").addEventListener("click", conectarWebUSB);
+    document.getElementById("btn-serial-connect").addEventListener("click", conectarWebSerial);
+    document.getElementById("btn-print-test").addEventListener("click", async function () {
+      try {
+        if (usbDevice) { await imprimirWebUSB(); }
+        else if (serialPort) { await imprimirWebSerial(); }
+        else { log("Nenhuma impressora conectada — conecte via WebUSB ou Web Serial, ou use window.print().", "err"); }
+        status("Teste enviado.");
+      } catch (e) {
+        log("Erro ao imprimir teste: " + e.message, "err");
+      }
+    });
+    document.getElementById("btn-disconnect").addEventListener("click", async function () {
+      try {
+        if (usbDevice) { await usbDevice.close(); usbDevice = null; document.getElementById("usb-status").textContent = "Não conectado."; log("WebUSB desconectado."); }
+        if (serialPort) { await serialPort.close(); serialPort = null; document.getElementById("serial-status").textContent = "Não conectado."; log("Web Serial desconectado."); }
+        status("aguardando…");
+      } catch (e) { log("Erro ao desconectar: " + e.message, "err"); }
+    });
+    /* Fallback (§18): nenhuma API direta funciona → spooler do sistema com driver "Generic / Text Only" */
+    document.getElementById("btn-window-print").addEventListener("click", function () {
+      var janela = window.open("", "_blank", "width=420,height=420");
+      janela.document.write("<title>Etiqueta de teste — imprima com Generic / Text Only</title><pre style='font-family:monospace;font-size:12px;white-space:pre-wrap;'>" + ZPL_TESTE.replace(/</g, "<") + "</pre>");
+      janela.document.close();
+      janela.focus();
+      janela.print();
+      log("window.print() aberto com o ZPL bruto (imprima com o driver Generic / Text Only).");
+    });
+
+    /* Plug/unplug durante a sessão */
+    if ("usb" in navigator) {
+      navigator.usb.addEventListener("connect", function (e) { log("USB conectado: " + (e.device.productName || "dispositivo"), "ok"); });
+      navigator.usb.addEventListener("disconnect", function (e) {
+        if (usbDevice && e.device === usbDevice) {
+          usbDevice = null; usbIface = null; usbEndpoint = null;
+          document.getElementById("usb-status").textContent = "Não conectado.";
+          log("Impressora USB desconectada.", "err");
+        }
+      });
+    }
+  </script>
+</body>
+</html>
