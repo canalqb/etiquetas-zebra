@@ -1245,7 +1245,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.10</span>
+      <span class="brand-ver">v2.11</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1476,7 +1476,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.10</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.11</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2608,7 +2608,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.10</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.11</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -4336,9 +4336,10 @@
       campo.focus();
       campo.select();
 
-      // Clique/arraste dentro do campo é só para posicionar cursor/selecionar — nunca deve mover o elemento
-      // nem reabrir menus por cima da edição.
-      ["mousedown", "click", "dblclick", "contextmenu"].forEach(function (evtName) {
+      // Toque/arraste dentro do campo posiciona o cursor/seleciona texto — nunca
+      // deve mover o elemento (arraste), reabrir menus ou sofrer preventDefault
+      // do handler de touch do div (o toque nativo precisa focar o campo).
+      ["mousedown", "click", "dblclick", "contextmenu", "touchstart", "touchmove"].forEach(function (evtName) {
         campo.addEventListener(evtName, function (e) { e.stopPropagation(); });
       });
 
@@ -5632,9 +5633,15 @@
         "^LL" + H,
         "^MT" + (ribbon === "Y" ? "T" : "D"),
         "^MD" + darkness,
+        "^MN" + getTipoMidia(),
         "^PM" + ((espelhoModo === "h" || espelhoModo === "v") ? "Y" : "N"),
         "^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N")
       ];
+      /* Configurações encenadas do submenu Calibrar viajam em cada etiqueta:
+         sem calibrar, valem só para a impressão; Calibrar Agora persiste na impressora. */
+      var modoOpLbl = getModoOperacional();
+      if (modoOpLbl) p.push("^MM" + modoOpLbl);
+      p.push("^PR" + velocAtualValida());
 
       /* Injeta deslocamento de hardware ^LH (Label Home) se houver margens de ajuste de impressora */
       var lhX = Math.round(mmToDots(margens.left));
@@ -6235,9 +6242,13 @@
         "^LL" + cv.height,
         "^MT" + (ribbon === "Y" ? "T" : "D"),
         "^MD" + darkness,
+        "^MN" + getTipoMidia(),
         "^PMN",
         "^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N")
       ];
+      var modoOpImg = getModoOperacional();
+      if (modoOpImg) p.push("^MM" + modoOpImg);
+      p.push("^PR" + velocAtualValida());
       p.push("^FO0,0" + canvasParaGF(cv) + "^FS");
       p.push("^XZ");
       return p.join("\n");
@@ -8595,7 +8606,9 @@
           notify("⚠️ Requisição transmitida para o endpoint na nuvem (" + cloudUrl + ").", "info");
         });
       } else if (proto === "http") {
-        notify("Enviando ZPL via Extensão Chrome / HTTP Direct (http://" + ip + "/pstprnt)...", "dark");
+        notify(isExtensionDetected
+          ? "Enviando ZPL via Extensão Chrome (http://" + ip + "/pstprnt)..."
+          : "Enviando ZPL via HTTP direto (http://" + ip + "/pstprnt)...", "dark");
         fetch("http://" + ip + "/pstprnt", {
           method: "POST",
           body: zpl,
@@ -8605,7 +8618,9 @@
           notify("✅ Comando ZPL transmitido com sucesso para " + ip + "!", "success");
         })
         .catch(function () {
-          notify("⚠️ Comando ZPL transmitido via Extensão Chrome para " + ip + ".", "info");
+          notify(isExtensionDetected
+            ? "⚠️ Comando ZPL transmitido via Extensão Chrome para " + ip + "."
+            : "⚠️ ZPL enviado via HTTP direto para " + ip + " — sem confirmação da impressora (confira a etiqueta impressa).", "info");
         });
       } else {
         enviarViaServidorLocal(ip, zpl, proto);
@@ -8710,9 +8725,7 @@
       }
       var ip = localStorage.getItem(CHAVE_IP);
       if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
-      var qtd = parseInt(localStorage.getItem(CHAVE_ULTIMA_QTD), 10);
-      if (!(qtd >= 1 && qtd <= 999)) qtd = 1;
-      imprimirFTP(qtd);
+      abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
     }
 
     var bsModalPrintZpl = $("modal-print-zpl") ? new bootstrap.Modal($("modal-print-zpl")) : null;
@@ -9400,6 +9413,9 @@
       var mqMob = window.matchMedia("(max-width: 991.98px)");
       function ajustarZoomMobile() {
         if (!mqMob.matches) return;
+        /* Edição de texto in-loco ativa: o teclado virtual dispara resize ao
+           abrir — reconstruir aqui destruiria o campo (foco perdido). */
+        if (document.querySelector(".edicao-inline-input")) return;
         autoFitCanvas();
         renderStudio();
         requestAnimationFrame(renderRulerTracks);
@@ -9513,6 +9529,7 @@
 
     // Window Resize Auto-Fit & Ruler Track Update
     window.addEventListener("resize", function () {
+      if (document.querySelector(".edicao-inline-input")) return;
       autoFitCanvas();
       renderStudio();
     });
