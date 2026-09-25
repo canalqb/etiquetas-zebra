@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Declaração de Acessibilidade — CanalQb Etiquetas Zebra</title>
+<meta name="description" content="Compromisso de acessibilidade do Etiquetas Zebra com as diretrizes WCAG 2.1 nível AA: navegação por teclado, contraste, ARIA e rotulagem em todas as páginas.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="CanalQb">
+<meta property="og:title" content="Declaração de Acessibilidade">
+<meta property="og:description" content="Compromisso WCAG 2.1 AA e como reportar barreiras.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="">
+<link rel="canonical" href="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+:root{--bg:#f2f5fb;--card:#ffffff;--texto:#101828;--muted:#475467;--borda:#d6e0f0;--prim:#0b5fd7;--acs:#0a58ca}
+[data-bs-theme="dark"]{--bg:#0a1120;--card:#111a2e;--texto:#e8eefb;--muted:#a3b3cf;--borda:#26334f;--prim:#7db2ff;--acs:#9cc4ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--texto);line-height:1.65}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--prim);color:#fff;padding:.6rem 1rem;z-index:99;border-radius:0 0 8px 8px}
+.skip-link:focus{left:8px}
+a{color:var(--acs)}
+a:hover{color:var(--prim)}
+header.topo{position:sticky;top:0;z-index:50;background:var(--card);border-bottom:1px solid var(--borda)}
+.topo-in{max-width:980px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:.55rem 1rem;gap:.75rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.55rem;font-weight:700;color:var(--texto);text-decoration:none}
+.brand i{color:var(--prim)}
+.acoes{display:flex;gap:.5rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.4rem;background:var(--card);color:var(--texto);border:1px solid var(--borda);border-radius:8px;padding:.42rem .8rem;font-size:.9rem;cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--prim)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--prim);outline-offset:2px}
+main{max-width:980px;margin:0 auto;padding:1.25rem 1rem 3rem}
+article{background:var(--card);border:1px solid var(--borda);border-radius:14px;padding:clamp(1.1rem,3vw,2.4rem)}
+.migalhas{font-size:.82rem;color:var(--muted);margin:0 0 .6rem}
+h1{font-size:clamp(1.45rem,4vw,2rem);margin:.2rem 0 .4rem}
+h2{font-size:clamp(1.08rem,3vw,1.28rem);margin:1.7rem 0 .5rem}
+.meta{color:var(--muted);font-size:.85rem;margin:0 0 1rem}
+section{border-top:1px solid var(--borda);margin-top:1.3rem;padding-top:.3rem}
+ul,ol{padding-left:1.3rem;margin:.5rem 0}
+li{margin:.35rem 0}
+.alerta{border-left:4px solid var(--prim);background:var(--bg);padding:.7rem .95rem;border-radius:0 8px 8px 0;margin:.9rem 0}
+footer.rodape{border-top:1px solid var(--borda);background:var(--card);margin-top:2rem}
+.rodape-in{max-width:980px;margin:0 auto;padding:1.4rem 1rem;display:flex;flex-wrap:wrap;gap:1.2rem;justify-content:space-between;font-size:.85rem;color:var(--muted)}
+.rodape-in p{margin:.18rem 0}
+.rodape nav{display:flex;flex-wrap:wrap;gap:.4rem 1rem;max-width:520px}
+.toast{position:fixed;bottom:1rem;right:1rem;background:var(--card);border:1px solid var(--prim);color:var(--texto);padding:.7rem 1rem;border-radius:10px;box-shadow:0 6px 18px rgba(2,8,20,.25);opacity:0;transform:translateY(8px);transition:.25s;z-index:99;font-size:.9rem}
+.toast.on{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","name":"Declaração de Acessibilidade — CanalQb Etiquetas Zebra","inLanguage":"pt-BR","isPartOf":{"@type":"WebSite","name":"CanalQb Etiquetas Zebra"},"about":"Acessibilidade WCAG 2.1 AA"}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#conteudo">Ir para o conteúdo principal</a>
+<header class="topo">
+  <div class="topo-in">
+    <a class="brand" href="../index.html"><i class="fa-solid fa-barcode" aria-hidden="true"></i><span>CanalQb · Etiquetas Zebra</span></a>
+    <div class="acoes" role="group" aria-label="Ações da página">
+      <a class="btn" href="../index.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao editor</a>
+      <button type="button" class="btn" id="btn-tema" aria-pressed="false"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> Tema</button>
+    </div>
+  </div>
+</header>
+<main id="conteudo">
+  <article>
+    <nav class="migalhas" aria-label="Trilha de navegação"><a href="../index.html">Início</a> <span aria-hidden="true">›</span> Acessibilidade</nav>
+    <h1>Declaração de Acessibilidade</h1>
+    <p class="meta">Última atualização: <time datetime="2026-09-25">25 de setembro de 2026</time> · Mantido por CanalQb · Página estática — nenhum dado pessoal é coletado aqui.</p>
+
+    <section aria-labelledby="s1">
+      <h2 id="s1">Qual é o compromisso de acessibilidade?</h2>
+      <p>O CanalQb se compromete a manter o Etiquetas Zebra e suas páginas institucionais utilizáveis pelo maior número de pessoas possível, seguindo as diretrizes <strong>WCAG 2.1 no nível AA</strong>. Isso significa operável por teclado, legível por leitores de tela, perceptível com contraste suficiente e compreensível em linguagem direta — em tema claro e escuro, no computador e no celular.</p>
+    </section>
+
+    <section aria-labelledby="s2">
+      <h2 id="s2">Quais medidas já estão implementadas?</h2>
+      <ul>
+        <li><strong>Navegação por teclado:</strong> link de salto “Ir para o conteúdo principal” em todas as páginas e foco visível destacado em links e botões.</li>
+        <li><strong>Semântica W3C:</strong> estrutura com <code>header</code>, <code>main</code>, <code>section</code> e <code>footer</code>; um único <code>h1</code> por página e hierarquia de títulos coerente.</li>
+        <li><strong>ARIA e rótulos:</strong> regiões rotuladas, botões com <code>aria-pressed</code> quando alternáveis, avisos dinâmicos em <code>role="status"</code> com <code>aria-live</code>, imagens decorativas marcadas com <code>aria-hidden</code>.</li>
+        <li><strong>Contraste WCAG AA:</strong> paletas verificadas nos temas claro e escuro, com corpo de texto em proporção mínima de 4,5:1.</li>
+        <li><strong>Respeito às preferências do usuário:</strong> suporte a <code>prefers-reduced-motion</code> (animações desligadas quando o sistema pede) e fontes de sistema escaláveis pelo navegador.</li>
+        <li><strong>Editor responsivo:</strong> áreas de toque ampliadas em telas sensíveis ao toque e zoom do navegador preservado (nada de bloqueio de ampliação).</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="s3">
+      <h2 id="s3">Existem limitações conhecidas?</h2>
+      <p>Sim, e são declaradas com honestidade. O editor visual de etiquetas é uma ferramenta complexa de desenho com arrasto de elementos, que depende de interação com mouse ou toque fino; equivalentes completos por teclado para posicionar elementos estão em evolução contínua. Documentos e vídeos de terceiros eventualmente embutidos não estão sob nosso controle. Caso encontre qualquer barreira não listada aqui, ela será tratada como relato de erro com prioridade.</p>
+    </section>
+
+    <section aria-labelledby="s4">
+      <h2 id="s4">Como reportar uma barreira de acessibilidade?</h2>
+      <p>Use a página <a href="contato.html">Fale com o CanalQb</a> descrevendo: a página envolvida, o recurso que você tentou usar, a tecnologia assistiva em questão (leitor de tela, navegação por teclado, ampliação) e o resultado obtido. Relatos de acessibilidade têm prioridade alta e recebem resposta em até 7 dias úteis, com correções publicadas nas versões seguintes do editor.</p>
+      <div class="alerta" role="note"><i class="fa-solid fa-universal-access" aria-hidden="true"></i> Esta declaração segue o modelo do W3C (WAI) e a referência de boas práticas de acessibilidade digital. Revisões formais ocorrem a cada grande versão do projeto.</div>
+    </section>
+  </article>
+</main>
+<footer class="rodape">
+  <div class="rodape-in">
+    <div>
+      <p><strong>CanalQb · Etiquetas Zebra</strong></p>
+      <p>Projeto independente. Página estática hospedada em GitHub Pages.</p>
+      <p>URL desta página: <span id="url-atual">detectada automaticamente pelo navegador</span></p>
+      <p>© <span id="ano">2026</span> CanalQb. Conteúdo jurídico fornecido como referência, sem valor de aconselhamento legal.</p>
+    </div>
+    <nav aria-label="Páginas legais e institucionais">
+      <a href="sobre.html">Sobre</a>
+      <a href="contato.html">Contato</a>
+      <a href="politica-privacidade.html">Privacidade</a>
+      <a href="politica-cookies.html">Cookies</a>
+      <a href="termos-de-servico.html">Termos de Serviço</a>
+      <a href="protecao-menores.html">Proteção de Menores (Felca)</a>
+      <a href="seus-direitos-lgpd-dsa.html">Seus Direitos (LGPD/DSA)</a>
+      <a href="solicitacao-exclusao-dados.html">Exclusão de Dados</a>
+      <a href="declaracao-acessibilidade.html">Acessibilidade</a>
+      <a href="disclaimer.html">Disclaimer</a>
+    </nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  "use strict";
+  var CHAVE = "etiquetasZebra.tema";
+  function q(s) { return document.querySelector(s); }
+  var raiz = document.documentElement, salvo = null;
+  try { salvo = localStorage.getItem(CHAVE); } catch (e) {}
+  if (salvo === "dark" || salvo === "light") raiz.setAttribute("data-bs-theme", salvo);
+  var btn = document.getElementById("btn-tema");
+  function rotular() {
+    var escuro = raiz.getAttribute("data-bs-theme") === "dark";
+    if (btn) { btn.setAttribute("aria-pressed", escuro ? "true" : "false"); btn.title = escuro ? "Ativar tema claro" : "Ativar tema escuro"; }
+  }
+  rotular();
+  if (btn) btn.addEventListener("click", function () {
+    var novo = raiz.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+    raiz.setAttribute("data-bs-theme", novo);
+    try { localStorage.setItem(CHAVE, novo); } catch (e) {}
+    rotular();
+  });
+  var aqui = location.href.split("#")[0];
+  var can = q('link[rel="canonical"]'); if (can) can.setAttribute("href", aqui);
+  var og = q('meta[property="og:url"]'); if (og) og.setAttribute("content", aqui);
+  var u = document.getElementById("url-atual"); if (u) u.textContent = aqui;
+  var a = document.getElementById("ano"); if (a) a.textContent = String(new Date().getFullYear());
+  window.showToast = function (msg) {
+    var t = document.getElementById("toast"); if (!t) return;
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(window.__tt); window.__tt = setTimeout(function () { t.classList.remove("on"); }, 3400);
+  };
+})();
+</script>
+</body>
+</html>

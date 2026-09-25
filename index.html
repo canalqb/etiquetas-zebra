@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>CanalQb - Designer &amp; Gerador de Etiquetas Zebra ZPL</title>
   <meta name="description" content="CanalQb - Designer e Gerador de Etiquetas Zebra ZPL II. Crie, personalize e imprima etiquetas profissionais com QR Code, código de barras e mais. Impressão direta via FTP sem drivers.">
   <meta name="robots" content="index, follow">
@@ -71,6 +71,17 @@
     /* Índice da Ajuda: âncoras com folga de rolagem + destaque ao chegar */
     #modal-ajuda h5[id], #modal-ajuda h6[id] { scroll-margin-top: 14px; }
     #modal-ajuda .ajuda-flash { animation: ajudaFlash 1.6s ease-out 1; border-radius: 8px; }
+    /* Modal de páginas legais (footer 2): conteúdo injetado de pages/*.html */
+    [data-bs-theme="dark"] #modal-pagina-legal .modal-body { background-color: var(--zebra-card-bg) !important; }
+    #pagina-legal-conteudo .migalhas { font-size: .82rem; color: var(--zebra-muted); margin-bottom: .6rem; }
+    #pagina-legal-conteudo .meta { color: var(--zebra-muted); font-size: .85rem; margin-bottom: 1rem; }
+    #pagina-legal-conteudo h1 { font-size: clamp(1.4rem, 3vw, 1.9rem); margin: .2rem 0 .4rem; }
+    #pagina-legal-conteudo h2 { font-size: clamp(1.05rem, 2.5vw, 1.25rem); margin: 1.5rem 0 .5rem; }
+    #pagina-legal-conteudo section { border-top: 1px solid var(--zebra-border); margin-top: 1.2rem; padding-top: .3rem; }
+    #pagina-legal-conteudo table { width: 100%; border-collapse: collapse; margin: .8rem 0; font-size: .92rem; }
+    #pagina-legal-conteudo th, #pagina-legal-conteudo td { border: 1px solid var(--zebra-border); padding: .5rem .6rem; text-align: left; vertical-align: top; }
+    #pagina-legal-conteudo th { background: var(--zebra-bg); }
+    #pagina-legal-conteudo .alerta { border-left: 4px solid var(--bs-primary); background: var(--zebra-bg); padding: .7rem .95rem; border-radius: 0 8px 8px 0; margin: .9rem 0; }
     @keyframes ajudaFlash {
       0% { background-color: rgba(59,130,246,.25); box-shadow: 0 0 0 6px rgba(59,130,246,.25); }
       100% { background-color: transparent; box-shadow: 0 0 0 0 rgba(59,130,246,0); }
@@ -389,26 +400,6 @@
       font-family: sans-serif;
     }
 
-    /* Printer Blocked Icon (Sem Ribbon) */
-    .printer-blocked {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-    }
-    .printer-blocked::after {
-      content: "";
-      position: absolute;
-      width: 26px;
-      height: 3px;
-      background: #dc3545;
-      transform: rotate(-45deg);
-      border-radius: 2px;
-      pointer-events: none;
-    }
-
     /* =======================================================
        ICON BUTTON SYSTEM
        Botões exclusivamente ícone, fundo transparente,
@@ -430,6 +421,8 @@
       line-height: 1;
       flex-shrink: 0;
     }
+    /* Ribbons: botão 20% menor para reduzir o espaçamento — o ícone (font-size) não muda */
+    .ribbon-body .icon-btn { width: 26px; height: 26px; }
     .icon-btn:hover {
       background: rgba(0,0,0,0.08) !important;
       transform: scale(1.12);
@@ -503,15 +496,13 @@
          a marcada colorida;
        - Expandir/Recolher ribbon: grupo expandido = colorido no tom do
          próprio ribbon; recolhido = preto e branco. */
+    /* Expandir/Recolher ribbon: grupo expandido = colorido no tom do
+       próprio ribbon; recolhido = preto e branco. */
     .icon-btn.icon-btn-off,
-    #ribbon-nao + label.icon-btn,
-    input.btn-check[name="quality"]:not(:checked) + label.icon-btn,
     .ribbon-group.ribbon-collapsed .ribbon-toggle {
       filter: grayscale(1);
     }
     .ribbon-toggle { color: var(--rb-accent); }
-    /* Qualidade selecionada = colorida (ciano), substituindo o cinza muted */
-    input.btn-check[name="quality"]:checked + label.icon-btn { color: #0891b2; }
 
 
     /* Canvas Elements */
@@ -671,6 +662,9 @@
     /* Mobile-First: touch targets >= 44px em telas touch */
     @media (pointer: coarse) {
       .icon-btn { width: 44px; height: 44px; font-size: 1.1rem; }
+      /* Ribbons: 20% menor também no toque (44→35; sm 38→30), ícone intacto */
+      .ribbon-body .icon-btn { width: 35px; height: 35px; }
+      .ribbon-body .icon-btn.icon-btn-sm { width: 30px; height: 30px; }
     /* Ícones maiores na paleta de elementos (pedido do usuário — Item 2) */
     .palette-item { font-size: 1.3rem; }
     .palette-item i { font-size: 1.3rem; }
@@ -714,15 +708,12 @@
     /* Padrão único (azul) — apenas a tonalidade varia sutilmente de ribbon para ribbon */
     .ribbon-elementos  { --rb-accent:#3b82f6; --rb-bg:rgba(59,130,246,.055); --rb-border:rgba(59,130,246,.18); }
     .ribbon-formas     { --rb-accent:#4689f7; --rb-bg:rgba(70,137,247,.065);  --rb-border:rgba(70,137,247,.20); }
-    .ribbon-impressora { --rb-accent:#4c8df7; --rb-bg:rgba(76,141,247,.07);  --rb-border:rgba(76,141,247,.21); }
-    .ribbon-modelos    { --rb-accent:#5f97f8; --rb-bg:rgba(95,151,248,.085); --rb-border:rgba(95,151,248,.24); }
-.ribbon-configuracao  { --rb-accent:#72a1f9; --rb-bg:rgba(114,161,249,.10);  --rb-border:rgba(114,161,249,.27); }
+ .ribbon-modelos    { --rb-accent:#5f97f8; --rb-bg:rgba(95,151,248,.085); --rb-border:rgba(95,151,248,.24); }
     .ribbon-exibicao  { --rb-accent:#98b5fb; --rb-bg:rgba(152,181,251,.13);  --rb-border:rgba(152,181,251,.33); }
     [data-bs-theme="dark"] .ribbon-elementos  { --rb-bg:rgba(59,130,246,.10);  --rb-border:rgba(96,165,250,.30); }
     [data-bs-theme="dark"] .ribbon-formas     { --rb-bg:rgba(70,137,247,.11);  --rb-border:rgba(101,168,250,.32); }
-    [data-bs-theme="dark"] .ribbon-impressora { --rb-bg:rgba(76,141,247,.12);  --rb-border:rgba(106,170,250,.33); }
-    [data-bs-theme="dark"] .ribbon-modelos    { --rb-bg:rgba(95,151,248,.14);  --rb-border:rgba(116,175,250,.36); }
-[data-bs-theme="dark"] .ribbon-configuracao  { --rb-bg:rgba(114,161,249,.16);  --rb-border:rgba(126,180,250,.39); }
+ [data-bs-theme="dark"] .ribbon-modelos    { --rb-bg:rgba(95,151,248,.14);  --rb-border:rgba(116,175,250,.36); }
+
     [data-bs-theme="dark"] .ribbon-exibicao  { --rb-bg:rgba(152,181,251,.20);  --rb-border:rgba(160,190,252,.45); }
 
     /* Ribbon Exibição: toggles de Régua/Grade/Grade Etiqueta/Snap — ícones on/off
@@ -749,24 +740,8 @@
        Mesmos grupos, cliques, toggles e atalhos — só o layout muda: cada ribbon
        é uma seção do menu (grupos de ícones separados por seção), liberando a
        tela para o canvas. No desktop (≥992px) nada muda. */
-    .btn-ribbons-mobile { display: none; }
     .ribbons-backdrop { display: none; }
-    .mobile-acoes-bar { display: none; }
-    .btn-acoes-mobile { display: none; }
     @media (max-width: 991.98px) {
-      .mobile-acoes-bar {
-        display: flex; flex-wrap: wrap; gap: 8px;
-        margin: 0 0 10px 0;
-      }
-      .btn-ribbons-mobile {
-        display: inline-flex; align-items: center; gap: 8px;
-        margin: 0; padding: 8px 14px;
-        border-radius: 10px; font-weight: 700;
-      }
-      .btn-acoes-mobile {
-        display: inline-flex; align-items: center;
-        padding: 8px 11px; border-radius: 10px; font-size: 1rem;
-      }
       /* Content encosta nas bordas da tela: menos respiro lateral no mobile
          (o canvas ganha ~30px úteis de largura em um telefone de 390px). */
       main.container { padding-left: .375rem; padding-right: .375rem; }
@@ -778,7 +753,7 @@
          redimensionável (a alça "resize" alargava a página no toque) e encolhe
          a altura mínima — o footer volta para logo após o conteúdo. */
       html, body { overflow-x: hidden; overflow-x: clip; }
-      body { overscroll-behavior-y: none; }
+      body { overscroll-behavior-y: none; padding-bottom: 74px; }
       .preview-stage-wrap { min-height: 300px; resize: none; }
       .preview-stage { min-height: 260px; }
       .ribbons-bar {
@@ -841,6 +816,162 @@
       #modal-editor .frame-picker button { min-width: 44px; min-height: 40px; }
       #modal-editor .modal-dialog { margin: 10px; }
       .edicao-inline-input { font-size: 16px !important; }
+
+      /* ===== MOBILE BOOTSTRAP 5: Navbar, Hero, Bottom Bar e Drawer ===== */
+      #btn-floating-help { display: none !important; }
+
+      .mobile-top-navbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-color: var(--zebra-border) !important;
+        z-index: 1030;
+      }
+      [data-bs-theme="dark"] .mobile-top-navbar {
+        background: rgba(11, 18, 32, 0.95);
+        border-color: var(--zebra-border) !important;
+      }
+      .mobile-brand-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1.1rem;
+      }
+      .mobile-menu-toggle {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        font-size: 1.05rem;
+      }
+      .mobile-status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #6c757d;
+        display: inline-block;
+        flex: 0 0 auto;
+      }
+
+      .mobile-hero-card {
+        background: linear-gradient(135deg, #0b1329 0%, #1e293b 55%, #1e3a8a 100%);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
+      }
+      [data-bs-theme="dark"] .mobile-hero-card {
+        background: linear-gradient(135deg, #070d18 0%, #0f172a 55%, #1e3a8a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .mobile-offcanvas-drawer {
+        width: min(340px, 86vw) !important;
+        background: var(--zebra-card-bg);
+        color: var(--zebra-text);
+      }
+      [data-bs-theme="dark"] .mobile-offcanvas-drawer {
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      .mobile-offcanvas-drawer .list-group-item {
+        background: transparent;
+        color: var(--zebra-text);
+        border-color: var(--zebra-border);
+      }
+      [data-bs-theme="dark"] .mobile-offcanvas-drawer .list-group-item {
+        color: #e2e8f0;
+        border-color: #2a3648;
+      }
+
+      .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-top: 1px solid var(--zebra-border);
+        box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.07);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        z-index: 1045;
+      }
+      [data-bs-theme="dark"] .mobile-bottom-nav {
+        background: rgba(11, 18, 32, 0.96);
+        border-color: #2a3648;
+        box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.35);
+      }
+      .mobile-bottom-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--zebra-muted);
+        padding: 5px 2px;
+        min-height: 48px;
+        cursor: pointer;
+        position: relative;
+        transition: color 0.15s ease, transform 0.1s ease;
+      }
+      .mobile-bottom-item span {
+        font-size: 0.65rem;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .mobile-bottom-item .icone-aba { margin-top: 0; }
+      #bottom-btn-estudio.aba-ativa i { color: var(--bs-primary); }
+      #bottom-btn-zpl.aba-ativa i { color: var(--bs-info); }
+      #bottom-btn-elementos.aba-ativa i { color: var(--bs-success); }
+      .mobile-bottom-item .badge-cont {
+        position: absolute;
+        bottom: -4px;
+        right: -9px;
+        min-width: 15px;
+        height: 15px;
+        padding: 0 3px;
+        border-radius: 8px;
+        background: var(--bs-primary);
+        color: #ffffff;
+        font-size: 0.55rem;
+        font-weight: 700;
+        line-height: 15px;
+        text-align: center;
+        margin-top: 0;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95);
+      }
+      [data-bs-theme="dark"] .mobile-bottom-item .badge-cont { box-shadow: 0 0 0 2px #0b1220; }
+      .mobile-bottom-item:active {
+        transform: scale(0.92);
+        color: var(--zebra-primary);
+      }
+      .mobile-bottom-fab {
+        position: relative;
+        margin-top: -14px;
+      }
+      .mobile-fab-circle {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+        border: 2px solid #ffffff;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      [data-bs-theme="dark"] .mobile-fab-circle {
+        border-color: #0b1220;
+      }
+      .mobile-bottom-fab:active .mobile-fab-circle {
+        transform: scale(0.92);
+      }
     }
 
     /* ===== IMPORTADOR DE DADOS ===== */
@@ -885,6 +1016,220 @@
       overflow: hidden; clip: rect(0, 0, 0, 0);
       white-space: nowrap; border: 0;
     }
+
+    /* ================================================================
+       FASE A — App-shell Desktop (Navbar + Status Bar)
+       d-none d-lg-flex = visível APENAS ≥ 992px; mobile zero impacto
+       ================================================================ */
+
+    /* --- Navbar Desktop --- */
+    .dnv-navbar {
+      background: var(--zebra-card-bg);
+      border-bottom: 1px solid var(--zebra-border);
+      height: 44px;
+      z-index: 1030;
+    }
+    .dnv-navbar .navbar-brand {
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--zebra-text);
+      text-decoration: none;
+      padding: 0;
+      margin-right: 1rem;
+    }
+    .dnv-navbar .navbar-brand .brand-icon {
+      width: 28px; height: 28px;
+      background: var(--zebra-primary);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 0.8rem;
+    }
+    .dnv-navbar .navbar-brand .brand-ver {
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: var(--zebra-primary);
+      color: #fff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      opacity: 0.9;
+    }
+    .dnv-nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 0; padding: 0;
+      list-style: none;
+      height: 44px;
+    }
+    .dnv-nav-menu > li {
+      position: relative;
+      height: 100%;
+    }
+    .dnv-nav-menu > li > button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      height: 100%;
+      padding: 0 0.75rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--zebra-text);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      border-radius: 0;
+    }
+    .dnv-nav-menu > li > button:hover,
+    .dnv-nav-menu > li > button.dnv-open {
+      color: var(--zebra-accent);
+      border-bottom-color: var(--zebra-accent);
+      background: rgba(59,130,246,0.06);
+    }
+    .dnv-nav-menu > li > button .caret {
+      font-size: 0.6rem;
+      transition: transform 0.2s;
+    }
+    .dnv-nav-menu > li > button.dnv-open .caret {
+      transform: rotate(180deg);
+    }
+    /* Dropdown panel */
+    .dnv-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 230px;
+      background: var(--zebra-card-bg);
+      border: 1px solid var(--zebra-border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.15);
+      padding: 0.35rem 0;
+      z-index: 1050;
+      animation: dnvFadeIn 0.14s ease;
+    }
+    @keyframes dnvFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dnv-dropdown.dnv-open { display: block; }
+    .dnv-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.45rem 1rem;
+      font-size: 0.82rem;
+      color: var(--zebra-text);
+      text-align: left;
+      transition: background 0.12s, color 0.12s;
+    }
+    .dnv-dropdown-item:hover {
+      background: rgba(59,130,246,0.08);
+      color: var(--zebra-accent);
+    }
+    .dnv-dropdown-item .dnv-icon {
+      width: 16px;
+      text-align: center;
+      color: var(--zebra-muted);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .dnv-dropdown-divider {
+      border: none;
+      border-top: 1px solid var(--zebra-border);
+      margin: 0.3rem 0;
+    }
+    .dnv-dropdown-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--zebra-muted);
+      padding: 0.35rem 1rem 0.15rem;
+    }
+    /* Submenu aninhado (Calibrar Impressora) */
+    .dnv-submenu-wrap { position: relative; }
+    .dnv-submenu-btn .dnv-sub-caret {
+      font-size: 0.6rem;
+      margin-left: auto;
+      opacity: 0.7;
+      transition: transform 0.15s;
+    }
+    .dnv-submenu-btn.dnv-open .dnv-sub-caret { transform: rotate(90deg); }
+    .dnv-dropdown.dnv-submenu {
+      top: 0;
+      left: 100%;
+      min-width: 290px;
+      z-index: 1051;
+    }
+    .dnv-item-static, .dnv-item-static:hover { background: none; color: var(--zebra-text); cursor: default; }
+    .dnv-slider-row { gap: .55rem; }
+    .dnv-slider-row .form-range { min-width: 90px; height: 18px; }
+    #dnv-papel-opcoes { padding: 0 1rem 0.35rem; }
+    #dnv-papel-opcoes .btn { font-size: 0.72rem; }
+    /* Navbar right actions */
+    .dnv-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: auto;
+    }
+
+    /* --- Status Bar --- */
+    .sb-bar {
+      background: var(--zebra-card-bg);
+      border-top: 1px solid var(--zebra-border);
+      padding: 0.2rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.72rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .sb-bar::-webkit-scrollbar { display: none; }
+    .sb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.18rem 0.55rem;
+      border-radius: 20px;
+      border: 1px solid var(--zebra-border);
+      background: var(--zebra-bg);
+      color: var(--zebra-muted);
+      white-space: nowrap;
+      font-size: 0.71rem;
+      font-weight: 500;
+      transition: border-color 0.2s;
+    }
+    .sb-chip i { font-size: 0.68rem; }
+    .sb-chip-label { color: var(--zebra-muted); font-size: 0.67rem; }
+    .sb-chip-val { color: var(--zebra-text); font-weight: 600; }
+    .sb-sep {
+      width: 1px; height: 16px;
+      background: var(--zebra-border);
+      flex-shrink: 0;
+    }
+    button.sb-chip { font: inherit; cursor: pointer; }
+    button.sb-chip:hover { border-color: var(--bs-primary); }
+    .sb-zoom-btn { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; }
+    .sb-zoom-btn:focus-visible { outline: 2px solid var(--bs-primary); border-radius: 4px; }
+    .sb-tab { position: relative; border: 0; background: transparent; color: var(--zebra-muted); cursor: pointer; padding: 0.14rem 0.5rem; border-radius: 8px; font-size: 0.85rem; line-height: 1.25; display: inline-flex; align-items: center; }
+    .sb-tab:hover { background: var(--zebra-bg); color: var(--zebra-text); }
+    .sb-tab:focus-visible { outline: 2px solid var(--bs-primary); }
+    .sb-tab.aba-ativa { background: var(--bs-primary); }
+    .sb-tab.aba-ativa i { color: #fff; }
+    .sb-tab .badge-cont { position: absolute; bottom: -4px; right: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--bs-success); color: #fff; font-size: 0.55rem; font-weight: 700; line-height: 15px; text-align: center; box-shadow: 0 0 0 2px var(--zebra-card-bg); }
   </style>
 </head>
 <body>
@@ -892,8 +1237,278 @@
   <!-- Skip Link (Acessibilidade Teclado - WCAG 2.1 AA) -->
   <a class="skip-link" href="#stage-wrap">Ir para o editor de etiquetas</a>
 
-  <!-- Hero Header Compact (container por fora = mesma largura/centralização do main .container) -->
-  <div class="container">
+  <!-- Navbar Desktop (Fase A — d-none d-lg-flex: visível APENAS ≥ 992px) -->
+  <nav class="dnv-navbar container d-none d-lg-flex align-items-center sticky-top" id="dnv-navbar-desktop" aria-label="Navegação principal desktop">
+    <div class="d-flex align-items-center justify-content-between flex-grow-1 w-100">
+
+    <!-- Brand -->
+    <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
+      <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
+      <span>CanalQb</span>
+      <span class="brand-ver">v2.10</span>
+    </a>
+
+    <!-- Menus dropdown -->
+    <ul class="dnv-nav-menu" role="menubar">
+
+      <!-- Dropdown: Arquivo -->
+      <li role="none">
+        <button type="button" class="dnv-menu-btn" id="dnv-btn-arquivo" aria-haspopup="true" aria-expanded="false" role="menuitem">
+          <i class="fas fa-folder-open" aria-hidden="true"></i> Arquivo <i class="fas fa-chevron-down caret" aria-hidden="true"></i>
+        </button>
+        <div class="dnv-dropdown" id="dnv-dd-arquivo" role="menu">
+          <span class="dnv-dropdown-header">Etiquetas</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-novo" role="menuitem">
+            <i class="fas fa-file-circle-plus dnv-icon text-danger"></i> Nova Etiqueta em Branco
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-carregar" role="menuitem">
+            <i class="fas fa-folder-open dnv-icon text-primary"></i> Carregar Modelo (.bin)
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-salvar" role="menuitem">
+            <i class="fas fa-floppy-disk dnv-icon text-primary"></i> Salvar Modelo Atual
+          </button>
+          <hr class="dnv-dropdown-divider">
+          <span class="dnv-dropdown-header">Dados &amp; Lote</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-lote" role="menuitem">
+            <i class="fas fa-layer-group dnv-icon text-info"></i> Geração em Lote
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-importar" role="menuitem">
+            <i class="fas fa-file-import dnv-icon text-info"></i> Importar Dados (Excel, CSV)
+          </button>
+          <hr class="dnv-dropdown-divider">
+          <span class="dnv-dropdown-header">ZPL</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-carregar-zpl" role="menuitem">
+            <i class="fas fa-file-code dnv-icon text-secondary"></i> Carregar arquivo .ZPL
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-file-download-zpl" role="menuitem">
+            <i class="fas fa-file-download dnv-icon text-secondary"></i> Download ZPL
+          </button>
+        </div>
+      </li>
+
+      <!-- Dropdown: Etiqueta -->
+      <li role="none">
+        <button type="button" class="dnv-menu-btn" id="dnv-btn-etiqueta" aria-haspopup="true" aria-expanded="false" role="menuitem">
+          <i class="fas fa-tag" aria-hidden="true"></i> Etiqueta <i class="fas fa-chevron-down caret" aria-hidden="true"></i>
+        </button>
+        <div class="dnv-dropdown" id="dnv-dd-etiqueta" role="menu">
+          <span class="dnv-dropdown-header">Layout</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-etq-tamanho" role="menuitem">
+            <i class="fas fa-ruler-combined dnv-icon text-primary"></i> Tamanho da Etiqueta
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-etq-rotacao" role="menuitem">
+            <i class="fas fa-rotate dnv-icon text-warning"></i> Alternar Orientação
+          </button>
+          <hr class="dnv-dropdown-divider">
+          <span class="dnv-dropdown-header">Modelos</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-etq-modelos" role="menuitem">
+            <i class="fas fa-table-cells dnv-icon text-success"></i> Modelos Prontos
+          </button>
+        </div>
+      </li>
+
+      <!-- Dropdown: Impressora -->
+      <li role="none">
+        <button type="button" class="dnv-menu-btn" id="dnv-btn-impressora" aria-haspopup="true" aria-expanded="false" role="menuitem">
+          <i class="fas fa-print" aria-hidden="true"></i> Impressora <i class="fas fa-chevron-down caret" aria-hidden="true"></i>
+        </button>
+        <div class="dnv-dropdown" id="dnv-dd-impressora" role="menu">
+          <span class="dnv-dropdown-header">Configuração</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-imp-ip" role="menuitem">
+            <i class="fas fa-network-wired dnv-icon text-secondary"></i> Configurar IP
+          </button>
+          <!-- Submenu: Calibrar Impressora (comandos de calibragem) -->
+          <div class="dnv-submenu-wrap" id="dnv-sub-cal-wrap">
+            <button type="button" class="dnv-dropdown-item dnv-submenu-btn" id="dnv-imp-calibrar" role="menuitem" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-sliders-h dnv-icon text-secondary"></i> Calibrar Impressora <i class="fas fa-chevron-right dnv-sub-caret" aria-hidden="true"></i>
+            </button>
+            <div class="dnv-dropdown dnv-submenu" id="dnv-dd-calibrar" role="menu">
+              <!-- Estado das configurações migradas do ribbon Impressora (hidden) -->
+              <div class="d-none">
+                <input type="radio" class="btn-check" name="ribbon" id="ribbon-nao" value="N" checked>
+                <input type="radio" class="btn-check" name="ribbon" id="ribbon-sim" value="Y">
+                <input type="radio" class="btn-check" name="quality" id="quality-grayscale" value="grayscale" checked>
+                <input type="radio" class="btn-check" name="quality" id="quality-bitonal" value="bitonal">
+              </div>
+              <button type="button" class="dnv-dropdown-item" id="dnv-imp-modo" role="menuitem">
+                <i class="fas fa-tape dnv-icon text-secondary"></i> <span id="dnv-modo-text">Modo Ribbon: Sem (Térmica Direta)</span>
+              </button>
+              <!-- Tipo de mídia: combobox direto no submenu (^MN) -->
+              <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-midia" title="Tipo de mídia (^MN)">
+                <i class="fas fa-tags dnv-icon text-secondary"></i>
+                <select class="form-select form-select-sm flex-grow-1" id="sel-tipo-midia" aria-label="Tipo de mídia">
+                  <option value="C">Etiquetas contínuas</option>
+                  <option value="N" selected>Etiquetas com intervalos</option>
+                  <option value="M">Etiquetas com marcações pretas</option>
+                  <option value="F">Etiquetas com ranhuras laterais</option>
+                </select>
+              </div>
+              <!-- Modo operacional: combobox direto no submenu (^MM) -->
+              <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-modoop" title="Modo operacional de impressão (^MM)">
+                <i class="fas fa-gears dnv-icon text-secondary"></i>
+                <select class="form-select form-select-sm flex-grow-1" id="sel-modo-operacional" aria-label="Modo operacional">
+                  <option value="" selected>Usar padrão da impressora</option>
+                  <option value="T">Arrancar</option>
+                  <option value="P">Descolar</option>
+                  <option value="C">Cortador</option>
+                  <option value="R">Rebobinar</option>
+                  <option value="L">Parte sem revestimento</option>
+                  <option value="V">Corte sem revestimento</option>
+                  <option value="W">Retroceder sem linha</option>
+                  <option value="D">Aplicador</option>
+                </select>
+              </div>
+              <!-- Tonalidade: slider direto no submenu (sem fechar o menu) -->
+              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-ton" title="Tonalidade — Intensidade de Queima (^MD 10 a 30)">
+                <i class="fas fa-sun dnv-icon text-warning"></i>
+                <input type="range" class="form-range mb-0 flex-grow-1" id="tonalidade" min="10" max="30" value="25" step="1" aria-label="Tonalidade (Darkness ^MD)">
+                <span class="badge bg-secondary text-white" id="ton-val" style="font-size:0.7rem; min-width:20px; text-align:center;">25</span>
+              </div>
+              <!-- Tamanho do papel: listagem direta no submenu (sem fechar o menu) -->
+              <div class="dnv-dropdown-item dnv-item-static">
+                <i class="fas fa-ruler-combined dnv-icon text-secondary"></i>
+                <span class="small text-muted">Tamanho do Papel</span>
+                <span class="ms-auto small fw-semibold" id="dnv-papel-text">100 × 50 mm</span>
+              </div>
+              <div class="d-flex flex-wrap gap-1 px-3 pb-1" id="dnv-papel-opcoes"></div>
+              <!-- Velocidade: slider direto no submenu (^PR 2 a 14 pol/s, padrão 6) -->
+              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-veloc" title="Velocidade de impressão (^PR 2 a 14 pol/s)">
+                <i class="fas fa-gauge-high dnv-icon text-secondary"></i>
+                <input type="range" class="form-range mb-0 flex-grow-1" id="velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)">
+                <span class="badge bg-secondary text-white" id="veloc-val" style="font-size:0.7rem; min-width:20px; text-align:center;">6</span>
+              </div>
+              <button type="button" class="dnv-dropdown-item" id="dnv-imp-qual" role="menuitem">
+                <i class="fas fa-adjust dnv-icon text-secondary"></i> <span id="dnv-qual-text">Qualidade: Escala de Cinza</span>
+              </button>
+              <hr class="dnv-dropdown-divider">
+              <button type="button" class="dnv-dropdown-item fw-semibold" id="dnv-imp-cal-exec" role="menuitem">
+                <i class="fas fa-circle-check dnv-icon text-success"></i> <span class="text-success">Calibrar Agora</span>
+              </button>
+            </div>
+          </div>
+          <hr class="dnv-dropdown-divider">
+          <span class="dnv-dropdown-header">Impressão</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-imp-preview" role="menuitem">
+            <i class="bi bi-eye dnv-icon text-info"></i> Pré-visualizar
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-imp-imgprint" role="menuitem">
+            <i class="bi bi-image dnv-icon text-secondary"></i> Imprimir como Imagem (^GF)
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="dnv-imp-copias" role="menuitem">
+            <i class="fas fa-copy dnv-icon text-secondary"></i> Imprimir com Cópias (^PQ)
+          </button>
+          <button type="button" class="dnv-dropdown-item fw-semibold" id="dnv-imp-imprimir" role="menuitem">
+            <i class="fas fa-print dnv-icon text-success"></i> <span class="text-success">Imprimir Agora</span>
+          </button>
+        </div>
+      </li>
+
+      <!-- Dropdown: Ajuda -->
+      <li role="none">
+        <button type="button" class="dnv-menu-btn" id="dnv-btn-ajuda" aria-haspopup="true" aria-expanded="false" role="menuitem">
+          <i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda <i class="fas fa-chevron-down caret" aria-hidden="true"></i>
+        </button>
+        <div class="dnv-dropdown" id="dnv-dd-ajuda" role="menu">
+          <button type="button" class="dnv-dropdown-item" id="dnv-ajuda-doc" role="menuitem">
+            <i class="fas fa-book-open dnv-icon text-primary"></i> Central de Ajuda (F1)
+          </button>
+          <hr class="dnv-dropdown-divider">
+          <button type="button" class="dnv-dropdown-item" id="dnv-ajuda-tema" role="menuitem">
+            <i class="bi bi-moon-stars dnv-icon" id="dnv-icon-tema"></i> <span id="dnv-tema-text">Tema Escuro</span>
+          </button>
+        </div>
+      </li>
+
+    </ul>
+
+    <!-- Ações rápidas à direita -->
+    <div class="dnv-actions">
+      <!-- Status da impressora: ponto colorido + IP -->
+      <span class="sb-chip cursor-pointer" id="dnv-status-impressora" title="Status da impressora">
+        <span id="dnv-print-dot" style="width:8px;height:8px;border-radius:50%;background:#6c757d;display:inline-block;flex-shrink:0;"></span>
+        <span id="dnv-status-ip-text" class="sb-chip-val">pendente</span>
+      </span>
+    </div>
+
+    </div>
+  </nav>
+
+  <!-- Mobile Navbar (Bootstrap 5 - Apenas Mobile) -->
+  <nav class="navbar navbar-expand-lg mobile-top-navbar d-lg-none sticky-top py-2 px-3 border-bottom shadow-sm" aria-label="Navegação móvel principal">
+    <div class="container-fluid p-0 d-flex align-items-center justify-content-between">
+      <!-- Brand com ícone e título -->
+      <div class="d-flex align-items-center gap-2">
+        <span class="mobile-brand-icon d-inline-flex align-items-center justify-content-center rounded-3 bg-primary text-white shadow-sm">
+          <i class="bi bi-printer-fill"></i>
+        </span>
+        <div class="d-flex flex-column">
+          <span class="fw-bold fs-6 text-body lh-1">CanalQb</span>
+          <span class="text-muted lh-1" style="font-size: 0.7rem; font-weight: 500;">Zebra ZPL</span>
+        </div>
+      </div>
+
+      <!-- Ações do Topo Mobile: Status Rápido + Tema + Hambúrguer Offcanvas -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- Indicador de Conexão com a Impressora -->
+        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle d-inline-flex align-items-center gap-1 cursor-pointer py-1 px-2" id="mobile-top-ip-badge" title="Status da impressora — toque para configurar" role="button" tabindex="0">
+          <span id="mobile-print-server-dot" class="mobile-status-dot"></span>
+          <span id="mobile-header-ip-text" class="fw-semibold" style="font-size:0.75rem;">pendente</span>
+        </span>
+
+        <!-- Alternar Tema no Mobile -->
+        <button type="button" class="icon-btn icon-btn-muted icon-btn-sm" id="btn-tema-mobile" title="Alternar tema claro/escuro" aria-label="Alternar tema claro ou escuro">
+          <i class="bi bi-moon-stars" id="icon-tema-mobile"></i>
+        </button>
+
+        <!-- Botão Menu Offcanvas -->
+        <button class="btn btn-primary btn-sm mobile-menu-toggle d-inline-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNavOffcanvas" aria-controls="mobileNavOffcanvas" aria-label="Abrir menu de navegação">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section Mobile (Apenas Mobile) -->
+  <section class="container d-lg-none mt-2 px-2" id="sec-hero-mobile" aria-label="Apresentação e Status da Etiqueta">
+    <div class="card border-0 mobile-hero-card text-white overflow-hidden p-3 shadow-sm">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
+            <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
+          </span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.10</span>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
+          <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
+        </span>
+      </div>
+
+      <h1 class="h6 fw-bold text-white mb-1">Designer &amp; Gerador de Etiquetas Zebra</h1>
+      <p class="text-white-50 mb-2 small" style="font-size:0.75rem; line-height: 1.35;">
+        Crie, personalize e envie etiquetas térmicas com QR Code, Barcode e gráficos direto do seu dispositivo móvel.
+      </p>
+
+      <!-- Grid de Ações Rápidas & Dimensões no Hero Mobile -->
+      <div class="mobile-hero-status-row d-flex flex-wrap gap-2 pt-2 border-top border-white border-opacity-10 align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center gap-1" id="mobile-hero-tamanho-btn" title="Alterar tamanho da etiqueta">
+            <i class="fas fa-ruler-combined text-info" style="font-size:0.75rem;"></i>
+            <span id="mobile-hero-tamanho-label" class="fw-semibold" style="font-size:0.72rem;">100 × 50 mm</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center gap-1" id="mobile-hero-rotacao-btn" title="Alternar orientação">
+            <i class="fas fa-arrows-alt-h text-warning" style="font-size:0.75rem;"></i>
+            <span id="mobile-hero-rot-label" class="fw-semibold" style="font-size:0.72rem; white-space:pre-line; line-height:1.1;">Horizontal</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center" id="mobile-hero-modelos-btn" title="Modelos Prontos (5 layouts para cada tamanho de etiqueta)" aria-label="Abrir Modelos Prontos">
+            <i class="fas fa-table-cells text-primary" style="font-size:0.75rem;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hero Header Compact (Desktop >= 992px) — Fase A: oculto no desktop (navbar assume) -->
+  <section class="container d-none" id="sec-hero-desktop" aria-label="Apresentação do Sistema">
     <header class="hero-header">
       <div class="row align-items-center g-2">
         <div class="col-md-8">
@@ -918,7 +1533,7 @@
         </div>
       </div>
     </header>
-  </div>
+  </section>
 
   <!-- Main Workspace -->
   <main class="container my-3">
@@ -928,37 +1543,15 @@
       <!-- Right Column: Studio, Canvas & ZPL Output (largura total) -->
       <div class="col-12">
         
-        <div class="card card-custom h-100">
-          <div class="card-header card-header-custom d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <section class="card card-custom h-100" id="sec-studio" aria-label="Studio Visual e Ferramentas">
+          <div class="card-header card-header-custom d-none d-lg-flex flex-wrap align-items-center justify-content-between gap-2">
             
-            <!-- Navigation Tabs -->
-            <nav aria-label="Abas do Studio">
-              <ul class="nav nav-pills card-header-pills" id="studio-tabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link active py-1 px-3 fw-semibold small" id="tab-canvas-link" data-bs-toggle="tab" data-bs-target="#tab-canvas" type="button" role="tab">
-                  <i class="bi bi-eye me-1"></i> Studio Visual
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link py-1 px-3 fw-semibold small" id="tab-zpl-link" data-bs-toggle="tab" data-bs-target="#tab-zpl" type="button" role="tab">
-                  <i class="bi bi-code-square me-1"></i> Código ZPL
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link py-1 px-3 fw-semibold small" id="tab-list-link" data-bs-toggle="tab" data-bs-target="#tab-list" type="button" role="tab">
-                  <i class="bi bi-layers me-1"></i> Elementos (<span id="el-count">0</span>)
-                </button>
-              </li>
-              </ul>
-            </nav>
-
             <!-- Tamanho e Controles de Rotação -->
-            <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap">
               <div class="vr mx-1" style="height:22px;"></div>
               <button type="button" class="icon-btn icon-btn-dark" id="btn-tamanho" title="Alterar Tamanho da Etiqueta">
                 <i class="fas fa-ruler-combined"></i>
               </button>
-              <small class="text-muted fw-bold" id="tamanho-label" style="font-size:0.75rem;">100 × 50 mm</small>
               <button type="button" class="icon-btn icon-btn-dark" id="btn-rotacao" title="Alternar Orientação (Horizontal / Vertical)">
                 <i class="fas fa-arrows-alt-h"></i>
               </button>
@@ -974,43 +1567,15 @@
               <!-- Tab 1: Visual Studio Canvas -->
               <div class="tab-pane fade show active" id="tab-canvas" role="tabpanel">
 
-                <!-- Mobile: barra de ações ao lado de Ferramentas (lote, importar, imprimir) -->
-                <div class="mobile-acoes-bar" id="mobile-acoes-bar">
-                  <button type="button" class="btn btn-primary btn-ribbons-mobile" id="btn-ribbons-mobile" aria-controls="canvas-elements-palette" aria-expanded="false" title="Ferramentas: Elementos, Formas, Impressora, Modelos, Configuração e Exibição" aria-label="Abrir menu lateral de ferramentas">
-                    <i class="fas fa-bars" aria-hidden="true"></i> Ferramentas
-                  </button>
-                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-lote" title="Gerar Lote (sequências e importação de dados)" aria-label="Gerar lote">
-                    <i class="fas fa-layer-group" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-importar" title="Importar Dados (Excel, CSV, Google Sheets, Webhook, Banco/API, Pasta, ODBC)" aria-label="Importar dados">
-                    <i class="fas fa-file-import" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="btn btn-success btn-acoes-mobile" id="btn-mobile-imprimir" title="Imprimir etiqueta / lote" aria-label="Imprimir">
-                    <i class="fas fa-print" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="btn btn-outline-danger btn-acoes-mobile" id="btn-mobile-novo" title="Nova etiqueta em branco (limpa tudo)" aria-label="Nova etiqueta">
-                    <i class="fas fa-file-circle-plus" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-salvar" title="Salvar etiqueta como arquivo .bin (1ª etiqueta + árvore do lote + conexões de importação)" aria-label="Salvar etiqueta em bin">
-                    <i class="fas fa-floppy-disk" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="btn btn-primary btn-acoes-mobile" id="btn-mobile-carregar" title="Carregar etiqueta salva (.bin de modelo ou de lote/ZPL)" aria-label="Carregar etiqueta">
-                    <i class="fas fa-folder-open" aria-hidden="true"></i>
-                  </button>
-                  <button type="button" class="btn btn-primary btn-acoes-mobile d-none" id="btn-mobile-salvar-lote" title="Salvar lote de etiquetas como .bin (ZPL concatenado)" aria-label="Salvar lote de etiquetas">
-                    <i class="fas fa-box" aria-hidden="true"></i>
-                  </button>
-                </div>
                 <div class="ribbons-backdrop" id="ribbons-backdrop" aria-hidden="true"></div>
 
                 <!-- Barra Horizontal de Elementos (Paleta) -->
                 <div class="ribbons-bar" id="canvas-elements-palette" role="toolbar" aria-label="Ribbons de ferramentas do Studio">
                   <!-- Ribbon: Elementos -->
                   <div class="ribbon-group ribbon-elementos">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Elementos" aria-label="Arrastar para reordenar o ribbon Elementos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Elementos" title="Exibir / Ocultar ícones do Ribbon Elementos" aria-label="Exibir ou ocultar ícones do Ribbon Elementos" aria-expanded="true"><i class="fas fa-shapes"></i></button>
+                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Elementos Clássicos" aria-label="Arrastar para reordenar o ribbon Elementos Clássicos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                  <button type="button" class="icon-btn ribbon-toggle" data-label="Elementos Clássicos" title="Exibir / Ocultar ícones do Ribbon Elementos Clássicos" aria-label="Exibir ou ocultar ícones do Ribbon Elementos Clássicos" aria-expanded="true"><i class="fas fa-shapes"></i></button>
                   <div class="ribbon-body">
-                  <span class="small fw-bold text-muted me-1 ms-1" style="font-size:0.78rem;">Elementos:</span>
                   <div class="icon-btn icon-btn-primary palette-item" draggable="true" data-type="texto" data-text="Novo Texto" title="Texto Livre / Rótulo (Clique ou arraste)">
                     <i class="fas fa-font"></i>
                   </div>
@@ -1030,7 +1595,6 @@
                     <i class="fas fa-image"></i>
                     <input type="file" id="input-import-imagem" accept="image/*" class="d-none">
                   </div>
-                  <button type="button" class="icon-btn icon-btn-info" id="btn-import-dados" title="Importar Dados (Excel, CSV/TXT, Google Sheets)" aria-label="Importar Dados (Excel, CSV/TXT, Google Sheets)" data-bs-toggle="modal" data-bs-target="#modal-import-dados"><i class="fas fa-file-import"></i></button>
                   <div class="vr mx-1"></div>
                   <!-- Clonar elemento selecionado (Ctrl+D) -->
                   <button type="button" class="icon-btn icon-btn-purple" id="btn-duplicar-elemento" title="Clonar elemento selecionado (Ctrl+D)" aria-label="Clonar elemento selecionado"><i class="fas fa-clone"></i></button>
@@ -1039,10 +1603,9 @@
 
                   <!-- Ribbon: Elementos Formas (linha, borda, elipse, diagonal, raio, retas, curva) -->
                   <div class="ribbon-group ribbon-formas">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Formas" aria-label="Arrastar para reordenar o ribbon Formas"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Formas" title="Exibir / Ocultar ícones do Ribbon Formas" aria-label="Exibir ou ocultar ícones do ribbon Formas" aria-expanded="true"><i class="fas fa-shapes"></i></button>
+                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Elementos Geométricos" aria-label="Arrastar para reordenar o ribbon Elementos Geométricos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                  <button type="button" class="icon-btn ribbon-toggle" data-label="Elementos Geométricos" title="Exibir / Ocultar ícones do Ribbon Elementos Geométricos" aria-label="Exibir ou ocultar ícones do Ribbon Elementos Geométricos" aria-expanded="true"><i class="fas fa-draw-polygon"></i></button>
                   <div class="ribbon-body">
-                  <span class="small fw-bold text-muted me-1 ms-1" style="font-size:0.78rem;">Formas:</span>
                   <div class="icon-btn icon-btn-muted palette-item" draggable="true" data-type="linha" title="Linha Divisória (Clique ou arraste)" aria-label="Adicionar linha divisória">
                     <i class="fas fa-minus"></i>
                   </div>
@@ -1067,38 +1630,13 @@
                   </div>
                   </div>
 
-                  <!-- Ribbon: Impressora (Modo Ribbon / Calibrar) -->
-                  <div class="ribbon-group ribbon-impressora">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Impressora" aria-label="Arrastar para reordenar o ribbon Impressora"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Impressora" title="Exibir / Ocultar ícones do Ribbon Impressora" aria-label="Exibir ou ocultar ícones do Ribbon Impressora" aria-expanded="true"><i class="fas fa-tape"></i></button>
-                  <div class="ribbon-body">
-                  <!-- Calibrar -->
-                  <button type="button" class="icon-btn icon-btn-purple" id="btn-calibrar" title="Calibrar impressora Zebra" aria-label="Calibrar impressora Zebra"><i class="fas fa-sliders-h"></i></button>
+                  <!-- Ribbon: Impressora removido (Pedido 1.76) — configurações migradas
+                       para o submenu Calibrar Impressora do menu Impressora da navbar -->
 
-                  <!-- Configurar IP da impressora -->
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-config-ip" title="Configurar IP da impressora" aria-label="Configurar IP da impressora"><i class="fas fa-network-wired"></i></button>
-
-                  </div>
-                  </div>
-
-                  <!-- Ribbon: Modelos e Lote -->
+                  <!-- Ribbon: Etiqueta (espelhos de impressão e guias de desenho) -->
                   <div class="ribbon-group ribbon-modelos">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Modelos" aria-label="Arrastar para reordenar o ribbon Modelos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Modelos" title="Exibir / Ocultar ícones do Ribbon Modelos" aria-label="Exibir ou ocultar ícones do Ribbon Modelos" aria-expanded="true"><i class="fas fa-floppy-disk"></i></button>
-                  <div class="ribbon-body">
-                  <!-- Modelos: Carregar / Salvar / Geração em Lote (3 ações explícitas na régua) -->
-                  <button type="button" class="icon-btn icon-btn-info" id="btn-carregar-modelos" title="Carregar Modelos salvos" aria-label="Carregar modelos salvos" data-bs-toggle="modal" data-bs-target="#modal-templates" data-tmpl-tab="carregar"><i class="fas fa-folder-open"></i></button>
-                  <button type="button" class="icon-btn icon-btn-orange" id="btn-salvar-modelos" title="Salvar Modelo atual (estrutura da etiqueta)" aria-label="Salvar modelo atual" data-bs-toggle="modal" data-bs-target="#modal-templates" data-tmpl-tab="salvar"><i class="fas fa-floppy-disk"></i></button>
-                  <button type="button" class="icon-btn icon-btn-primary" id="btn-modal-batch" title="Geração em Lote (Níveis Sequenciais)" aria-label="Abrir Geração em Lote" data-bs-toggle="modal" data-bs-target="#modal-batch"><i class="fas fa-sitemap"></i></button>
-                  <button type="button" class="icon-btn icon-btn-success" id="btn-novo-etiqueta" title="Nova etiqueta em branco (limpa todas as configurações: elementos, lote, dados importados e ZPL)" aria-label="Nova etiqueta em branco"><i class="fas fa-file-circle-plus"></i></button>
-
-                  </div>
-                  </div>
-
-                  <!-- Ribbon: Configuração (unificado: espelhos, reverso, ribbon/tonalidade/qualidade, impressão) -->
-                  <div class="ribbon-group ribbon-configuracao">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Configuração" aria-label="Arrastar para reordenar o ribbon Configuração"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Configuração" title="Exibir / Ocultar ícones do Ribbon Configuração" aria-label="Exibir ou ocultar ícones do Ribbon Configuração" aria-expanded="true"><i class="fas fa-gear"></i></button>
+                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Etiqueta" aria-label="Arrastar para reordenar o ribbon Etiqueta"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                  <button type="button" class="icon-btn ribbon-toggle" data-label="Etiqueta" title="Exibir / Ocultar ícones do Ribbon Etiqueta" aria-label="Exibir ou ocultar ícones do Ribbon Etiqueta" aria-expanded="true"><i class="fas fa-tag"></i></button>
                   <div class="ribbon-body">
                   <!-- Espelhos de impressão (exclusivos entre si) e Reverso (^LR) -->
                   <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-espelho-v" title="Espelho VERTICAL na impressão (topo↔base) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito." aria-label="Espelho vertical na impressão"><i class="bi bi-symmetry-vertical"></i></button>
@@ -1108,41 +1646,15 @@
 
                   <div class="vr mx-1"></div>
 
-                  <!-- Modo Ribbon (Sem Ribbon / Com Ribbon) -->
-                  <input type="radio" class="btn-check" name="ribbon" id="ribbon-nao" value="N" checked>
-                  <label class="icon-btn icon-btn-danger" for="ribbon-nao" title="Sem Ribbon (Térmica Direta)">
-                    <span class="printer-blocked"><i class="fas fa-print"></i></span>
-                  </label>
-                  <input type="radio" class="btn-check" name="ribbon" id="ribbon-sim" value="Y">
-                  <label class="icon-btn icon-btn-primary d-flex align-items-center justify-content-center gap-1" for="ribbon-sim" title="Com Ribbon (Transferência Térmica)">
-                    <i class="fas fa-print"></i><i class="fas fa-tag" style="font-size:0.75rem;"></i>
-                  </label>
-
-                  <!-- Tonalidade (Padrão 25) -->
-                  <div class="d-flex align-items-center gap-1" title="Tonalidade / Intensidade de Queima (Darkness 10-30)">
-                    <i class="fas fa-sun text-warning" style="font-size:0.85rem;"></i>
-                    <input type="range" class="form-range mb-0" id="tonalidade" min="10" max="30" value="25" step="1" style="width:65px; height:18px;">
-                    <span class="badge bg-secondary text-white" id="ton-val" style="font-size:0.7rem; min-width:20px; text-align:center;">25</span>
-                  </div>
-
-                  <!-- Modo de Cor / Qualidade (Escala de Cinza & Preto/Branco) -->
-                  <div class="d-flex align-items-center gap-1 ms-1">
-                    <input type="radio" class="btn-check" name="quality" id="quality-grayscale" value="grayscale" checked>
-                    <label class="icon-btn icon-btn-muted icon-btn-sm" for="quality-grayscale" title="Escala de Cinza (Dithering)">
-                      <i class="fas fa-fill-drip"></i>
-                    </label>
-                    <input type="radio" class="btn-check" name="quality" id="quality-bitonal" value="bitonal">
-                    <label class="icon-btn icon-btn-dark icon-btn-sm" for="quality-bitonal" title="Preto e Branco / Alto Contraste (Bitonal)">
-                      <i class="fas fa-adjust"></i>
-                    </label>
-                  </div>
-
-                  <div class="vr mx-1"></div>
-
-                  <!-- Ações de Impressão -->
-                  <button type="button" class="icon-btn icon-btn-primary" id="btn-print-preview" title="Pré-visualizar Impressão (fiel ao desenho)" aria-label="Pré-visualizar impressão"><i class="bi bi-eye"></i></button>
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-imgprint" title="Imprimir como Imagem ^GF — envia a etiqueta rasterizada exatamente como desenhada (à prova de reposicionamento)" aria-label="Alternar impressão como imagem"><i class="bi bi-image"></i></button>
-                  <button type="button" class="icon-btn icon-btn-success" id="btn-imprimir" title="Imprimir Etiqueta" aria-label="Imprimir etiqueta"><i class="fas fa-print"></i></button>
+                  <!-- Toggles on/off (OFF em preto e branco, ON colorido — regra universal) -->
+                  <input class="btn-check" type="checkbox" id="toggle-regua" checked autocomplete="off">
+                  <label class="icon-btn icon-btn-sm" for="toggle-regua" title="Mostrar/Ocultar Régua" aria-label="Mostrar ou ocultar régua"><i class="fas fa-ruler-horizontal"></i></label>
+                  <input class="btn-check" type="checkbox" id="toggle-grid" checked autocomplete="off">
+                  <label class="icon-btn icon-btn-sm" for="toggle-grid" title="Grade Palco" aria-label="Mostrar ou ocultar grade do palco"><i class="fas fa-table-cells"></i></label>
+                  <input class="btn-check" type="checkbox" id="toggle-label-grid" checked autocomplete="off">
+                  <label class="icon-btn icon-btn-sm" for="toggle-label-grid" title="Grade dentro da etiqueta" aria-label="Mostrar ou ocultar grade da etiqueta"><i class="fas fa-border-all"></i></label>
+                  <input class="btn-check" type="checkbox" id="toggle-snap" autocomplete="off">
+                  <label class="icon-btn icon-btn-sm" for="toggle-snap" title="Ajuste Magnético (Snap)" aria-label="Ajuste magnético"><i class="fas fa-magnet"></i></label>
 
                   </div>
                   </div>
@@ -1168,16 +1680,6 @@
                   </select>
                   <button type="button" class="icon-btn icon-btn-primary icon-btn-sm" id="btn-config-margens" title="Definir limites de margem (Top, Bottom, Left, Right)"><i class="fas fa-border-style"></i></button>
                   <button type="button" class="icon-btn icon-btn-muted icon-btn-sm" id="btn-limpar-canvas" title="Limpar Canvas (remover todos os elementos)"><i class="fas fa-trash-alt"></i></button>
-                  <div class="vr mx-1"></div>
-                  <!-- Toggles on/off (OFF em preto e branco, ON colorido — regra universal) -->
-                  <input class="btn-check" type="checkbox" id="toggle-regua" checked autocomplete="off">
-                  <label class="icon-btn icon-btn-sm" for="toggle-regua" title="Mostrar/Ocultar Régua" aria-label="Mostrar ou ocultar régua"><i class="fas fa-ruler-horizontal"></i></label>
-                  <input class="btn-check" type="checkbox" id="toggle-grid" checked autocomplete="off">
-                  <label class="icon-btn icon-btn-sm" for="toggle-grid" title="Grade Palco" aria-label="Mostrar ou ocultar grade do palco"><i class="fas fa-table-cells"></i></label>
-                  <input class="btn-check" type="checkbox" id="toggle-label-grid" checked autocomplete="off">
-                  <label class="icon-btn icon-btn-sm" for="toggle-label-grid" title="Grade dentro da etiqueta" aria-label="Mostrar ou ocultar grade da etiqueta"><i class="fas fa-border-all"></i></label>
-                  <input class="btn-check" type="checkbox" id="toggle-snap" autocomplete="off">
-                  <label class="icon-btn icon-btn-sm" for="toggle-snap" title="Ajuste Magnético (Snap)" aria-label="Ajuste magnético"><i class="fas fa-magnet"></i></label>
 
                   </div>
                   </div>
@@ -1403,6 +1905,8 @@
                   <div class="d-flex gap-1">
                     <button type="button" class="icon-btn icon-btn-primary" id="btn-copiar-zpl" title="Copiar ZPL para a área de transferência"><i class="fas fa-clipboard"></i></button>
                     <button type="button" class="icon-btn icon-btn-muted" id="btn-download-zpl" title="Baixar arquivo .ZPL"><i class="fas fa-file-download"></i></button>
+                    <button type="button" class="icon-btn icon-btn-muted" id="btn-carregar-zpl" title="Carregar arquivo .ZPL para o campo abaixo"><i class="fas fa-file-import"></i></button>
+                    <input type="file" id="input-carregar-zpl" accept=".zpl,.txt,.prn" class="d-none">
                     <div class="vr mx-1"></div>
                     <button type="button" class="icon-btn icon-btn-success" id="btn-export-png" title="Exportar etiqueta como PNG (fiel ao desenho)"><i class="bi bi-filetype-png"></i></button>
                     <button type="button" class="icon-btn icon-btn-success" id="btn-export-svg" title="Exportar etiqueta como SVG"><i class="bi bi-filetype-svg"></i></button>
@@ -1438,9 +1942,60 @@
             </div>
 
           </div>
-        </div>
+        </section>
 
       </div>
+
+    <!-- Status Bar Desktop (Fase A — d-none d-lg-flex: visível APENAS ≥ 992px) -->
+    <footer class="sb-bar d-none d-lg-flex mt-2" id="sb-desktop-bar" aria-label="Barra de status e ações desktop" role="contentinfo">
+      <!-- Tamanho da etiqueta (clique = alterar) -->
+      <button type="button" class="sb-chip" id="sb-tamanho" title="Tamanho da etiqueta — clique para alterar">
+        <i class="fas fa-ruler-combined text-info"></i>
+        <span class="sb-chip-label">Tam:</span>
+        <span class="sb-chip-val" id="sb-tamanho-val">100 × 50 mm</span>
+      </button>
+      <span class="sb-sep"></span>
+      <!-- Orientação (clique = alternar) -->
+      <button type="button" class="sb-chip" id="sb-rot" title="Orientação — clique para alternar (Horizontal / Vertical / invertidas)">
+        <i class="fas fa-arrows-alt-h text-warning"></i>
+        <span class="sb-chip-val" id="sb-rot-val">Horizontal</span>
+      </button>
+      <span class="sb-sep"></span>
+      <!-- Elementos no canvas -->
+      <span class="sb-chip" id="sb-elem" title="Quantidade de elementos no canvas">
+        <i class="bi bi-layers text-primary"></i>
+        <span class="sb-chip-label">Elem:</span>
+        <span class="sb-chip-val" id="sb-elem-val">0</span>
+      </span>
+      <span class="sb-sep"></span>
+      <!-- Zoom: botões funcionais -->
+      <span class="sb-chip" id="sb-zoom" title="Zoom do canvas">
+        <button type="button" class="sb-zoom-btn" id="sb-zoom-out" title="Diminuir zoom" aria-label="Diminuir zoom"><i class="fas fa-magnifying-glass-minus text-danger"></i></button>
+        <span class="sb-chip-val" id="sb-zoom-val">100%</span>
+        <button type="button" class="sb-zoom-btn" id="sb-zoom-in" title="Aumentar zoom" aria-label="Aumentar zoom"><i class="fas fa-magnifying-glass-plus text-success"></i></button>
+      </span>
+      <span class="sb-sep"></span>
+      <!-- IP da impressora (clique = configurar) -->
+      <button type="button" class="sb-chip" id="sb-ip" title="IP da impressora — clique para configurar">
+        <i class="fas fa-network-wired text-danger"></i>
+        <span class="sb-chip-label">IP:</span>
+        <span class="sb-chip-val" id="sb-ip-val">pendente</span>
+      </button>
+      <span class="sb-sep"></span>
+      <!-- DPI (clique = alterar densidade) -->
+      <button type="button" class="sb-chip" id="sb-dpi" title="Resolução da impressora — clique para alterar (203 / 300 / 600 DPI)">
+        <i class="fas fa-crosshairs text-success"></i>
+        <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
+      </button>
+      <!-- Alternância de painéis Estúdio/ZPL/Elementos + Imprimir (clone da bottom bar mobile) -->
+      <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Alternar painéis do Studio e imprimir">
+        <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estúdio (canvas)"><i class="bi bi-eye text-primary" aria-hidden="true"></i></button>
+        <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (código)"><i class="bi bi-code-square text-info" aria-hidden="true"></i></button>
+        <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;"><i class="bi bi-list-ul text-success" aria-hidden="true"></i><span class="badge-cont" id="sb-el-badge">0</span></button>
+        <span class="sb-sep"></span>
+        <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta"><i class="fas fa-print text-success" aria-hidden="true"></i></button>
+      </div>
+    </footer>
 
   </main>
 
@@ -1734,6 +2289,43 @@
     </div>
   </div>
 
+  <!-- Modal Modelos Prontos (5 layouts para cada tamanho) -->
+  <div class="modal fade" id="modal-modelos-prontos" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalModelosProntosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title fs-6 fw-bold" id="modalModelosProntosLabel"><i class="fas fa-table-cells text-primary me-2"></i> Modelos Prontos</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body py-3">
+          <span class="small fw-bold text-secondary d-block mb-2">Tamanho da etiqueta:</span>
+          <div class="d-flex flex-wrap gap-2 mb-3" id="modelos-tamanhos"></div>
+          <span class="small fw-bold text-secondary d-block mb-2">Modelo:</span>
+          <div class="d-grid gap-2" id="modelos-lista"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Enviar ZPL bruto (impressora cadastrada vs range da rede) -->
+  <div class="modal fade" id="modal-print-zpl" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalPrintZplLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title fs-6 fw-bold" id="modalPrintZplLabel"><i class="fas fa-paper-plane text-primary me-2"></i> Enviar ZPL para onde?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body py-3">
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center gap-2" id="btn-zpl-print-direto"><i class="fas fa-print"></i> Impressora cadastrada (<span id="zpl-print-ip">—</span>)</button>
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2" id="btn-zpl-print-range"><i class="fas fa-network-wired"></i> Range da rede — procurar impressoras e enviar</button>
+          </div>
+          <p class="small text-muted mt-3 mb-0">O conteúdo atual do campo ZPL é enviado exatamente como digitado (sem injetar cópias ^PQ).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Salvar / Exportar Modelos (.BIN) — movido do painel esquerdo (IDs preservados) -->
   <div class="modal fade" id="modal-templates" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalTemplatesLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -2013,15 +2605,157 @@
   </div>
 
   <!-- Footer (aligned to container) -->
-  <footer class="container mt-auto mb-3">
+  <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.9</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.10</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
     </div>
   </footer>
+
+  <!-- Footer 2: páginas legais/institucionais (abrem em modal, mesmo padrão da Ajuda) -->
+  <footer class="container mt-0 mb-3" id="footer-legal" aria-label="Páginas legais e institucionais">
+    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
+      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2" role="group" aria-label="Links para as páginas legais">
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="sobre" data-titulo="Sobre o CanalQb Etiquetas Zebra">Sobre</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="contato" data-titulo="Fale com o CanalQb — Contato Direto">Contato</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-privacidade" data-titulo="Política de Privacidade">Privacidade</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-cookies" data-titulo="Política de Cookies">Cookies</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="termos-de-servico" data-titulo="Termos de Serviço">Termos</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="protecao-menores" data-titulo="Proteção de Menores — Lei Felca nº 15.211/2025">Menores (Felca)</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="seus-direitos-lgpd-dsa" data-titulo="Seus Direitos — LGPD e DSA">Seus Direitos</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="solicitacao-exclusao-dados" data-titulo="Solicitação de Exclusão de Dados">Excluir Dados</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="declaracao-acessibilidade" data-titulo="Declaração de Acessibilidade">Acessibilidade</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="disclaimer" data-titulo="Disclaimer / Isenção de Responsabilidade">Disclaimer</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bottom Navigation Bar (Apenas Mobile - Ergonomia do Polegar) -->
+  <nav class="mobile-bottom-nav d-lg-none" aria-label="Navegação rápida do aplicativo">
+    <button type="button" class="mobile-bottom-item" id="bottom-btn-ferramentas" aria-label="Abrir Ferramentas">
+      <i class="fas fa-shapes fs-5"></i>
+      <span>Ferramentas</span>
+    </button>
+    <button type="button" class="mobile-bottom-item mobile-bottom-fab" id="bottom-btn-imprimir" aria-label="Imprimir etiqueta">
+      <div class="mobile-fab-circle">
+        <i class="fas fa-print"></i>
+      </div>
+      <span class="mt-1">Imprimir</span>
+    </button>
+    <button type="button" class="mobile-bottom-item" id="bottom-btn-estudio" aria-label="Abrir Studio Visual">
+      <i class="bi bi-eye fs-5"></i>
+      <span>Estúdio</span>
+    </button>
+    <button type="button" class="mobile-bottom-item" id="bottom-btn-zpl" aria-label="Ver Código ZPL">
+      <i class="bi bi-code-square fs-5"></i>
+      <span>ZPL</span>
+    </button>
+    <button type="button" class="mobile-bottom-item" id="bottom-btn-elementos" aria-label="Elementos da etiqueta">
+      <span class="icone-aba position-relative d-inline-flex">
+        <i class="bi bi-layers fs-5"></i>
+        <span class="badge-cont" id="bottom-el-count">0</span>
+      </span>
+      <span>Elementos</span>
+    </button>
+  </nav>
+
+  <!-- Offcanvas Navigation Menu (Bootstrap 5 - Apenas Mobile) -->
+  <div class="offcanvas offcanvas-end mobile-offcanvas-drawer" tabindex="-1" id="mobileNavOffcanvas" aria-labelledby="mobileNavOffcanvasLabel">
+    <div class="offcanvas-header border-bottom py-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="rounded-3 bg-primary text-white p-2 d-inline-flex align-items-center justify-content-center" style="width:34px; height:34px;">
+          <i class="bi bi-printer-fill fs-6"></i>
+        </span>
+        <h2 class="offcanvas-title h6 fw-bold mb-0" id="mobileNavOffcanvasLabel">Menu &amp; Ferramentas</h2>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
+    </div>
+    <div class="offcanvas-body p-3">
+      <!-- Gestão de Etiquetas e Dados -->
+      <div class="mb-4">
+        <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Etiquetas &amp; Lotes</span>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-danger btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-novo" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-file-circle-plus me-2 text-danger"></i> Nova Etiqueta em Branco</span>
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-carregar" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-folder-open me-2 text-primary"></i> Carregar Modelo (.bin)</span>
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-salvar" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-floppy-disk me-2 text-primary"></i> Salvar Modelo Atual</span>
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-lote" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-layer-group me-2 text-primary"></i> Geração em Lote</span>
+          </button>
+          <button type="button" class="btn btn-outline-info btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-importar" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-file-import me-2 text-info"></i> Importar Dados (Excel, CSV)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Impressora & Conectividade -->
+      <div class="mb-4">
+        <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Impressora Zebra</span>
+        <div class="card p-2 bg-light-subtle border mb-2">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small fw-semibold">Endereço IP:</span>
+            <span class="badge bg-secondary" id="nav-printer-ip">pendente</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold">Resolução:</span>
+            <span class="badge bg-primary-subtle text-primary" id="nav-printer-dpi">203 DPI</span>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-config-ip" data-bs-dismiss="offcanvas">
+              <i class="fas fa-network-wired me-1"></i> Configurar IP
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
+              <i class="fas fa-sliders-h me-1"></i> Calibrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações de Impressão -->
+      <div class="mb-4">
+        <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Ações de Impressão</span>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-success py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="nav-btn-imprimir" data-bs-dismiss="offcanvas">
+            <i class="fas fa-print"></i> Imprimir Etiqueta
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-preview" data-bs-dismiss="offcanvas">
+            <i class="bi bi-eye"></i> Pré-visualizar Impressão
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-imgprint" data-bs-dismiss="offcanvas">
+            <i class="bi bi-image"></i> Imprimir como Imagem (^GF)
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-copias" data-bs-dismiss="offcanvas">
+            <i class="fas fa-copy"></i> Imprimir com Cópias (^PQ)
+          </button>
+        </div>
+      </div>
+
+      <!-- Configurações e Tema -->
+      <div class="pt-2 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="small fw-semibold">Modo Visual:</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" id="nav-btn-tema">
+            <i class="bi bi-moon-stars" id="nav-icon-tema"></i>
+            <span id="nav-tema-text">Tema</span>
+          </button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" id="nav-btn-ajuda" data-bs-dismiss="offcanvas">
+            <i class="fas fa-circle-question me-1"></i> Central de Ajuda (F1)
+          </button>
+          <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="small text-secondary text-decoration-none">canalqb.com.br</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Bootstrap Toast Notification -->
   <div id="status-toast" class="toast align-items-center text-bg-dark border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
@@ -2089,15 +2823,12 @@
       "100x150": { w: 800, h: 1200, mmW: 100, mmH: 150 }
     };
 
-    var ROT_SEQ = [0, 90, 270]; /* 180 removido: no editor a etiqueta fica idêntica e só a impressão sairia de cabeça para baixo — o projeto imprime sempre a 0° em relação ao desenho */
+    var ROT_SEQ = [0, 180, 90, 270];
     var rotAtual = 0;
-    /* Rótulo honesto das 4 orientações: o botão cicla 0→90→180→270 e os
-       textos "Horizontal"/"Vertical" sozinhos escondiam o 180°/270°
-       (mesma cara na tela, saída física da impressora rotacionada). */
     function rotRotulo() {
       if (rotAtual === 90) return "Vertical";
-      if (rotAtual === 180) return "Horizontal (180°)";
-      if (rotAtual === 270) return "Vertical (270°)";
+      if (rotAtual === 180) return "Horizontal\nInvertida";
+      if (rotAtual === 270) return "Vertical\nInvertida";
       return "Horizontal";
     }
     var scaleZoom = 1.0;
@@ -2260,7 +2991,7 @@
        seção (acordeão pelos próprios toggles). Fecha por: backdrop, Esc ou ao
        inserir um elemento da paleta — liberando a tela para o canvas. */
     (function ligarMenuRibbonsMobile() {
-      var btnMobile = $("btn-ribbons-mobile");
+      var btnMobile = $("bottom-btn-ferramentas");
       var backdrop = $("ribbons-backdrop");
       if (!ribbonsBar || !btnMobile || !backdrop) return;
       function abrirMenuRibbons(open) {
@@ -2290,28 +3021,6 @@
       });
     })();
 
-    /* Mobile: botões de ação rápida ao lado de Ferramentas — reaproveitam os
-       mesmos fluxos do desktop (Gerar Lote, Importar Dados, Imprimir). */
-    (function () {
-      function encaminhar(idBotao, idAlvo) {
-        var b = $(idBotao);
-        var alvo = $(idAlvo);
-        if (b && alvo) b.addEventListener("click", function () { alvo.click(); });
-      }
-      encaminhar("btn-mobile-lote", "btn-batch-special-generate");
-      encaminhar("btn-mobile-importar", "btn-import-dados");
-      encaminhar("btn-mobile-imprimir", "btn-imprimir");
-      encaminhar("btn-mobile-novo", "btn-novo-etiqueta");
-      encaminhar("btn-mobile-salvar", "btn-export-modelo-atual");
-      (function () {
-        var b = $("btn-mobile-carregar");
-        var alvo = $("input-import-bin");
-        if (b && alvo) b.addEventListener("click", function () { alvo.click(); });
-      })();
-      var bl = $("btn-mobile-salvar-lote");
-      if (bl) bl.addEventListener("click", salvarLoteBin);
-    })();
-
     /* ---------------- IP & Protocol Management & Modal ---------------- */
     var CHAVE_IP = "etiquetasZebra.printerIp";
     var CHAVE_PROTO = "etiquetasZebra.printerProtocol";
@@ -2336,6 +3045,7 @@
       headerVal.style.fontSize = "0.78rem";
       if (ipIcon) ipIcon.style.color = savedIp ? "#198754" : "#dc3545";
       if (typeof verificarImpressoraIp === "function") verificarImpressoraIp();
+      if (typeof syncMobileState === "function") syncMobileState();
     }
 
     function abrirModalIp() {
@@ -2690,8 +3400,20 @@
       return el && el.cheio ? "#FFFFFF" : "#000000";
     }
 
-    /* ---------------- Gerador de Preset Automático ---------------- */
+    /* ---------------- Modelos Prontos (5 layouts por tamanho, escala proporcional) ---------------- */
     function gerarPresetLayout() {
+      montarModeloPreset("completo");
+    }
+
+    var MODELOS_PRESET = [
+      { id: "completo",   nome: "Completo QR",   desc: "Título, nome + QR Code ao lado e série no rodapé" },
+      { id: "expedicao",  nome: "Expedição",     desc: "Nome grande, série legível e código de barras na base" },
+      { id: "qr-central", nome: "QR Central",    desc: "QR Code destacado no centro com nome abaixo" },
+      { id: "produto",    nome: "Produto",       desc: "Título + nome + série (sem QR Code)" },
+      { id: "serial",     nome: "Serial Grande", desc: "Série em corpo grande com QR compacto no canto" }
+    ];
+
+    function montarModeloPreset(modeloId) {
       var nome = ($("nome") ? $("nome").value.trim() : "") || "Impressora";
       var qrVal = ($("qrcode") ? $("qrcode").value.trim() : "") || "https://canalqb.com.br";
       var serie = ($("serie") ? $("serie").value.trim() : "") || "SN-000123";
@@ -2705,83 +3427,138 @@
       var esp = Math.max(2, Math.round(H * 0.008));
 
       elements = [];
-
       var disponivelW = W - 2 * m;
 
-      var y = m;
-      // Subtítulo
-      if (sub) {
-        var fontSub = ajustarFonteParaCaber(sub.toUpperCase(), Math.round(H * 0.08), disponivelW);
-        elements.push({
-          id: "el_sub",
-          tipo: "texto",
-          texto: sub.toUpperCase(),
-          x: m,
-          y: y,
-          fonte: fontSub,
-          classe: "sub"
-        });
-        y += fontSub + gap;
+      if (modeloId === "expedicao") {
+        var yExp = m;
+        if (sub) {
+          var fSubExp = ajustarFonteParaCaber(sub.toUpperCase(), Math.round(H * 0.09), disponivelW);
+          elements.push({ id: "el_sub", tipo: "texto", texto: sub.toUpperCase(), x: m, y: yExp, fonte: fSubExp, classe: "sub" });
+          yExp += fSubExp + gap;
+        }
+        var fNomeExp = ajustarFonteParaCaber(nome, Math.min(Math.round(H * 0.24), 100), disponivelW);
+        elements.push({ id: "el_nome", tipo: "texto", texto: nome, x: m, y: yExp + Math.round(gap * 1.5), fonte: fNomeExp, classe: "nome" });
+        var bcH = Math.max(30, Math.round(H * 0.16));
+        var bcW = Math.min(Math.round(disponivelW * 0.8), 420);
+        var bcY = H - m - bcH;
+        var fSerieExp = Math.round(H * 0.08);
+        elements.push({ id: "el_serie", tipo: "texto", texto: serie, x: m, y: bcY - fSerieExp - Math.round(gap / 2), fonte: fSerieExp, classe: "serie" });
+        elements.push({ id: "el_bc", tipo: "barcode", texto: serie, x: Math.round((W - bcW) / 2), y: bcY, w: bcW, h: bcH });
+      } else if (modeloId === "qr-central") {
+        var yQr = m;
+        if (sub) {
+          var fSubQr = ajustarFonteParaCaber(sub.toUpperCase(), Math.round(H * 0.08), disponivelW);
+          elements.push({ id: "el_sub", tipo: "texto", texto: sub.toUpperCase(), x: m, y: yQr, fonte: fSubQr, classe: "sub" });
+          yQr += fSubQr + gap;
+        }
+        var fNomeQr = ajustarFonteParaCaber(nome, Math.round(H * 0.12), disponivelW);
+        var qrSide = Math.max(40, Math.min(disponivelW, H - yQr - fNomeQr - 2 * gap - m));
+        elements.push({ id: "el_qr", tipo: "qr", texto: qrVal, x: Math.round((W - qrSide) / 2), y: yQr, w: qrSide, h: qrSide });
+        elements.push({ id: "el_nome", tipo: "texto", texto: nome, x: m, y: yQr + qrSide + gap, fonte: fNomeQr, classe: "nome" });
+        var fSerieQr = Math.round(H * 0.08);
+        elements.push({ id: "el_serie", tipo: "texto", texto: serie, x: m, y: H - m - fSerieQr, fonte: fSerieQr, classe: "serie" });
+      } else if (modeloId === "produto") {
+        var yProd = m;
+        if (sub) {
+          var fSubP = ajustarFonteParaCaber(sub.toUpperCase(), Math.round(H * 0.1), disponivelW);
+          elements.push({ id: "el_sub", tipo: "texto", texto: sub.toUpperCase(), x: m, y: yProd, fonte: fSubP, classe: "sub" });
+          yProd += fSubP + gap;
+        }
+        var fSerieP = ajustarFonteParaCaber(serie, Math.round(H * 0.12), disponivelW);
+        var fNomeP = ajustarFonteParaCaber(nome, Math.min(Math.round(H * 0.28), 110), disponivelW);
+        var nomeYP = yProd + Math.round((H - yProd - m - fSerieP - gap - fNomeP) / 2);
+        elements.push({ id: "el_nome", tipo: "texto", texto: nome, x: m, y: Math.max(yProd, nomeYP), fonte: fNomeP, classe: "nome" });
+        elements.push({ id: "el_serie", tipo: "texto", texto: serie, x: m, y: H - m - fSerieP, fonte: fSerieP, classe: "serie" });
+      } else if (modeloId === "serial") {
+        var fSubS = ajustarFonteParaCaber(sub.toUpperCase(), Math.round(H * 0.09), disponivelW);
+        if (sub) elements.push({ id: "el_sub", tipo: "texto", texto: sub.toUpperCase(), x: m, y: m, fonte: fSubS, classe: "sub" });
+        var fSerieS = ajustarFonteParaCaber(serie, Math.min(Math.round(H * 0.34), 140), disponivelW);
+        elements.push({ id: "el_serie", tipo: "texto", texto: serie, x: m, y: Math.round((H - fSerieS) / 2), fonte: fSerieS, classe: "serie" });
+        var qrSideS = Math.min(Math.round(W * 0.2), Math.round(H * 0.3), 120);
+        elements.push({ id: "el_qr", tipo: "qr", texto: qrVal, x: W - m - qrSideS, y: H - m - qrSideS, w: qrSideS, h: qrSideS });
+      } else {
+        var y = m;
+        if (sub) {
+          var fontSub = ajustarFonteParaCaber(sub.toUpperCase(), Math.round(H * 0.08), disponivelW);
+          elements.push({
+            id: "el_sub",
+            tipo: "texto",
+            texto: sub.toUpperCase(),
+            x: m,
+            y: y,
+            fonte: fontSub,
+            classe: "sub"
+          });
+          y += fontSub + gap;
+        }
+
+        var fontSerieDesejada = Math.round(H * 0.08);
+        var fontSerie = serie ? ajustarFonteParaCaber("" + serie, fontSerieDesejada, disponivelW) : fontSerieDesejada;
+        var serieY = H - m - fontSerie;
+
+        if (serie) {
+          elements.push({
+            id: "el_serie",
+            tipo: "texto",
+            texto: "" + serie,
+            x: m,
+            y: serieY,
+            fonte: fontSerie,
+            classe: "serie"
+          });
+        }
+
+        var corpoH = serie ? (serieY - gap - y) : (H - m - y);
+        var qrSize = qrVal ? Math.min(Math.round(W * 0.35), Math.max(40, corpoH), disponivelW) : 0;
+
+        var lado = qrVal && (disponivelW >= qrSize + 120);
+
+        var nomeW = lado ? (disponivelW - qrSize - gap) : disponivelW;
+        var fontNomeDesejada = Math.min(Math.round(H * 0.14), 70);
+        var fontNome = nome ? ajustarFonteParaCaber(nome, fontNomeDesejada, nomeW) : fontNomeDesejada;
+
+        if (nome) {
+          elements.push({
+            id: "el_nome",
+            tipo: "texto",
+            texto: nome,
+            x: m,
+            y: y,
+            w: nomeW,
+            fonte: fontNome,
+            classe: "nome"
+          });
+        }
+
+        if (qrVal) {
+          var qrX = lado ? (W - m - qrSize) : Math.round(m + (disponivelW - qrSize) / 2);
+          var qrY = lado ? y : Math.round(y + (corpoH - qrSize) / 2);
+          elements.push({
+            id: "el_qr",
+            tipo: "qr",
+            texto: qrVal,
+            x: qrX,
+            y: qrY,
+            w: qrSize,
+            h: qrSize
+          });
+        }
       }
-
-      // Rodapé: Série
-      var fontSerieDesejada = Math.round(H * 0.08);
-      var fontSerie = serie ? ajustarFonteParaCaber("" + serie, fontSerieDesejada, disponivelW) : fontSerieDesejada;
-      var serieY = H - m - fontSerie;
-
-      if (serie) {
-        elements.push({
-          id: "el_serie",
-          tipo: "texto",
-          texto: "" + serie,
-          x: m,
-          y: serieY,
-          fonte: fontSerie,
-          classe: "serie"
-        });
-      }
-
-      // Corpo Central: Nome + QR Code
-      var corpoH = serie ? (serieY - gap - y) : (H - m - y);
-      var qrSize = qrVal ? Math.min(Math.round(W * 0.35), Math.max(40, corpoH), disponivelW) : 0;
-
-      var lado = qrVal && (disponivelW >= qrSize + 120);
-
-      var nomeW = lado ? (disponivelW - qrSize - gap) : disponivelW;
-      var fontNomeDesejada = Math.min(Math.round(H * 0.14), 70);
-      var fontNome = nome ? ajustarFonteParaCaber(nome, fontNomeDesejada, nomeW) : fontNomeDesejada;
-
-      if (nome) {
-        elements.push({
-          id: "el_nome",
-          tipo: "texto",
-          texto: nome,
-          x: m,
-          y: y,
-          w: nomeW,
-          fonte: fontNome,
-          classe: "nome"
-        });
-      }
-
-      if (qrVal) {
-        var qrX = lado ? (W - m - qrSize) : Math.round(m + (disponivelW - qrSize) / 2);
-        var qrY = lado ? y : Math.round(y + (corpoH - qrSize) / 2);
-        elements.push({
-          id: "el_qr",
-          tipo: "qr",
-          texto: qrVal,
-          x: qrX,
-          y: qrY,
-          w: qrSize,
-          h: qrSize
-        });
-      }
-
-      /* Moldura inicial removida por padrão (só inclui se o usuário adicionar via paleta) */
 
       selectedElId = null;
       renderStudio();
+    }
+
+    function aplicarModeloPreset(sizeKey, modeloId) {
+      tamAtualKey = SIZES[sizeKey] ? sizeKey : "100x50";
+      if ($("tamanho")) $("tamanho").value = tamAtualKey;
+      autoFitCanvas();
+      montarModeloPreset(modeloId);
+      updateTamanhoLabel();
+      if (typeof syncMobileState === "function") syncMobileState();
+      var modelo = MODELOS_PRESET.find(function (m) { return m.id === modeloId; });
+      var sz = SIZES[tamAtualKey];
+      notify("Modelo \"" + (modelo ? modelo.nome : modeloId) + "\" aplicado (" + sz.mmW + " × " + sz.mmH + " mm).", "success");
     }
 
     /* ---------------- Atualizar Texto dos Campos sem Mover Elementos ---------------- */
@@ -3014,7 +3791,7 @@
       if ($("rot-label")) {
         $("rot-label").textContent = rotRotulo();
       }
-      $("el-count").textContent = elements.length;
+      atualizarContagemElementos(elements.length);
 
       /* Render Margin Guide Box overlay if margins are set */
       if (margens.top > 0 || margens.bottom > 0 || margens.left > 0 || margens.right > 0) {
@@ -3610,6 +4387,7 @@
       renderBatchSpecialTreeUI();
       scheduleSaveToSession();
       updateTamanhoLabel();
+      if (typeof syncMobileState === "function") syncMobileState();
     }
 
     // Coalesce de renderização do preview via requestAnimationFrame:
@@ -3918,11 +4696,7 @@
       selectedElIds = id ? [id] : [];
       selectedElId = id || null;
       renderStudio();
-      var tabCanvas = document.getElementById("tab-canvas-link");
-      if(tabCanvas && typeof bootstrap !== "undefined" && bootstrap.Tab) {
-         var tab = new bootstrap.Tab(tabCanvas);
-         tab.show();
-      }
+      ativarAbaStudio("tab-canvas");
     }
 
     /* ---------------- Copiar / Recortar / Colar ---------------- */
@@ -4453,15 +5227,6 @@
         tbody.appendChild(tr);
       });
     }
-    /* Ao abrir a aba Elementos, a tabela é re-renderizada na hora — nunca
-       depende de um renderStudio anterior (que pode ter sido interrompido). */
-    (function () {
-      var linkLista = document.getElementById("tab-list-link");
-      if (linkLista) linkLista.addEventListener("shown.bs.tab", function () {
-        try { renderElementsTable(); } catch (e) { console.error("renderElementsTable:", e); }
-      });
-    })();
-
     /* ---------------- Adicionar Elementos da Paleta ---------------- */
     /* ---------------- Inserção sem sobreposição ----------------
        Nenhum elemento novo nasce sobreposto a outro: se a posição de inserção
@@ -7448,10 +8213,40 @@
 
         loteEspecialAtivo = false;
         $("zpl").value = r.zpl;
-        var zplTabBtn = $("tab-zpl-link");
-        if (zplTabBtn) { new bootstrap.Tab(zplTabBtn).show(); }
+        mostrarAbaZPL();
         atualizarBarraStatusLote();
         notify(r.total + " etiquetas geradas (uma por linha)." + aviso + " \"Imprimir\" também envia todas de uma vez.", "success");
+      });
+    }
+
+    function ativarAbaStudio(paneId) {
+      ["tab-canvas", "tab-zpl", "tab-list"].forEach(function (id) {
+        var pane = $(id);
+        if (pane) {
+          pane.classList.toggle("active", id === paneId);
+          pane.classList.toggle("show", id === paneId);
+        }
+      });
+      var mapaBottom = { "tab-canvas": "bottom-btn-estudio", "tab-zpl": "bottom-btn-zpl", "tab-list": "bottom-btn-elementos" };
+      Object.keys(mapaBottom).forEach(function (pid) {
+        var btn = $(mapaBottom[pid]);
+        if (btn) btn.classList.toggle("aba-ativa", pid === paneId);
+      });
+      var mapaBottomDesk = { "tab-canvas": "sb-btm-estudio", "tab-zpl": "sb-btm-zpl", "tab-list": "sb-btm-elem" };
+      Object.keys(mapaBottomDesk).forEach(function (pid) {
+        var btn = $(mapaBottomDesk[pid]);
+        if (btn) btn.classList.toggle("aba-ativa", pid === paneId);
+      });
+      if (paneId === "tab-list") {
+        try { renderElementsTable(); } catch (e) {}
+      }
+    }
+
+    function mostrarAbaZPL() { ativarAbaStudio("tab-zpl"); }
+
+    function atualizarContagemElementos(n) {
+      [$("bottom-el-count")].forEach(function (el) {
+        if (el) el.textContent = n;
       });
     }
 
@@ -7497,11 +8292,7 @@
             if (snZpl) {
               snZpl = snZpl.replace(/\^XZ\s*$/, "^PQ" + snCount + "\n^XZ");
               $("zpl").value = snZpl;
-              var zplTabBtn2 = $("tab-zpl-link");
-              if (zplTabBtn2) {
-                var tab2 = new bootstrap.Tab(zplTabBtn2);
-                tab2.show();
-              }
+              mostrarAbaZPL();
               notify("Lote Especial de " + snCount + " etiquetas via serialização nativa ^SN + ^PQ (1 bloco).", "success");
               atualizarBarraStatusLote();
               return;
@@ -7534,11 +8325,7 @@
         var fullBatchCode = batchZPL.join("\n\n");
         $("zpl").value = fullBatchCode;
 
-        var zplTabBtn = $("tab-zpl-link");
-        if (zplTabBtn) {
-          var tab = new bootstrap.Tab(zplTabBtn);
-          tab.show();
-        }
+        mostrarAbaZPL();
 
         notify("Lote Especial de " + stepBindings.length + " etiquetas gerado em ZPL com sucesso!", "success");
         atualizarBarraStatusLote();
@@ -7917,7 +8704,104 @@
     /* Caminho único de impressão da etiqueta atual: pergunta cópias → injeta ^PQ → envia. */
     function solicitarImpressaoComCopias() {
       if (!$("zpl").value) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
-      abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
+      if ($("tab-zpl") && $("tab-zpl").classList.contains("active")) {
+        abrirModalImprimirZPLBruto();
+        return;
+      }
+      var ip = localStorage.getItem(CHAVE_IP);
+      if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+      var qtd = parseInt(localStorage.getItem(CHAVE_ULTIMA_QTD), 10);
+      if (!(qtd >= 1 && qtd <= 999)) qtd = 1;
+      imprimirFTP(qtd);
+    }
+
+    var bsModalPrintZpl = $("modal-print-zpl") ? new bootstrap.Modal($("modal-print-zpl")) : null;
+
+    function abrirModalImprimirZPLBruto() {
+      var ip = localStorage.getItem(CHAVE_IP);
+      if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+      $("zpl-print-ip").textContent = ip;
+      if (bsModalPrintZpl) bsModalPrintZpl.show();
+    }
+
+    function imprimirZPLBruto(usarRange) {
+      var zpl = $("zpl").value;
+      if (!zpl || !zpl.trim()) { notify("Digite ou cole um comando ZPL primeiro.", "danger"); return; }
+      var ip = localStorage.getItem(CHAVE_IP);
+      if (!ip) { abrirModalIp(); return; }
+      if (bsModalPrintZpl) bsModalPrintZpl.hide();
+      if (usarRange) { imprimirZPLRange(zpl); return; }
+      enviarImpressao(ip, zpl);
+    }
+
+    if ($("btn-zpl-print-direto")) {
+      $("btn-zpl-print-direto").addEventListener("click", function () { imprimirZPLBruto(false); });
+    }
+    if ($("btn-zpl-print-range")) {
+      $("btn-zpl-print-range").addEventListener("click", function () { imprimirZPLBruto(true); });
+    }
+
+    var RANGE_SCAN_TTL = 10 * 60 * 1000;
+    var CHAVE_RANGE_SCAN = "etiquetasZebra.rangeScan";
+
+    function obterCacheRange(base) {
+      try {
+        var c = JSON.parse(localStorage.getItem(CHAVE_RANGE_SCAN) || "null");
+        if (c && c.base === base && c.ips && c.ips.length && (Date.now() - c.ts) < RANGE_SCAN_TTL) return c.ips;
+      } catch (e) {}
+      return null;
+    }
+
+    function sondarHost(ip) {
+      return new Promise(function (resolver) {
+        var ctrl = ("AbortController" in window) ? new AbortController() : null;
+        var timer = setTimeout(function () { if (ctrl) ctrl.abort(); resolver(false); }, 1200);
+        fetch("http://" + ip + "/", { mode: "no-cors", signal: ctrl ? ctrl.signal : undefined })
+          .then(function () { clearTimeout(timer); resolver(true); })
+          .catch(function () { clearTimeout(timer); resolver(false); });
+      });
+    }
+
+    function escanearRangeImpressoras(base, aoFinalizar) {
+      var alvos = [];
+      for (var i = 2; i <= 254; i++) alvos.push(base + i);
+      var encontrados = [];
+      var idx = 0;
+      var LOTE = 24;
+      function proximoLote() {
+        if (idx >= alvos.length) return Promise.resolve();
+        var lote = [];
+        for (var k = 0; k < LOTE && idx < alvos.length; k++, idx++) lote.push(alvos[idx]);
+        return Promise.all(lote.map(function (ip) {
+          return sondarHost(ip).then(function (vivo) { if (vivo) encontrados.push(ip); });
+        })).then(proximoLote);
+      }
+      proximoLote().then(function () { aoFinalizar(encontrados.sort()); });
+    }
+
+    function enviarZPLParaLista(ips, zpl) {
+      ips.forEach(function (ip) {
+        fetch("http://" + ip + "/pstprnt", { method: "POST", body: zpl, mode: "no-cors" }).catch(function () {});
+      });
+      notify("Comando ZPL enviado para " + ips.length + " impressora(s): " + ips.join(", ") + ".", "success");
+    }
+
+    function imprimirZPLRange(zpl) {
+      var ip = localStorage.getItem(CHAVE_IP);
+      if (!ip) { abrirModalIp(); return; }
+      var base = ip.replace(/\.\d+$/, ".");
+      var cache = obterCacheRange(base);
+      if (cache) {
+        notify("Reutilizando busca salva da faixa " + base + "2–254 (" + cache.length + " host(s))...", "dark");
+        enviarZPLParaLista(cache, zpl);
+        return;
+      }
+      notify("Procurando impressoras em " + base + "2–254 (varredura paralela, aguarde)...", "dark");
+      escanearRangeImpressoras(base, function (ips) {
+        if (!ips.length) { notify("Nenhuma impressora respondeu na faixa " + base + "2–254.", "warning"); return; }
+        try { localStorage.setItem(CHAVE_RANGE_SCAN, JSON.stringify({ base: base, ts: Date.now(), ips: ips })); } catch (e) {}
+        enviarZPLParaLista(ips, zpl);
+      });
     }
 
     function imprimirFTP(qtd) {
@@ -7950,6 +8834,27 @@
       enviarImpressao(ip, zpl);
     }
 
+    /* ---------------- Rotina de Calibração (submenu Calibrar Impressora) ----------------
+       Estado encenado (staged): nada vai para a impressora até "Calibrar Agora". */
+    var VEL_KEY = "etiquetasZebra.velocidade";
+    var MIDIA_KEY = "etiquetasZebra.tipoMidia";
+    var MODOOP_KEY = "etiquetasZebra.modoOperacional";
+    function velocAtualValida() {
+      var v = parseInt(localStorage.getItem(VEL_KEY) || "6", 10);
+      if (isNaN(v)) v = 6;
+      return Math.max(2, Math.min(14, v));
+    }
+    function getTipoMidia() {
+      var v = localStorage.getItem(MIDIA_KEY);
+      if (v === "C" || v === "N" || v === "M" || v === "F") return v;
+      if (localStorage.getItem("etiquetasZebra.gapMedia") === "off") return "C";
+      return "N";
+    }
+    function getModoOperacional() {
+      var v = localStorage.getItem(MODOOP_KEY) || "";
+      return /^[TPCRLVWD]$/.test(v) ? v : "";
+    }
+
     function calibrarImpressora() {
       var ip = localStorage.getItem(CHAVE_IP);
       if (!ip) {
@@ -7957,8 +8862,18 @@
         notify("Informe o IP da impressora antes de calibrar.", "danger");
         return;
       }
-      var zplCal = "^XA^MCD^XZ";
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var modo = getRibbonMode() === "Y" ? "T" : "D";
+      var escuro = getTonalidade();
+      var midia = getTipoMidia();
+      var modoOp = getModoOperacional();
+      var vel = velocAtualValida();
+      var pw = mmToDots(sz.mmW), ll = mmToDots(sz.mmH);
+      var zplCal = "^XA^MCD^MT" + modo + "^MD" + escuro + "^MN" + midia;
+      if (modoOp) zplCal += "^MM" + modoOp;
+      zplCal += "^PR" + vel + "^PW" + pw + "^LL" + ll + "^XZ";
       enviarImpressao(ip, zplCal);
+      notify("Calibração enviada: ribbon ^MT" + modo + " · tonalidade ^MD" + escuro + " · mídia ^MN" + midia + (modoOp ? " · modo ^MM" + modoOp : "") + " · velocidade ^PR" + vel + " · papel " + sz.mmW + "×" + sz.mmH + " mm (^PW" + pw + "/^LL" + ll + ").", "success");
     }
 
     /* ---------------- Event Listeners Globais ---------------- */
@@ -8025,6 +8940,8 @@
     if ($("tonalidade")) {
       $("tonalidade").addEventListener("input", function () {
         if ($("ton-val")) $("ton-val").textContent = this.value;
+        var dnvTon = document.getElementById("dnv-ton-text");
+        if (dnvTon) dnvTon.textContent = "Tonalidade: " + this.value;
         saveFieldsToSession();
         renderZPL();
       });
@@ -8044,7 +8961,8 @@
       });
     });
 
-    $("btn-imprimir").addEventListener("click", solicitarImpressaoComCopias);
+    var btnImprimirDesk = $("btn-imprimir");
+    if (btnImprimirDesk) btnImprimirDesk.addEventListener("click", solicitarImpressaoComCopias);
 
     /* Toggle: Imprimir como Imagem (^GF) — persistente */
     var btnImgPrint = $("btn-toggle-imgprint");
@@ -8079,6 +8997,7 @@
         btnTema.classList.toggle("icon-btn-off", !escuro);    /* tema claro = preto e branco */
         btnTema.setAttribute("aria-pressed", escuro ? "true" : "false");
       }
+      if (typeof syncMobileState === "function") syncMobileState();
     }
     if (btnTema) {
       btnTema.addEventListener("click", function () {
@@ -8155,6 +9074,7 @@
       serverDotEl.style.boxShadow = (estado === "on") ? "0 0 6px rgba(25,135,84,.8)" : "none";
       var chip = $("print-server-ind");
       if (chip) chip.title = msg;
+      if (typeof syncMobileState === "function") syncMobileState();
     }
     function verificarImpressoraIp() {
       if (!serverDotEl) return;
@@ -8358,6 +9278,74 @@
       notify("Arquivo ZPL baixado.", "success");
     });
 
+    // Carregar ZPL File
+    if ($("btn-carregar-zpl") && $("input-carregar-zpl")) {
+      $("btn-carregar-zpl").addEventListener("click", function () { $("input-carregar-zpl").click(); });
+      $("input-carregar-zpl").addEventListener("change", function () {
+        var arq = this.files && this.files[0];
+        if (!arq) return;
+        var leitor = new FileReader();
+        leitor.onload = function () {
+          $("zpl").value = String(leitor.result || "");
+          $("zpl").dispatchEvent(new Event("input"));
+          notify("Arquivo ZPL carregado: " + arq.name, "success");
+        };
+        leitor.readAsText(arq);
+        this.value = "";
+      });
+    }
+
+    // Modelos Prontos (5 layouts por tamanho)
+    (function () {
+      var modalEl = $("modal-modelos-prontos");
+      if (!modalEl) return;
+      var bsModal = new bootstrap.Modal(modalEl);
+      var tamSelecionado = null;
+
+      function renderTamanhos() {
+        var wrap = $("modelos-tamanhos");
+        wrap.innerHTML = "";
+        Object.keys(SIZES).forEach(function (key) {
+          var sz = SIZES[key];
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn btn-sm " + (key === tamSelecionado ? "btn-primary" : "btn-outline-primary");
+          b.textContent = sz.mmW + " × " + sz.mmH + " mm";
+          b.addEventListener("click", function () { tamSelecionado = key; renderTamanhos(); });
+          wrap.appendChild(b);
+        });
+      }
+
+      function renderModelos() {
+        var wrap = $("modelos-lista");
+        wrap.innerHTML = "";
+        MODELOS_PRESET.forEach(function (modelo) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn btn-outline-secondary btn-sm text-start";
+          b.innerHTML = '<i class="fas fa-wand-magic-sparkles text-primary me-2"></i><strong>' + modelo.nome + '</strong><span class="d-block small text-muted ms-4">' + modelo.desc + '</span>';
+          b.addEventListener("click", function () {
+            bsModal.hide();
+            aplicarModeloPreset(tamSelecionado || tamAtualKey, modelo.id);
+            ativarAbaStudio("tab-canvas");
+          });
+          wrap.appendChild(b);
+        });
+      }
+
+      function abrirModelosProntos() {
+        tamSelecionado = tamAtualKey;
+        renderTamanhos();
+        renderModelos();
+        bsModal.show();
+      }
+
+      var btnMenu = $("dnv-etq-modelos");
+      if (btnMenu) btnMenu.addEventListener("click", abrirModelosProntos);
+      var btnHero = $("mobile-hero-modelos-btn");
+      if (btnHero) btnHero.addEventListener("click", abrirModelosProntos);
+    })();
+
     // Desseleciona elemento ao clicar no fundo do stage
     stageEl.addEventListener("click", function (e) {
       if (e.target === stageEl || e.target === $("preview")) {
@@ -8376,7 +9364,8 @@
     });
 
     /* Calibrar button */
-    $("btn-calibrar").addEventListener("click", calibrarImpressora);
+    var btnCalibrarDesk = $("btn-calibrar");
+    if (btnCalibrarDesk) btnCalibrarDesk.addEventListener("click", calibrarImpressora);
 
     /* Auto-fit canvas to stage */
     function autoFitCanvas() {
@@ -8458,14 +9447,13 @@
     var bsModalCustom = new bootstrap.Modal(modalCustomEl);
 
     function updateTamanhoLabel() {
-      var lbl = $("tamanho-label");
-      if (!lbl) return;
       var sz = SIZES[tamAtualKey];
-      if (sz && sz.mmW) {
-        lbl.textContent = mmParaUnidadeAtual(sz.mmW, unidadeAtual) + " × " + mmParaUnidadeAtual(sz.mmH, unidadeAtual) + " " + unidadeAtual;
-      } else {
-        lbl.textContent = "Selecionar tamanho";
-      }
+      var txt = (sz && sz.mmW)
+        ? mmParaUnidadeAtual(sz.mmW, unidadeAtual) + " × " + mmParaUnidadeAtual(sz.mmH, unidadeAtual) + " " + unidadeAtual
+        : "Selecionar tamanho";
+      [$("tamanho-label"), $("mobile-hero-tamanho-label")].forEach(function (lbl) {
+        if (lbl) lbl.textContent = txt;
+      });
     }
     updateTamanhoLabel();
 
@@ -8693,6 +9681,656 @@
 
     /* Garante réguas APÓS o browser pintar a etiqueta.
        getBoundingClientRect() retorna 0 antes do primeiro paint. */
+    /* ==========================================================================
+       Integração e Sincronização do Layout Mobile (Bootstrap 5)
+       ========================================================================== */
+    function syncMobileState() {
+      // 1. Sync DPI
+      var dpiEl = $("badge-dpi");
+      var mobDpiText = $("mobile-badge-dpi-text");
+      var navDpi = $("nav-printer-dpi");
+      if (dpiEl) {
+        var dpiVal = dpiEl.textContent || "203 DPI";
+        if (mobDpiText) mobDpiText.textContent = dpiVal;
+        if (navDpi) navDpi.textContent = dpiVal;
+      }
+
+      // 2. Sync IP & Connection Status
+      var savedIp = localStorage.getItem("etiquetasZebra.printerIp");
+      var mobIpText = $("mobile-header-ip-text");
+      var navIp = $("nav-printer-ip");
+      var mobDot = $("mobile-print-server-dot");
+      var dskDot = $("print-server-dot");
+
+      var ipVal = savedIp ? savedIp : "pendente";
+      if (mobIpText) mobIpText.textContent = ipVal;
+      if (navIp) navIp.textContent = ipVal;
+
+      if (mobDot && dskDot) {
+        mobDot.style.backgroundColor = dskDot.style.background || (savedIp ? "#198754" : "#6c757d");
+      }
+
+      // 3. Sync Tamanho & Orientação
+      var rotLbl = $("rot-label");
+      var mobRotLbl = $("mobile-hero-rot-label");
+      if (rotLbl && mobRotLbl) mobRotLbl.textContent = rotLbl.textContent;
+
+      // 4. Sync Contagem de Elementos
+      atualizarContagemElementos(typeof elements !== "undefined" ? elements.length : 0);
+
+      // 5. Sync Tema
+      var isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+      var mobThemeIcon = $("icon-tema-mobile");
+      var navThemeIcon = $("nav-icon-tema");
+      var navThemeText = $("nav-tema-text");
+      if (mobThemeIcon) mobThemeIcon.className = isDark ? "bi bi-sun" : "bi bi-moon-stars";
+      if (navThemeIcon) navThemeIcon.className = isDark ? "bi bi-sun" : "bi bi-moon-stars";
+      if (navThemeText) navThemeText.textContent = isDark ? "Tema Claro" : "Tema Escuro";
+    }
+
+    // Call sync on startup
+    syncMobileState();
+
+    // Hook listeners for Mobile Elements
+    var btnTemaMob = $("btn-tema-mobile");
+    if (btnTemaMob) {
+      btnTemaMob.addEventListener("click", function() {
+        var dskBtn = $("btn-tema");
+        if (dskBtn) dskBtn.click();
+        syncMobileState();
+      });
+    }
+
+    var navBtnTema = $("nav-btn-tema");
+    if (navBtnTema) {
+      navBtnTema.addEventListener("click", function() {
+        var dskBtn = $("btn-tema");
+        if (dskBtn) dskBtn.click();
+        syncMobileState();
+      });
+    }
+
+    // Mobile Top IP click -> Configurar IP
+    var mobTopIp = $("mobile-top-ip-badge");
+    if (mobTopIp) {
+      mobTopIp.addEventListener("click", function() {
+        if (typeof abrirModalIp === "function") abrirModalIp();
+      });
+    }
+
+    // Mobile DPI click -> Toggle DPI
+    var mobDpiBtn = $("mobile-badge-dpi");
+    if (mobDpiBtn) {
+      mobDpiBtn.addEventListener("click", function() {
+        var dskDpi = $("badge-dpi");
+        if (dskDpi) dskDpi.click();
+        syncMobileState();
+      });
+    }
+
+    // Mobile Hero Tamanho / Orientação
+    var mobHeroTam = $("mobile-hero-tamanho-btn");
+    if (mobHeroTam) {
+      mobHeroTam.addEventListener("click", function() {
+        var dskTam = $("btn-tamanho");
+        if (dskTam) dskTam.click();
+      });
+    }
+
+    function atualizarRotuloOrientacao() {
+      var txt = (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal";
+      var d = $("rot-label");
+      if (d) d.textContent = txt;
+      var h = $("mobile-hero-rot-label");
+      if (h) h.textContent = txt;
+    }
+
+    var mobHeroRot = $("mobile-hero-rotacao-btn");
+    if (mobHeroRot) {
+      mobHeroRot.addEventListener("click", function() {
+        var dskRot = $("btn-rotacao");
+        if (dskRot) dskRot.click();
+        atualizarRotuloOrientacao();
+      });
+    }
+
+    var btmImp = $("bottom-btn-imprimir");
+    if (btmImp) {
+      btmImp.addEventListener("click", function() {
+        if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias();
+      });
+    }
+
+    var btmZpl = $("bottom-btn-zpl");
+    if (btmZpl) {
+      btmZpl.addEventListener("click", function() {
+        mostrarAbaZPL();
+      });
+    }
+
+    var btmEstudio = $("bottom-btn-estudio");
+    if (btmEstudio) {
+      btmEstudio.addEventListener("click", function() {
+        ativarAbaStudio("tab-canvas");
+      });
+    }
+
+    var btmElem = $("bottom-btn-elementos");
+    if (btmElem) {
+      btmElem.addEventListener("click", function() {
+        ativarAbaStudio("tab-list");
+      });
+    }
+
+    ativarAbaStudio("tab-canvas");
+
+    var navNovo = $("nav-btn-novo");
+    if (navNovo) {
+      navNovo.addEventListener("click", function() {
+        if (!elements.length) { limparEtiqueta(); return; }
+        confirmar("Começar uma etiqueta em branco? O desenho atual não salvo será perdido.", function (ok) {
+          if (ok) limparEtiqueta();
+        });
+      });
+    }
+
+    var navCarregar = $("nav-btn-carregar");
+    if (navCarregar) {
+      navCarregar.addEventListener("click", function() {
+        var modalEl = document.getElementById("modal-templates");
+        if (!modalEl) return;
+        function focarAba() {
+          modalEl.removeEventListener("shown.bs.modal", focarAba);
+          var sel = document.getElementById("tmpl-select");
+          if (sel) sel.focus();
+        }
+        modalEl.addEventListener("shown.bs.modal", focarAba);
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      });
+    }
+
+    var navSalvar = $("nav-btn-salvar");
+    if (navSalvar) {
+      navSalvar.addEventListener("click", function() {
+        var modalEl = document.getElementById("modal-templates");
+        if (!modalEl) return;
+        function focarAba() {
+          modalEl.removeEventListener("shown.bs.modal", focarAba);
+          var inp = document.getElementById("tmpl-name-input");
+          if (inp) { inp.focus(); inp.select(); }
+        }
+        modalEl.addEventListener("shown.bs.modal", focarAba);
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      });
+    }
+
+    var navLote = $("nav-btn-lote");
+    if (navLote) {
+      navLote.addEventListener("click", function() {
+        var m = document.getElementById("modal-batch");
+        if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+    }
+
+    var navImport = $("nav-btn-importar");
+    if (navImport) {
+      navImport.addEventListener("click", function() {
+        var m = document.getElementById("modal-import-dados");
+        if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+    }
+
+    var navConfigIp = $("nav-btn-config-ip");
+    if (navConfigIp) {
+      navConfigIp.addEventListener("click", function() {
+        if (typeof abrirModalIp === "function") abrirModalIp();
+      });
+    }
+
+    var navCalibrar = $("nav-btn-calibrar");
+    if (navCalibrar) {
+      navCalibrar.addEventListener("click", function() {
+        if (typeof calibrarImpressora === "function") calibrarImpressora();
+      });
+    }
+
+    var navImprimir = $("nav-btn-imprimir");
+    if (navImprimir) {
+      navImprimir.addEventListener("click", function() {
+        if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias();
+      });
+    }
+
+    var navPreview = $("nav-btn-preview");
+    if (navPreview) {
+      navPreview.addEventListener("click", function() {
+        if (typeof abrirPreviewImpressao === "function") abrirPreviewImpressao();
+      });
+    }
+
+    var navImgPrint = $("nav-btn-imgprint");
+    if (navImgPrint) {
+      navImgPrint.addEventListener("click", function() {
+        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
+        localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
+        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada (^GF)." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
+      });
+    }
+
+    var navCop = $("nav-btn-copias");
+    if (navCop) {
+      navCop.addEventListener("click", function() {
+        if (!$("zpl").value) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
+        if ($("tab-zpl") && $("tab-zpl").classList.contains("active")) { abrirModalImprimirZPLBruto(); return; }
+        abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
+      });
+    }
+
+    var navAjuda = $("nav-btn-ajuda");
+    if (navAjuda) {
+      navAjuda.addEventListener("click", function() {
+        var btnAj = $("btn-footer-ajuda");
+        if (btnAj) btnAj.click();
+      });
+    }
+
+    /* ================================================================
+       FOOTER 2 — Páginas legais abrem em modal (mesmo padrão da Ajuda).
+       Conteúdo buscado de pages/{pagina}.html com cache em memória;
+       se o fetch falhar (ex.: file://), abre a página em nova aba.
+       ================================================================ */
+    (function () {
+      var cache = {};
+      function abrir(pagina, nome) {
+        var modalEl = document.getElementById("modal-pagina-legal");
+        var corpo = document.getElementById("pagina-legal-conteudo");
+        if (!modalEl || !corpo) return;
+        var titulo = document.getElementById("titulo-pagina-legal");
+        var link = document.getElementById("link-pagina-legal");
+        var url = "pages/" + pagina + ".html";
+        if (titulo) titulo.textContent = nome || pagina;
+        if (link) link.setAttribute("href", url);
+        var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        if (cache[pagina] !== undefined) {
+          corpo.innerHTML = cache[pagina];
+          bsModal.show();
+          return;
+        }
+        corpo.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando…</span></div><p class="mt-2 small text-muted mb-0">Carregando página…</p></div>';
+        bsModal.show();
+        fetch(url).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.text();
+        }).then(function (html) {
+          var doc = new DOMParser().parseFromString(html, "text/html");
+          var m = doc.querySelector("main");
+          cache[pagina] = m ? m.innerHTML : html;
+          corpo.innerHTML = cache[pagina];
+        }).catch(function () {
+          corpo.innerHTML = '<div class="alert alert-warning mb-0" role="alert">Não foi possível carregar a página dentro do aplicativo — ela foi aberta em uma nova aba.</div>';
+          window.open(url, "_blank", "noopener");
+        });
+      }
+      document.querySelectorAll(".btn-pagina-legal").forEach(function (b) {
+        b.addEventListener("click", function () {
+          abrir(this.getAttribute("data-pagina"), this.getAttribute("data-titulo") || this.textContent.trim());
+        });
+      });
+    })();
+
+    /* ================================================================
+       FASE A — Navbar Desktop: Dropdown Toggle + Handlers dnv-*
+       Todos os botoes chamam funcoes diretas (padrao 1.67).
+       Nenhum proxy .click() em botao escondido.
+       ================================================================ */
+    (function () {
+      /* "calibrar" entra no MENUS só para os loops de fechamento (dnv-btn-calibrar não existe,
+         então o registro de toggle do topo é ignorado — apenas o submenu fecha junto). */
+      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "calibrar"];
+      MENUS.forEach(function (nome) {
+        var btn = document.getElementById("dnv-btn-" + nome);
+        var dd  = document.getElementById("dnv-dd-" + nome);
+        if (!btn || !dd) return;
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var isOpen = dd.classList.contains("dnv-open");
+          MENUS.forEach(function (n) {
+            var b2 = document.getElementById("dnv-btn-" + n);
+            var d2 = document.getElementById("dnv-dd-" + n);
+            if (b2) { b2.classList.remove("dnv-open"); b2.setAttribute("aria-expanded", "false"); }
+            if (d2) d2.classList.remove("dnv-open");
+          });
+          if (!isOpen) {
+            dd.classList.add("dnv-open");
+            btn.classList.add("dnv-open");
+            btn.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+      /* Submenu "Calibrar Impressora" — abre para o lado, mantém o menu pai aberto */
+      var subCalBtn = document.getElementById("dnv-imp-calibrar");
+      var subCalDd  = document.getElementById("dnv-dd-calibrar");
+      if (subCalBtn && subCalDd) {
+        subCalBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var abrirSub = !subCalDd.classList.contains("dnv-open");
+          subCalDd.classList.toggle("dnv-open", abrirSub);
+          subCalBtn.classList.toggle("dnv-open", abrirSub);
+          subCalBtn.setAttribute("aria-expanded", String(abrirSub));
+          if (abrirSub) atualizarTextosCalibrarSub();
+        });
+      }
+
+      document.addEventListener("click", function (e) {
+        /* Cliques dentro da própria navbar (menus, submenu, sliders, combos nativos
+           do <select> e listagem de tamanhos) nunca fecham os menus abertos. */
+        if (e.target && e.target.closest && e.target.closest("#dnv-navbar-desktop")) return;
+        MENUS.forEach(function (n) {
+          var b = document.getElementById("dnv-btn-" + n);
+          var d = document.getElementById("dnv-dd-" + n);
+          if (b) { b.classList.remove("dnv-open"); b.setAttribute("aria-expanded", "false"); }
+          if (d) d.classList.remove("dnv-open");
+        });
+      });
+
+      function dnvAcao(id, fn) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("click", function (e) {
+          e.stopPropagation();
+          MENUS.forEach(function (n) {
+            var b = document.getElementById("dnv-btn-" + n);
+            var d = document.getElementById("dnv-dd-" + n);
+            if (b) { b.classList.remove("dnv-open"); b.setAttribute("aria-expanded", "false"); }
+            if (d) d.classList.remove("dnv-open");
+          });
+          fn();
+        });
+      }
+
+      /* Arquivo */
+      dnvAcao("dnv-file-novo", function () {
+        if (!elements.length) { limparEtiqueta(); return; }
+        confirmar("Comecar uma etiqueta em branco? O desenho atual nao salvo sera perdido.", function (ok) { if (ok) limparEtiqueta(); });
+      });
+      dnvAcao("dnv-file-carregar", function () {
+        var m = document.getElementById("modal-templates");
+        if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+      dnvAcao("dnv-file-salvar", function () {
+        var m = document.getElementById("modal-templates");
+        if (!m) return;
+        function focarSalvar() { m.removeEventListener("shown.bs.modal", focarSalvar); var inp = document.getElementById("tmpl-name-input"); if (inp) { inp.focus(); inp.select(); } }
+        m.addEventListener("shown.bs.modal", focarSalvar);
+        bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+      dnvAcao("dnv-file-lote", function () {
+        var m = document.getElementById("modal-batch");
+        if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+      dnvAcao("dnv-file-importar", function () {
+        var m = document.getElementById("modal-import-dados");
+        if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+      dnvAcao("dnv-file-carregar-zpl", function () {
+        var inp = document.getElementById("input-carregar-zpl");
+        if (inp) inp.click();
+      });
+      dnvAcao("dnv-file-download-zpl", function () {
+        var btn = $("btn-download-zpl");
+        if (btn) btn.click();
+      });
+
+      /* Etiqueta */
+      dnvAcao("dnv-etq-tamanho", function () { var btn = $("btn-tamanho"); if (btn) btn.click(); });
+      dnvAcao("dnv-etq-rotacao", function () { var btn = $("btn-rotacao"); if (btn) btn.click(); });
+
+      /* Impressora */
+      dnvAcao("dnv-imp-ip", function () { if (typeof abrirModalIp === "function") abrirModalIp(); });
+      dnvAcao("dnv-imp-cal-exec", function () { if (typeof calibrarImpressora === "function") calibrarImpressora(); });
+      dnvAcao("dnv-imp-preview", function () { if (typeof abrirPreviewImpressao === "function") abrirPreviewImpressao(); });
+      dnvAcao("dnv-imp-imgprint", function () {
+        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
+        localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
+        notify(novo ? "Impressao como IMAGEM ativada (^GF)." : "Impressao ZPL vetorial padrao reativada.", novo ? "success" : "dark");
+      });
+      dnvAcao("dnv-imp-copias", function () {
+        if (!$("zpl").value) { notify("Gere ou adicione elementos a etiqueta primeiro.", "danger"); return; }
+        abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
+      });
+      dnvAcao("dnv-imp-imprimir", function () { if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias(); });
+
+      /* Submenu Calibrar Impressora — sliders, combos e listagem apenas ENCENAM
+         valores (staged); o envio único acontece em "Calibrar Agora" (calibrarImpressora).
+         VEL_KEY/MIDIA_KEY/MODOOP_KEY/getTipoMidia/getModoOperacional/velocAtualValida
+         vivem no escopo externo, junto de calibrarImpressora. */
+      function fecharMenusDnv() {
+        MENUS.forEach(function (n) {
+          var b = document.getElementById("dnv-btn-" + n);
+          var d = document.getElementById("dnv-dd-" + n);
+          if (b) { b.classList.remove("dnv-open"); b.setAttribute("aria-expanded", "false"); }
+          if (d) d.classList.remove("dnv-open");
+        });
+      }
+
+      /* Tamanho do papel: listagem encenada (aplica no design, sem enviar e sem fechar) */
+      function renderPapelOpcoes() {
+        var cont = document.getElementById("dnv-papel-opcoes");
+        if (!cont) return;
+        cont.innerHTML = "";
+        Object.keys(SIZES).forEach(function (key) {
+          var sz = SIZES[key];
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn btn-sm py-0 px-2 " + (key === tamAtualKey ? "btn-primary" : "btn-outline-secondary");
+          b.style.fontSize = "0.72rem";
+          b.textContent = sz.mmW + " × " + sz.mmH + " mm";
+          b.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (tamAtualKey === key) return;
+            tamAtualKey = key;
+            var sel = $("tamanho"); if (sel) sel.value = key;
+            autoFitCanvas();
+            gerarPresetLayout();
+            updateTamanhoLabel();
+            atualizarTextosCalibrarSub();
+          });
+          cont.appendChild(b);
+        });
+      }
+
+      function atualizarTextosCalibrarSub() {
+        var m = document.getElementById("dnv-modo-text");
+        if (m) m.textContent = "Modo Ribbon: " + (getRibbonMode() === "Y" ? "Com (Transferência)" : "Sem (Térmica Direta)");
+        var q = document.getElementById("dnv-qual-text");
+        if (q) q.textContent = "Qualidade: " + (getQualityMode() === "bitonal" ? "Preto e Branco (Bitonal)" : "Escala de Cinza");
+        var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+        var p = document.getElementById("dnv-papel-text");
+        if (p) p.textContent = sz.mmW + " × " + sz.mmH + " mm";
+        var slV = document.getElementById("velocidade");
+        if (slV) slV.value = String(velocAtualValida());
+        var bv = document.getElementById("veloc-val");
+        if (bv) bv.textContent = velocAtualValida();
+        var selM = document.getElementById("sel-tipo-midia");
+        if (selM) selM.value = getTipoMidia();
+        var selO = document.getElementById("sel-modo-operacional");
+        if (selO) selO.value = getModoOperacional();
+        renderPapelOpcoes();
+      }
+
+      /* Toggles encenados: alternam estado e NÃO enviam nada (nem fecham o submenu) */
+      function toggleEncenado(id, fn) {
+        var btn = document.getElementById(id);
+        if (btn) btn.addEventListener("click", function (e) { e.stopPropagation(); fn(); atualizarTextosCalibrarSub(); });
+      }
+      toggleEncenado("dnv-imp-modo", function () {
+        setRibbonMode(getRibbonMode() === "Y" ? "N" : "Y");
+        saveFieldsToSession();
+        renderZPL();
+      });
+      toggleEncenado("dnv-imp-qual", function () {
+        var novo = getQualityMode() === "bitonal" ? "grayscale" : "bitonal";
+        var el = document.querySelector('input[name="quality"][value="' + novo + '"]');
+        if (el) el.checked = true;
+        saveFieldsToSession();
+        renderZPL();
+      });
+      /* Linhas de ajuste direto (sliders/combos): o clique NÃO fecha o submenu */
+      ["dnv-imp-ton", "dnv-imp-veloc", "dnv-imp-midia", "dnv-imp-modoop"].forEach(function (rid) {
+        var row = document.getElementById(rid);
+        if (row) row.addEventListener("click", function (e) { e.stopPropagation(); });
+      });
+      /* Velocidade: slider encenado persiste em VEL_KEY (envia só no Calibrar Agora) */
+      var slVel = document.getElementById("velocidade");
+      if (slVel) slVel.addEventListener("input", function () {
+        var bv = document.getElementById("veloc-val");
+        if (bv) bv.textContent = this.value;
+        localStorage.setItem(VEL_KEY, this.value);
+      });
+      /* Combos encenados: persistem em MIDIA_KEY/MODOOP_KEY (enviam só no Calibrar Agora) */
+      var selMidia = document.getElementById("sel-tipo-midia");
+      if (selMidia) selMidia.addEventListener("change", function (e) {
+        e.stopPropagation();
+        localStorage.setItem(MIDIA_KEY, this.value);
+      });
+      var selModoOp = document.getElementById("sel-modo-operacional");
+      if (selModoOp) selModoOp.addEventListener("change", function (e) {
+        e.stopPropagation();
+        localStorage.setItem(MODOOP_KEY, this.value);
+      });
+      atualizarTextosCalibrarSub();
+
+      /* Ajuda */
+      dnvAcao("dnv-ajuda-doc", function () {
+        var m = document.getElementById("modal-ajuda");
+        if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+      });
+      dnvAcao("dnv-ajuda-tema", function () {
+        var btn = $("btn-tema");
+        if (btn) btn.click();
+      });
+
+    })(); /* fim Navbar Fase A */
+
+    /* ================================================================
+       FASE A2 — Status Bar: sincronizadores sb-* (extensao dos existentes)
+       ================================================================ */
+    (function () {
+      function sbSet(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
+
+      /* Tamanho */
+      var _origUpdateTam = updateTamanhoLabel;
+      function sbSyncTamanho() {
+        var sz = SIZES[tamAtualKey];
+        var txt = (sz && sz.mmW)
+          ? mmParaUnidadeAtual(sz.mmW, unidadeAtual) + " x " + mmParaUnidadeAtual(sz.mmH, unidadeAtual) + " " + unidadeAtual
+          : "Selecionar tamanho";
+        sbSet("sb-tamanho-val", txt);
+      }
+      updateTamanhoLabel = function () { _origUpdateTam(); sbSyncTamanho(); };
+      sbSyncTamanho();
+
+      /* Orientacao */
+      var _origAtuRot = atualizarRotuloOrientacao;
+      atualizarRotuloOrientacao = function () {
+        _origAtuRot();
+        sbSet("sb-rot-val", (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal");
+      };
+      sbSet("sb-rot-val", (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal");
+
+      /* Elementos */
+      var _origContElem = atualizarContagemElementos;
+      atualizarContagemElementos = function (n) { _origContElem(n); sbSet("sb-elem-val", n); };
+      sbSet("sb-elem-val", typeof elements !== "undefined" ? elements.length : 0);
+
+      /* Zoom */
+      function sbSyncZoom() { sbSet("sb-zoom-val", Math.round(scaleZoom * 100) + "%"); }
+      ["zoom-in", "zoom-out", "zoom-fit", "zoom-reset"].forEach(function (zid) {
+        var zb = document.getElementById(zid);
+        if (zb) zb.addEventListener("click", sbSyncZoom);
+      });
+      sbSyncZoom();
+
+      /* IP / DPI / Tema navbar */
+      function sbSyncIpDpi() {
+        var ip = localStorage.getItem("etiquetasZebra.printerIp") || "pendente";
+        sbSet("sb-ip-val", ip);
+        var dnvDot = document.getElementById("dnv-print-dot");
+        var dnvIpTxt = document.getElementById("dnv-status-ip-text");
+        var dskDot = $("print-server-dot");
+        if (dnvDot && dskDot) dnvDot.style.backgroundColor = dskDot.style.backgroundColor || "#6c757d";
+        if (dnvIpTxt) dnvIpTxt.textContent = ip;
+        var badgeDpi = $("badge-dpi");
+        if (badgeDpi) sbSet("sb-dpi-val", badgeDpi.textContent || "203 DPI");
+        var isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+        var dnvIcon = document.getElementById("dnv-icon-tema");
+        var dnvTxt  = document.getElementById("dnv-tema-text");
+        if (dnvIcon) dnvIcon.className = isDark ? "bi bi-sun dnv-icon" : "bi bi-moon-stars dnv-icon";
+        if (dnvTxt)  dnvTxt.textContent = isDark ? "Tema Claro" : "Tema Escuro";
+      }
+      sbSyncIpDpi();
+      var _origSyncMob = syncMobileState;
+      syncMobileState = function () { _origSyncMob(); sbSyncIpDpi(); };
+
+    })(); /* fim Status Bar Fase A2 */
+
+    /* ================================================================
+       FASE A2.5 — Status Bar interativa: cliques dos chips,
+       alternância de painéis (Estúdio/ZPL/Elementos) e imprimir
+       ================================================================ */
+    (function () {
+      function clic(id, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("click", fn);
+      }
+      clic("sb-tamanho", function () {
+        if (typeof bsModalTamanho !== "undefined" && bsModalTamanho) {
+          if (SIZES[tamAtualKey] && $("tamanho")) $("tamanho").value = tamAtualKey;
+          bsModalTamanho.show();
+        }
+      });
+      clic("sb-rot", function () {
+        rotAtual = ROT_SEQ[(ROT_SEQ.indexOf(rotAtual) + 1) % ROT_SEQ.length];
+        renderStudio();
+        atualizarRotuloOrientacao();
+      });
+      function sbZoomPasso(delta) {
+        scaleZoom = Math.max(0.4, Math.min(2.5, scaleZoom + delta));
+        renderStudio();
+        var zv = document.getElementById("zoom-val");
+        if (zv) zv.textContent = Math.round(scaleZoom * 100) + "%";
+        var sv = document.getElementById("sb-zoom-val");
+        if (sv) sv.textContent = Math.round(scaleZoom * 100) + "%";
+        if (typeof renderRulerTracks === "function") requestAnimationFrame(renderRulerTracks);
+      }
+      clic("sb-zoom-out", function () { sbZoomPasso(-0.15); });
+      clic("sb-zoom-in", function () { sbZoomPasso(0.15); });
+      clic("sb-ip", function () {
+        if (typeof abrirModalIp === "function") abrirModalIp();
+      });
+      clic("sb-dpi", function () {
+        if (typeof bsModalDpi !== "undefined" && bsModalDpi) {
+          if ($("density")) $("density").value = String(activeDpmm);
+          bsModalDpi.show();
+        }
+      });
+      clic("sb-btm-estudio", function () { ativarAbaStudio("tab-canvas"); });
+      clic("sb-btm-zpl", function () { mostrarAbaZPL(); });
+      clic("sb-btm-elem", function () { ativarAbaStudio("tab-list"); });
+      clic("sb-btn-imprimir", function () {
+        if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias();
+      });
+      var _contAnterior = atualizarContagemElementos;
+      atualizarContagemElementos = function (n) {
+        _contAnterior(n);
+        var b = document.getElementById("sb-el-badge");
+        if (b) b.textContent = n;
+      };
+      atualizarContagemElementos(typeof elements !== "undefined" ? elements.length : 0);
+    })();
+
+    /* Garante reguas APOS o browser pintar a etiqueta.
+       getBoundingClientRect() retorna 0 antes do primeiro paint. */
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         renderRulerTracks();
@@ -8708,6 +10346,25 @@
   </button>
 
   <!-- Modal Expandido da Central de Ajuda -->
+  <div class="modal fade" id="modal-pagina-legal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalPaginaLegalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
+      <div class="modal-content shadow-lg border-0" style="max-height: 90vh;">
+        <div class="modal-header bg-dark text-white py-2 px-3">
+          <h5 class="modal-title d-flex align-items-center gap-2" id="modalPaginaLegalLabel">
+            <i class="bi bi-file-text text-primary"></i> <span id="titulo-pagina-legal">Página</span>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body p-4" style="overflow-y: auto; background-color: #f8fafc;">
+          <div class="d-flex justify-content-end mb-2">
+            <a id="link-pagina-legal" class="btn btn-sm btn-outline-primary py-0 px-2" href="#" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Abrir como página completa</a>
+          </div>
+          <article id="pagina-legal-conteudo" class="card card-custom border p-3 p-lg-4"></article>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="modal-ajuda" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalAjudaLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
       <div class="modal-content shadow-lg border-0" style="max-height: 90vh;">
