@@ -1245,7 +1245,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.11</span>
+      <span class="brand-ver">v2.12</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1476,7 +1476,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.11</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.12</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2608,7 +2608,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.11</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.12</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -4083,8 +4083,8 @@
                 selectedElIds = [el.id]; selectedElId = el.id; renderStudio();
               }
               iniciarArrasteOuRedimensionamento(e, el);
-            } else if (e.ctrlKey) {
-              // Ctrl+Click no corpo: alternar seleção múltipla
+            } else if (e.ctrlKey || e.metaKey) {
+              // Ctrl/Cmd+Click no corpo: alternar seleção múltipla
               var idx = selectedElIds.indexOf(el.id);
               if (idx === -1) {
                 selectedElIds.push(el.id);
@@ -4196,7 +4196,7 @@
       previewEl.addEventListener("mousedown", function (e) {
         if (e.target !== previewEl && e.target.id !== "preview") return;
         if (e.button !== 0) return;
-        if (!e.ctrlKey) {
+        if (!e.ctrlKey && !e.metaKey) {
           selectedElIds = [];
           selectedElId = null;
           renderStudio();
@@ -4366,7 +4366,9 @@
 
       campo.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
-          if (e.shiftKey) return; // Shift+Enter: nova linha (comportamento nativo do textarea)
+          /* Mobile (teclado virtual): Enter insere quebra de linha — salvar é
+             tocar fora do campo (blur confirma). PC: Enter confirma, Shift+Enter quebra. */
+          if (ehDispositivoToque() || e.shiftKey) return;
           e.preventDefault();
           confirmar();
         } else if (e.key === "Escape") {
@@ -4511,7 +4513,7 @@
         var dxMm = (p.x - startX) / (3.78 * scaleZoom);
         var dyMm = (p.y - startY) / (3.78 * scaleZoom);
 
-        if (me.ctrlKey || isResizeHandle) {
+        if (me.ctrlKey || me.metaKey || isResizeHandle) {
           targetElements.forEach(function (item) {
             var itemEl = item.el;
             /* Correção: em 90°/270°, o eixo horizontal do mouse controla a
@@ -4604,7 +4606,7 @@
            barato que reconstruir o canvas e mantém o elemento "colado" no dedo.
            Redimensionar/rotacionar (alça, Ctrl/Shift) segue com render completo,
            e o finalizarGesto reconstrói tudo e sincroniza inspetor/ZPL. */
-        if (!me.ctrlKey && !isResizeHandle && !me.shiftKey) {
+        if (!me.ctrlKey && !me.metaKey && !isResizeHandle && !me.shiftKey) {
           var divsOk = targetElements.length > 0;
           targetElements.forEach(function (item) {
             if (!item.div) { divsOk = false; return; }
@@ -4840,13 +4842,17 @@
     if ($("sel-btn-align-right"))   $("sel-btn-align-right").addEventListener("click", function () { alinharSelecionados("direita"); });
     if ($("sel-btn-align-center"))  $("sel-btn-align-center").addEventListener("click", function () { alinharSelecionados("centro"); });
 
-    // Atalhos de teclado globais
+    // Atalhos de teclado globais (Ctrl no PC, ⌘ Cmd no Mac)
+    function ehDispositivoToque() {
+      return window.matchMedia("(pointer: coarse)").matches || ("ontouchstart" in window);
+    }
+    var ehMac = /Mac|iPhone|iPad|iPod/i.test((navigator.platform || "") + " " + (navigator.userAgent || ""));
     document.addEventListener("keydown", function(e) {
       var tag = (e.target.tagName || "").toLowerCase();
       var inField = tag === "input" || tag === "textarea" || tag === "select";
       var k = (e.key || "").toLowerCase();
-      var isUndo = e.ctrlKey && !e.shiftKey && !e.altKey && k === "z";
-      var isRedo = (e.ctrlKey && !e.shiftKey && k === "y") || (e.ctrlKey && e.shiftKey && k === "z") || (e.ctrlKey && !e.shiftKey && k === "r");
+      var isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && k === "z";
+      var isRedo = ((e.ctrlKey || e.metaKey) && !e.shiftKey && k === "y") || ((e.ctrlKey || e.metaKey) && e.shiftKey && k === "z") || ((e.ctrlKey || e.metaKey) && !e.shiftKey && k === "r");
 
       function tirarFocoDoCampo() {
         if (inField && document.activeElement) document.activeElement.blur();
@@ -4865,7 +4871,7 @@
          inspetor (antes eram ignorados "dependendo do elemento"/foco):
          sem seleção de texto no campo, o foco sai e o atalho age sobre o
          elemento selecionado. */
-      if (e.ctrlKey && !e.altKey && !e.metaKey) {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
         if (k === "c") {
           if (inField && campoComTextoSelecionado()) return; /* nativo: copiar texto */
           e.preventDefault(); tirarFocoDoCampo(); copiarSelecionados(); return;
@@ -9595,7 +9601,7 @@
             }
           });
 
-          if (e.ctrlKey) {
+          if (e.ctrlKey || e.metaKey) {
             novaSel.forEach(function(id) { if (selectedElIds.indexOf(id) === -1) selectedElIds.push(id); });
           } else {
             selectedElIds = novaSel;
@@ -9619,11 +9625,27 @@
     }
 
     // Central de Ajuda: Botão Flutuante, botão do footer e Tecla F1
+    /* Cada dispositivo mostra a ajuda específica: PC/Mac veem os atalhos de
+       teclado (Ctrl vira ⌘ Cmd no Mac), telas de toque veem os gestos do celular. */
+    function ajustarAjudaDispositivo() {
+      var m = document.getElementById("modal-ajuda");
+      if (!m) return;
+      var toque = ehDispositivoToque();
+      m.querySelectorAll(".ajuda-so-pc").forEach(function (el) { el.classList.toggle("d-none", toque); });
+      m.querySelectorAll(".ajuda-so-mobile").forEach(function (el) { el.classList.toggle("d-none", !toque); });
+      if (ehMac) {
+        m.querySelectorAll("kbd").forEach(function (kb) {
+          if ((kb.textContent || "").trim() === "Ctrl") kb.textContent = "⌘ Cmd";
+        });
+      }
+    }
+    ajustarAjudaDispositivo();
     document.addEventListener("click", function (e) {
       var btn = e.target.closest("#btn-floating-help, #btn-footer-ajuda");
       if (btn) {
         var modalEl = document.getElementById("modal-ajuda");
         if (modalEl) {
+          ajustarAjudaDispositivo();
           var modalHelp = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
           modalHelp.show();
         }
@@ -9635,6 +9657,7 @@
         e.preventDefault();
         var modalEl = document.getElementById("modal-ajuda");
         if (modalEl) {
+          ajustarAjudaDispositivo();
           var modalHelp = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
           modalHelp.show();
         }
@@ -10408,19 +10431,19 @@
           <div class="card p-3 mb-4 border-0 shadow-sm bg-white" id="ajuda-indice">
             <h6 class="fw-bold text-primary mb-2"><i class="bi bi-list-ul me-1"></i>Índice — toque/clique para ir direto à seção</h6>
             <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-1"><i class="bi bi-keyboard me-1"></i>1. Atalhos</a>
+              <a class="btn btn-sm btn-outline-primary ajuda-so-pc" href="#ajuda-secao-1"><i class="bi bi-keyboard me-1"></i>1. Atalhos</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-2"><i class="bi bi-palette me-1"></i>2. Studio Visual</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-3"><i class="fas fa-shapes me-1"></i>3. Paleta & Inspetor</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-4"><i class="bi bi-aspect-ratio me-1"></i>4. Tamanho & Mídia</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-5"><i class="bi bi-stack me-1"></i>5. Lote & Importação</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-6"><i class="bi bi-folder-check me-1"></i>6. Modelos</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-7"><i class="bi bi-printer me-1"></i>7. Impressão</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-8"><i class="fas fa-mobile-screen me-1"></i>8. Celular (Mobile)</a>
+              <a class="btn btn-sm btn-outline-primary ajuda-so-mobile" href="#ajuda-secao-8"><i class="fas fa-mobile-screen me-1"></i>8. Celular (Mobile)</a>
             </div>
           </div>
 
-          <!-- Section 1: Atalhos de Teclado -->
-          <div class="mb-4">
+          <!-- Section 1: Atalhos de Teclado (PC/Mac — oculta em telas de toque) -->
+          <div class="mb-4 ajuda-so-pc">
             <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-1"><i class="bi bi-keyboard text-primary me-2"></i>1. Teclas de Atalho & Produtividade</h5>
             <div class="table-responsive">
               <table class="table table-hover table-bordered align-middle bg-white shadow-sm rounded overflow-hidden">
@@ -10573,7 +10596,7 @@
             <div class="p-3 mt-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
               <span class="small fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> Edição de texto in-loco:</span>
               <p class="small text-muted mb-0">
-                <strong>Duplo clique</strong> em qualquer texto (inclusive dentro de formas) abre a edição direto no canvas. <kbd>Enter</kbd> confirma, <kbd>Shift</kbd> + <kbd>Enter</kbd> insere quebra de linha manual e <kbd>Esc</kbd> cancela. QR Code e Código de Barras abrem um mini modal para editar o dado. A quebra automática vale para todos os textos — não é preciso ativar nada.
+                <strong>Duplo clique</strong> em qualquer texto (inclusive dentro de formas) abre a edição direto no canvas. <span class="ajuda-so-pc"><kbd>Enter</kbd> confirma, <kbd>Shift</kbd> + <kbd>Enter</kbd> insere quebra de linha manual e <kbd>Esc</kbd> cancela.</span><span class="ajuda-so-mobile">No teclado do celular, <kbd>Enter</kbd> insere quebra de linha — <strong>basta tocar fora do campo</strong> para salvar o que foi digitado.</span> QR Code e Código de Barras abrem um mini modal para editar o dado. A quebra automática vale para todos os textos — não é preciso ativar nada.
               </p>
             </div>
             <div class="card p-3 border-0 shadow-sm">
@@ -10722,8 +10745,8 @@
             </div>
           </div>
 
-          <!-- Section 8: Uso no Celular (Mobile) -->
-          <div class="mb-4">
+          <!-- Section 8: Uso no Celular (Mobile) — visível apenas em telas de toque -->
+          <div class="mb-4 ajuda-so-mobile">
             <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-8"><i class="fas fa-mobile-screen text-primary me-2"></i>8. Uso no Celular (Mobile)</h5>
             <div class="row g-3 mb-3">
               <div class="col-md-6">
@@ -10745,7 +10768,7 @@
                     <li><strong>Alça</strong> (quadradinho do canto) — segurar e arrastar redimensiona.</li>
                     <li><strong>Dois dedos sobre o elemento</strong> — pinça <strong>expande/contrai</strong>: texto muda a fonte, QR/formas mudam o tamanho.</li>
                     <li><strong>Toque longo</strong> (~meio segundo parado) — abre o <strong>Editor de Elemento</strong> em modal (mesma ação do botão direito no PC).</li>
-                    <li><strong>Toque duplo</strong> — edita texto/formas direto no canvas; QR e código de barras abrem um mini modal.</li>
+                    <li><strong>Toque duplo</strong> — edita texto/formas direto no canvas; QR e código de barras abrem um mini modal. No teclado, <kbd>Enter</kbd> quebra linha e <strong>tocar fora do campo salva</strong>.</li>
                     <li><strong>Tocar no fundo</strong> (fora dos elementos) — desmarca tudo. Fora do canvas a página rola normalmente.</li>
                   </ul>
                 </div>
@@ -10761,7 +10784,8 @@
 
         </div>
         <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
-          <span class="small text-muted"><i class="bi bi-info-circle me-1"></i> Pressione <kbd>F1</kbd> em qualquer momento para abrir esta ajuda.</span>
+          <span class="small text-muted ajuda-so-pc"><i class="bi bi-info-circle me-1"></i> Pressione <kbd>F1</kbd> em qualquer momento para abrir esta ajuda.</span>
+          <span class="small text-muted ajuda-so-mobile"><i class="bi bi-info-circle me-1"></i> Toque no botão de interrogação para reabrir esta ajuda a qualquer momento.</span>
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar Ajuda</button>
         </div>
       </div>
