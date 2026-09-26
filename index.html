@@ -983,6 +983,9 @@
     [data-bs-theme="dark"] #import-mapping-container .import-map-row { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
     #import-mapping-container .import-map-row label { flex: 1 1 auto; font-weight: 600; margin: 0; word-break: break-word; }
     #import-mapping-container .import-map-row select { flex: 0 0 190px; }
+    /* Pedido 1.96: múltiplos campos por coluna — grupo de checkboxes */
+    #import-mapping-container .import-map-row .import-map-campos { flex: 0 1 430px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+    #import-mapping-container .import-map-row .import-map-campos .form-check-input { margin-top: 0; }
     #import-preview { max-height: 180px; overflow: auto; }
     #import-preview th, #import-preview td { white-space: nowrap; }
     #import-mapping-container .import-map-colunas { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow: auto; }
@@ -1261,7 +1264,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.15</span>
+      <span class="brand-ver">v2.16</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1350,7 +1353,7 @@
                 <i class="fas fa-tape dnv-icon text-secondary"></i> <span id="dnv-modo-text">Modo Ribbon: Sem (Térmica Direta)</span>
               </button>
               <!-- Tipo de mídia: combobox direto no submenu (^MN) -->
-              <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-midia" title="Tipo de mídia (^MN)">
+              <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-midia" title="Tipo de mídia">
                 <i class="fas fa-tags dnv-icon text-secondary"></i>
                 <select class="form-select form-select-sm flex-grow-1" id="sel-tipo-midia" aria-label="Tipo de mídia">
                   <option value="C">Etiquetas contínuas</option>
@@ -1360,7 +1363,7 @@
                 </select>
               </div>
               <!-- Modo operacional: combobox direto no submenu (^MM) -->
-              <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-modoop" title="Modo operacional de impressão (^MM)">
+              <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-modoop" title="Modo operacional de impressão">
                 <i class="fas fa-gears dnv-icon text-secondary"></i>
                 <select class="form-select form-select-sm flex-grow-1" id="sel-modo-operacional" aria-label="Modo operacional">
                   <option value="" selected>Usar padrão da impressora</option>
@@ -1375,7 +1378,7 @@
                 </select>
               </div>
               <!-- Tonalidade: slider direto no submenu (sem fechar o menu) -->
-              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-ton" title="Tonalidade — Intensidade de Queima (^MD 10 a 30)">
+              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-ton" title="Tonalidade — Intensidade de Queima (10 a 30)">
                 <i class="fas fa-sun dnv-icon text-warning"></i>
                 <input type="range" class="form-range mb-0 flex-grow-1" id="tonalidade" min="10" max="30" value="25" step="1" aria-label="Tonalidade (Darkness ^MD)">
                 <span class="badge bg-secondary text-white" id="ton-val" style="font-size:0.7rem; min-width:20px; text-align:center;">25</span>
@@ -1388,7 +1391,7 @@
               </div>
               <div class="d-flex flex-wrap gap-1 px-3 pb-1" id="dnv-papel-opcoes"></div>
               <!-- Velocidade: slider direto no submenu (^PR 2 a 14 pol/s, padrão 6) -->
-              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-veloc" title="Velocidade de impressão (^PR 2 a 14 pol/s)">
+              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-veloc" title="Velocidade de impressão (2 a 14 pol/s)">
                 <i class="fas fa-gauge-high dnv-icon text-secondary"></i>
                 <input type="range" class="form-range mb-0 flex-grow-1" id="velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)">
                 <span class="badge bg-secondary text-white" id="veloc-val" style="font-size:0.7rem; min-width:20px; text-align:center;">6</span>
@@ -1410,7 +1413,7 @@
             <i class="bi bi-symmetry-vertical dnv-icon"></i> Espelho Vertical
             <i class="bi bi-check-lg dnv-check d-none text-success"></i>
           </button>
-          <button type="button" class="dnv-dropdown-item" id="btn-toggle-espelho-h" role="menuitem" aria-pressed="false" title="Espelho HORIZONTAL na impressão (^PM, esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+          <button type="button" class="dnv-dropdown-item" id="btn-toggle-espelho-h" role="menuitem" aria-pressed="false" title="Espelho HORIZONTAL na impressão (esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
             <i class="bi bi-symmetry-horizontal dnv-icon"></i> Espelho Horizontal
             <i class="bi bi-check-lg dnv-check d-none text-success"></i>
           </button>
@@ -1418,7 +1421,7 @@
             <i class="bi bi-arrow-repeat dnv-icon"></i> Inverter Vertical + Horizontal
             <i class="bi bi-check-lg dnv-check d-none text-success"></i>
           </button>
-          <button type="button" class="dnv-dropdown-item" id="btn-toggle-reverso" role="menuitem" aria-pressed="false" title="Reverso branco-sobre-preto (^LR) — inverte cores de toda a etiqueta">
+          <button type="button" class="dnv-dropdown-item" id="btn-toggle-reverso" role="menuitem" aria-pressed="false" title="Reverso branco-sobre-preto — inverte cores de toda a etiqueta">
             <i class="bi bi-circle-half dnv-icon"></i> Reverso (Branco sobre Preto)
             <i class="bi bi-check-lg dnv-check d-none text-success"></i>
           </button>
@@ -1428,10 +1431,10 @@
             <i class="bi bi-eye dnv-icon text-info"></i> Pré-visualizar
           </button>
           <button type="button" class="dnv-dropdown-item" id="dnv-imp-imgprint" role="menuitem">
-            <i class="bi bi-image dnv-icon text-secondary"></i> Imprimir como Imagem (^GF)
+            <i class="bi bi-image dnv-icon text-secondary"></i> Imprimir como Imagem
           </button>
           <button type="button" class="dnv-dropdown-item" id="dnv-imp-copias" role="menuitem">
-            <i class="fas fa-copy dnv-icon text-secondary"></i> Imprimir com Cópias (^PQ)
+            <i class="fas fa-copy dnv-icon text-secondary"></i> Imprimir com Cópias
           </button>
           <button type="button" class="dnv-dropdown-item fw-semibold" id="dnv-imp-imprimir" role="menuitem">
             <i class="fas fa-print dnv-icon text-success"></i> <span class="text-success">Imprimir Agora</span>
@@ -1512,7 +1515,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.15</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.16</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1580,21 +1583,6 @@
       <div class="col-12">
         
         <section class="card card-custom h-100" id="sec-studio" aria-label="Studio Visual e Ferramentas">
-          <div class="card-header card-header-custom d-none d-lg-flex flex-wrap align-items-center justify-content-between gap-2">
-            
-            <!-- Tamanho e Controles de Rotação -->
-            <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap">
-              <div class="vr mx-1" style="height:22px;"></div>
-              <button type="button" class="icon-btn icon-btn-dark" id="btn-tamanho" title="Alterar Tamanho da Etiqueta">
-                <i class="fas fa-ruler-combined"></i>
-              </button>
-              <button type="button" class="icon-btn icon-btn-dark" id="btn-rotacao" title="Alternar Orientação (Horizontal / Vertical)">
-                <i class="fas fa-arrows-alt-h"></i>
-              </button>
-              <small class="text-muted fw-bold" id="rot-label" style="font-size:0.75rem;">Horizontal</small>
-            </div>
-
-          </div>
 
           <div class="card-body p-3 d-flex flex-column">
 
@@ -1630,6 +1618,27 @@
                   <div class="icon-btn icon-btn-danger palette-item" id="btn-palette-import-img" draggable="true" data-type="imagem" title="Importar Imagem / Logo (Clique ou arraste)">
                     <i class="fas fa-image"></i>
                     <input type="file" id="input-import-imagem" accept="image/*" class="d-none">
+                  </div>
+                  <!-- Pedido 1.99: máscara de Data e Hora — atualiza sozinha a cada renderização/impressão -->
+                  <div class="btn-group dropup">
+                    <button type="button" class="icon-btn icon-btn-warning" id="btn-add-datahora" data-bs-toggle="dropdown" data-bs-display="dynamic" title="Data e Hora — insere um texto que atualiza sozinho com a data/hora atual (funciona com QR e código de barras também, via mapeamento)" aria-label="Inserir máscara de data e hora" aria-expanded="false"><i class="fas fa-calendar-clock"></i></button>
+                    <ul class="dropdown-menu" aria-labelledby="btn-add-datahora" style="min-width:14rem;">
+                      <li><h6 class="dropdown-header">Data</h6></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA">DD/MM/AAAA</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AA">DD/MM/AA</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="AAAA-MM-DD">AAAA-MM-DD</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD-MM-AAAA">DD-MM-AAAA</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD.MM.AAAA">DD.MM.AAAA</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="MM/DD/AAAA">MM/DD/AAAA</button></li>
+                      <li><h6 class="dropdown-header">Data + Hora</h6></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA HH:mm">DD/MM/AAAA HH:mm</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA HH:mm:ss">DD/MM/AAAA HH:mm:ss</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="AAAA-MM-DD HH:mm:ss">AAAA-MM-DD HH:mm:ss</button></li>
+                      <li><h6 class="dropdown-header">Hora</h6></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="HH:mm">HH:mm</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="HH:mm:ss">HH:mm:ss</button></li>
+                      <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="hh:mm AM/PM">hh:mm AM/PM</button></li>
+                    </ul>
                   </div>
                   <div class="vr mx-1"></div>
                   <!-- Clonar elemento selecionado (Ctrl+D) -->
@@ -1692,6 +1701,80 @@
                 </div>
                 </div>
 
+                <!-- Status Bar Desktop — Pedido 1.104: movida para logo abaixo da paleta de elementos -->
+                <footer class="sb-bar d-flex mt-2" id="sb-desktop-bar" aria-label="Barra de status e acoes desktop" role="contentinfo">
+
+                  <!-- Icones de Exibicao (zoom, unidade, margens, limpar) - movidos do ribbon Exibicao -->
+                  <div class="sb-exib-group" aria-label="Controles de Exibicao">
+                    <span class="sb-exib-label">Zoom:</span>
+                    <button type="button" class="sb-exib-btn" id="zoom-out" title="Diminuir Zoom (-)"><i class="fas fa-search-minus"></i></button>
+                    <span class="small fw-bold" id="zoom-val" style="font-size:0.70rem;min-width:3ch;text-align:center;color:var(--zebra-text);">100%</span>
+                    <button type="button" class="sb-exib-btn" id="zoom-in" title="Aumentar Zoom (+)"><i class="fas fa-search-plus"></i></button>
+                    <button type="button" class="sb-exib-btn" id="zoom-fit" title="Auto Fit"><i class="fas fa-expand-arrows-alt"></i></button>
+                    <button type="button" class="sb-exib-btn" id="zoom-reset" title="Reset Zoom (100%)"><i class="fas fa-compress-alt"></i></button>
+                    <div class="sb-sep" style="height:14px;"></div>
+                    <select class="sb-exib-select form-select form-select-sm" id="select-unidade" title="Alterar Unidade de Medida">
+                      <option value="mm" selected>mm</option>
+                      <option value="cm">cm</option>
+                      <option value="in">pol</option>
+                      <option value="dots">dots</option>
+                    </select>
+                    <button type="button" class="sb-exib-btn" id="btn-config-margens" title="Definir limites de margem"><i class="fas fa-border-style"></i></button>
+                    <button type="button" class="sb-exib-btn" id="btn-limpar-canvas" title="Limpar Canvas"><i class="fas fa-trash-alt"></i></button>
+                  </div>
+
+                  <!-- Tamanho da etiqueta (clique = alterar) -->
+                  <button type="button" class="sb-chip" id="sb-tamanho" title="Tamanho da etiqueta - clique para alterar">
+                    <i class="fas fa-ruler-combined text-info"></i>
+                    <span class="sb-chip-label">Tam:</span>
+                    <span class="sb-chip-val" id="sb-tamanho-val">100 x 50 mm</span>
+                  </button>
+                  <span class="sb-sep"></span>
+                  <!-- Orientacao (clique = alternar) -->
+                  <button type="button" class="sb-chip" id="sb-rot" title="Orientacao - clique para alternar (Horizontal / Vertical / invertidas)">
+                    <i class="fas fa-arrows-alt-h text-warning"></i>
+                    <span class="sb-chip-val" id="sb-rot-label-val">Horizontal</span>
+                  </button>
+                  <span class="sb-sep"></span>
+                  <!-- DPI (clique = alterar densidade) -->
+                  <button type="button" class="sb-chip" id="sb-dpi" title="Resolucao da impressora - clique para alterar (203 / 300 / 600 DPI)">
+                    <i class="fas fa-crosshairs text-success"></i>
+                    <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
+                  </button>
+
+                  <!-- Alternancia de paineis Estudio/ZPL/Elementos + Imprimir -->
+                  <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Alternar paineis do Studio e imprimir">
+                    <!-- Paginacao do lote: navega entre as etiquetas geradas (uma por linha importada) -->
+                    <div class="d-flex align-items-center gap-1 d-none" id="lote-nav" role="group" aria-label="Navegar entre as etiquetas do lote" title="Etiqueta exibida no Estudio — navegue entre as etiquetas do lote">
+                      <button type="button" class="sb-exib-btn" id="lote-nav-prev" aria-label="Etiqueta anterior" title="Etiqueta anterior"><i class="bi bi-chevron-left"></i></button>
+                      <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm text-center fw-bold" id="lote-nav-num" style="width:52px;font-size:0.78rem;padding:0.1rem 0.25rem;" aria-label="Ir para a etiqueta número" title="Número da etiqueta — digite e pressione Enter">
+                      <span class="small fw-semibold" style="font-size:0.72rem;color:var(--zebra-muted);" id="lote-nav-total">/ 1</span>
+                      <button type="button" class="sb-exib-btn" id="lote-nav-next" aria-label="Próxima etiqueta" title="Próxima etiqueta"><i class="bi bi-chevron-right"></i></button>
+                      <button type="button" class="sb-exib-btn" id="lote-nav-ir" aria-label="Ir para a etiqueta digitada" title="Ir para a etiqueta digitada">Ir</button>
+                    </div>
+                    <!-- Pedido 1.107: Testar 1 — migrou da barra de status do lote; só aparece para lote/importação com 2+ etiquetas -->
+                    <button type="button" class="sb-exib-btn d-none" id="btn-test-print-lote" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia" aria-label="Imprimir etiqueta de teste"><i class="fas fa-vial"></i><span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Testar 1</span></button>
+                    <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estudio (canvas)">
+                      <i class="bi bi-eye" aria-hidden="true"></i>
+                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Estudio</span>
+                    </button>
+                    <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (codigo)">
+                      <i class="bi bi-code-square" aria-hidden="true"></i>
+                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">ZPL</span>
+                    </button>
+                    <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;">
+                      <i class="bi bi-list-ul" aria-hidden="true"></i>
+                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Elementos</span>
+                      <span class="badge-cont" id="sb-el-badge">0</span>
+                    </button>
+                    <span class="sb-sep"></span>
+                    <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta">
+                      <i class="fas fa-print" aria-hidden="true"></i>
+                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Imprimir</span>
+                    </button>
+                  </div>
+                </footer>
+
                 <!-- Interactive Stage (resizable wrapper) -->
                 <div class="preview-stage-wrap" id="stage-wrap" style="height:634px;">
                   <div class="preview-stage position-relative p-0 overflow-hidden" id="stage">
@@ -1713,14 +1796,14 @@
                 </div>
 
                 <!-- Barra de status: total de etiquetas do lote / dados importados -->
-                <div class="d-flex align-items-center justify-content-between mt-2 px-1" id="status-bar-lote" style="display:none;" role="status">
+                <!-- Pedido 1.106: sempre visível — no modo normal a etiqueta atual conta como 1 -->
+                <div class="d-flex align-items-center justify-content-between mt-2 px-1" id="status-bar-lote" role="status">
                   <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background:var(--rb-accent,#4c8df7); font-size:0.8rem; padding:0.45em 0.9em;">
                     <i class="fas fa-layer-group" aria-hidden="true"></i>
-                    <span id="status-bar-texto">0 etiquetas serão geradas</span>
+                    <span id="status-bar-texto">1 etiqueta será gerada</span>
                   </span>
                   <span class="d-inline-flex align-items-center gap-2">
                     <span class="small text-muted" id="status-bar-detalhe"></span>
-                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-test-print-lote" style="font-size:0.72rem;" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia" aria-label="Imprimir etiqueta de teste"><i class="fas fa-vial"></i> Testar 1</button>
                   </span>
                 </div>
 
@@ -1773,32 +1856,32 @@
                     <form id="form-inspector" class="mb-0">
                       <div class="row g-2 align-items-end">
                         <div class="col-md-4 col-12" id="insp-col-texto">
-                          <label class="form-label fw-semibold small mb-1">Conteúdo / Texto</label>
+                          <label class="form-label fw-semibold small mb-1" title="O que vai escrito na etiqueta — é o texto que aparece no elemento selecionado. Digite aqui e o desenho atualiza na hora.">Conteúdo / Texto</label>
                           <input type="text" class="form-control form-control-sm" id="insp-texto">
                         </div>
 
                         <div class="col-md-2 col-4">
-                          <label class="form-label fw-semibold small mb-1">Pos. X (mm)</label>
+                          <label class="form-label fw-semibold small mb-1" title="A distância da borda ESQUERDA da etiqueta até o elemento, em milímetros. Aumente para empurrar o texto para a direita.">Pos. X (mm)</label>
                           <input type="number" step="0.5" class="form-control form-control-sm" id="insp-x-mm">
                         </div>
 
                         <div class="col-md-2 col-4">
-                          <label class="form-label fw-semibold small mb-1">Pos. Y (mm)</label>
+                          <label class="form-label fw-semibold small mb-1" title="A distância do TOPO da etiqueta até o elemento, em milímetros. Aumente para empurrar o texto para baixo.">Pos. Y (mm)</label>
                           <input type="number" step="0.5" class="form-control form-control-sm" id="insp-y-mm">
                         </div>
 
                         <div class="col-md-2 col-4" id="insp-col-fonte">
-                          <label class="form-label fw-semibold small mb-1">Fonte (dots)</label>
+                          <label class="form-label fw-semibold small mb-1" title="O tamanho da letra — quanto maior o número, maior o texto aparece na etiqueta (medido em dots, a pontinho da impressora).">Fonte (dots)</label>
                           <input type="number" class="form-control form-control-sm" id="insp-fonte">
                         </div>
 
                         <div class="col-md-2 col-4" id="insp-col-w">
-                          <label class="form-label fw-semibold small mb-1">Largura (mm)</label>
+                          <label class="form-label fw-semibold small mb-1" title="A largura da caixa do elemento em milímetros — usada em QR, códigos de barras e formas.">Largura (mm)</label>
                           <input type="number" step="0.5" class="form-control form-control-sm" id="insp-w-mm">
                         </div>
 
                         <div class="col-md-2 col-4" id="insp-col-rotacao">
-                          <label class="form-label fw-semibold small mb-1">Rotação</label>
+                          <label class="form-label fw-semibold small mb-1" title="Gira o elemento: Horizontal é o normal; Vertical deixa o texto de lado (bom para etiquetas compridas).">Rotação</label>
                           <div class="d-flex gap-1">
                             <select class="form-select form-select-sm flex-grow-1" id="insp-rotacao">
                               <option value="0">Horizontal</option>
@@ -1812,7 +1895,7 @@
 
                         <!-- Thickness control for linha / borda -->
                         <div class="col-md-3 col-6 d-none" id="thickness-style-row">
-                          <label class="form-label fw-semibold small mb-1">Espessura (dots)</label>
+                          <label class="form-label fw-semibold small mb-1" title="A grossura do risco da linha ou da moldura — quanto maior o número, mais grossa ela fica.">Espessura (dots)</label>
                           <div class="input-group input-group-sm align-items-center">
                             <button class="icon-btn icon-btn-muted icon-btn-sm me-1" type="button" id="btn-thick-minus" title="Afinar (-1 dot)"><i class="fas fa-minus"></i></button>
                             <input type="number" min="1" max="50" step="1" class="form-control form-control-sm text-center" id="insp-espessura" value="3">
@@ -1822,7 +1905,7 @@
 
                         <!-- Frame Style Picker (exibido no Editor de Elemento quando moldura selecionada) -->
                         <div id="frame-style-row" class="col-auto d-none">
-                          <label class="form-label fw-semibold small mb-1">Estilo da moldura</label>
+                          <label class="form-label fw-semibold small mb-1" title="O desenho da moldura em volta da etiqueta: sólida, tracejada, pontilhada, dupla, com cantos arredondados ou com sombra.">Estilo da moldura</label>
                           <div class="frame-picker" id="frame-picker">
                             <button type="button" class="frame-opt active" data-frame="solid" title="Sólida">▬</button>
                             <button type="button" class="frame-opt" data-frame="dashed" title="Tracejada">┄</button>
@@ -1835,7 +1918,7 @@
 
                         <!-- Line Style Picker (exibido no Editor de Elemento quando linha selecionada) -->
                         <div id="line-style-row" class="col-auto d-none">
-                          <label class="form-label fw-semibold small mb-1">Estilo da linha</label>
+                          <label class="form-label fw-semibold small mb-1" title="O desenho da linha divisória: sólida, tracejada, pontilhada, grossa, dupla ou gradiente.">Estilo da linha</label>
                           <div class="frame-picker" id="line-picker">
                             <button type="button" class="line-opt active" data-line="solid" title="Sólida">▬</button>
                             <button type="button" class="line-opt" data-line="dashed" title="Tracejada">┄</button>
@@ -1851,14 +1934,14 @@
                           <div class="d-flex align-items-end gap-3 flex-wrap">
                             <div class="form-check form-switch mb-2" id="insp-wrap-cheio">
                               <input class="form-check-input" type="checkbox" id="insp-cheio" title="Preencher forma (sólida)">
-                              <label class="form-check-label small fw-semibold" for="insp-cheio">Preenchido</label>
+                              <label class="form-check-label small fw-semibold" for="insp-cheio" title="Pinta a forma por dentro — deixa ela sólida em vez de só o contorno.">Preenchido</label>
                             </div>
                             <div class="col-auto" id="insp-wrap-raio">
-                              <label class="form-label fw-semibold small mb-1" for="insp-raio">Raio (0-8)</label>
+                              <label class="form-label fw-semibold small mb-1" for="insp-raio" title="Arredonda os cantos do retângulo — 0 fica quadradinho, 8 fica bem arredondadinho.">Raio (0-8)</label>
                               <input type="number" min="0" max="8" step="1" class="form-control form-control-sm" id="insp-raio" style="width:90px" aria-label="Raio dos cantos arredondados de 0 a 8">
                             </div>
                             <div class="col-auto" id="insp-wrap-diag">
-                              <label class="form-label fw-semibold small mb-1">Diagonal</label>
+                              <label class="form-label fw-semibold small mb-1" title="Muda para onde a linha diagonal aponta: para cima (↗) ou para baixo (↘).">Diagonal</label>
                               <button type="button" class="icon-btn icon-btn-dark" id="insp-diag-dir" title="Alternar orientação da diagonal (↗ / ↘)" aria-label="Alternar orientação da diagonal"><i class="fas fa-slash"></i></button>
                             </div>
                           </div>
@@ -1868,19 +1951,19 @@
                         <div id="fb-style-row" class="col-12 d-none">
                           <div class="d-flex align-items-end gap-3 flex-wrap">
                             <div class="form-check form-switch mb-2">
-                              <input class="form-check-input" type="checkbox" id="insp-fb-enable" title="Ativar Multilinha / Bloco de Campo (^FB)">
-                              <label class="form-check-label small fw-semibold" for="insp-fb-enable">Multilinha (^FB)</label>
+                              <input class="form-check-input" type="checkbox" id="insp-fb-enable" title="Ativar Multilinha / Bloco de Campo">
+                              <label class="form-check-label small fw-semibold" for="insp-fb-enable" title="Deixa o texto quebrar em várias linhas dentro de uma caixa, como um parágrafo — ótimo para textos grandes.">Multilinha</label>
                             </div>
                             <div class="col-auto">
-                              <label class="form-label fw-semibold small mb-1">Largura bloco (dots)</label>
+                              <label class="form-label fw-semibold small mb-1" title="A largura da caixa do texto: quando a frase chega no fim da caixa, ela continua na linha de baixo.">Largura bloco (dots)</label>
                               <input type="number" min="1" class="form-control form-control-sm" id="insp-fb-width" style="width:110px">
                             </div>
                             <div class="col-auto">
-                              <label class="form-label fw-semibold small mb-1">Máx. linhas</label>
+                              <label class="form-label fw-semibold small mb-1" title="Quantas linhas o texto pode usar, no máximo, antes de parar de crescer.">Máx. linhas</label>
                               <input type="number" min="1" max="20" class="form-control form-control-sm" id="insp-fb-lines" style="width:90px">
                             </div>
                             <div class="col-auto">
-                              <label class="form-label fw-semibold small mb-1">Alinhamento</label>
+                              <label class="form-label fw-semibold small mb-1" title="O jeito que o texto se encaixa na caixa: encostado na esquerda, no centro, encostado na direita ou esticado ocupando tudo (justificado).">Alinhamento</label>
                               <select class="form-select form-select-sm" id="insp-fb-align" style="width:140px">
                                 <option value="0">Esquerda</option>
                                 <option value="1">Centro</option>
@@ -1892,7 +1975,7 @@
                         </div>
 
                         <div class="col-auto ms-auto d-flex align-items-center gap-2">
-                          <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 fw-semibold" id="insp-btn-del" title="Remover elemento selecionado">
+                          <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2 fw-semibold" id="insp-btn-del" title="Apaga o elemento selecionado da etiqueta (pode desfazer com Ctrl+Z)">
                             <i class="bi bi-trash me-1"></i> Remover
                           </button>
                         </div>
@@ -1949,78 +2032,6 @@
 
       </div>
 
-    <!-- Status Bar Desktop (Fase A — d-none d-lg-flex: visível APENAS ≥ 992px) -->
-    <!-- Status Bar Desktop (d-none d-lg-flex: visivel APENAS >= 992px) -->
-    <footer class="sb-bar d-none d-lg-flex mt-2" id="sb-desktop-bar" aria-label="Barra de status e acoes desktop" role="contentinfo">
-
-      <!-- Icones de Exibicao (zoom, unidade, margens, limpar) - movidos do ribbon Exibicao -->
-      <div class="sb-exib-group" aria-label="Controles de Exibicao">
-        <span class="sb-exib-label">Zoom:</span>
-        <button type="button" class="sb-exib-btn" id="zoom-out" title="Diminuir Zoom (-)"><i class="fas fa-search-minus"></i></button>
-        <span class="small fw-bold" id="zoom-val" style="font-size:0.70rem;min-width:3ch;text-align:center;color:var(--zebra-text);">100%</span>
-        <button type="button" class="sb-exib-btn" id="zoom-in" title="Aumentar Zoom (+)"><i class="fas fa-search-plus"></i></button>
-        <button type="button" class="sb-exib-btn" id="zoom-fit" title="Auto Fit"><i class="fas fa-expand-arrows-alt"></i></button>
-        <button type="button" class="sb-exib-btn" id="zoom-reset" title="Reset Zoom (100%)"><i class="fas fa-compress-alt"></i></button>
-        <div class="sb-sep" style="height:14px;"></div>
-        <select class="sb-exib-select form-select form-select-sm" id="select-unidade" title="Alterar Unidade de Medida">
-          <option value="mm" selected>mm</option>
-          <option value="cm">cm</option>
-          <option value="in">pol</option>
-          <option value="dots">dots</option>
-        </select>
-        <button type="button" class="sb-exib-btn" id="btn-config-margens" title="Definir limites de margem"><i class="fas fa-border-style"></i></button>
-        <button type="button" class="sb-exib-btn" id="btn-limpar-canvas" title="Limpar Canvas"><i class="fas fa-trash-alt"></i></button>
-      </div>
-
-      <!-- Tamanho da etiqueta (clique = alterar) -->
-      <button type="button" class="sb-chip" id="sb-tamanho" title="Tamanho da etiqueta - clique para alterar">
-        <i class="fas fa-ruler-combined text-info"></i>
-        <span class="sb-chip-label">Tam:</span>
-        <span class="sb-chip-val" id="sb-tamanho-val">100 x 50 mm</span>
-      </button>
-      <span class="sb-sep"></span>
-      <!-- Orientacao (clique = alternar) -->
-      <button type="button" class="sb-chip" id="sb-rot" title="Orientacao - clique para alternar (Horizontal / Vertical / invertidas)">
-        <i class="fas fa-arrows-alt-h text-warning"></i>
-        <span class="sb-chip-val" id="sb-rot-label-val">Horizontal</span>
-      </button>
-      <span class="sb-sep"></span>
-      <!-- DPI (clique = alterar densidade) -->
-      <button type="button" class="sb-chip" id="sb-dpi" title="Resolucao da impressora - clique para alterar (203 / 300 / 600 DPI)">
-        <i class="fas fa-crosshairs text-success"></i>
-        <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
-      </button>
-
-      <!-- Alternancia de paineis Estudio/ZPL/Elementos + Imprimir -->
-      <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Alternar paineis do Studio e imprimir">
-        <!-- Paginacao do lote: navega entre as etiquetas geradas (uma por linha importada) -->
-        <div class="d-flex align-items-center gap-1 d-none" id="lote-nav" role="group" aria-label="Navegar entre as etiquetas do lote" title="Etiqueta exibida no Estudio — navegue entre as etiquetas do lote">
-          <button type="button" class="sb-exib-btn" id="lote-nav-prev" aria-label="Etiqueta anterior" title="Etiqueta anterior"><i class="bi bi-chevron-left"></i></button>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm text-center fw-bold" id="lote-nav-num" style="width:52px;font-size:0.78rem;padding:0.1rem 0.25rem;" aria-label="Ir para a etiqueta número" title="Número da etiqueta — digite e pressione Enter">
-          <span class="small fw-semibold" style="font-size:0.72rem;color:var(--zebra-muted);" id="lote-nav-total">/ 1</span>
-          <button type="button" class="sb-exib-btn" id="lote-nav-next" aria-label="Próxima etiqueta" title="Próxima etiqueta"><i class="bi bi-chevron-right"></i></button>
-        </div>
-        <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estudio (canvas)">
-          <i class="bi bi-eye" aria-hidden="true"></i>
-          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Estudio</span>
-        </button>
-        <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (codigo)">
-          <i class="bi bi-code-square" aria-hidden="true"></i>
-          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">ZPL</span>
-        </button>
-        <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;">
-          <i class="bi bi-list-ul" aria-hidden="true"></i>
-          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Elementos</span>
-          <span class="badge-cont" id="sb-el-badge">0</span>
-        </button>
-        <span class="sb-sep"></span>
-        <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta">
-          <i class="fas fa-print" aria-hidden="true"></i>
-          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Imprimir</span>
-        </button>
-      </div>
-    </footer>
-
   </main>
 
   <!-- Modal Editor (Menu de Contexto) -->
@@ -2057,6 +2068,11 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link py-1 px-2" id="tab-usb-btn" data-bs-toggle="pill" data-bs-target="#tab-usb" type="button" role="tab" aria-controls="tab-usb" aria-selected="false" style="font-size:0.82rem;" onclick="iniciarDiagnosticoUSB()">
                 <i class="fas fa-usb me-1"></i>USB (WebUSB)
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link py-1 px-2" id="tab-bt-btn" data-bs-toggle="pill" data-bs-target="#tab-bt" type="button" role="tab" aria-controls="tab-bt" aria-selected="false" style="font-size:0.82rem;">
+                <i class="fas fa-bluetooth-b me-1"></i>Bluetooth
               </button>
             </li>
           </ul>
@@ -2124,6 +2140,32 @@
               <pre id="usb-log-area" class="p-2 mb-0 rounded" style="max-height:120px;overflow:auto;background:#0f172a;color:#e2e8f0;font-size:0.72rem;"><span id="usb-log-lines"></span></pre>
               <div class="form-text small mt-1">
                 <i class="fas fa-info-circle me-1"></i>Requer Chrome/Edge (WebUSB). Funciona em <code>localhost</code> ou <code>https://</code>.
+              </div>
+            </div>
+
+            <!-- Tab Bluetooth (Web Bluetooth / BLE) — Pedido 1.95 -->
+            <div class="tab-pane fade" id="tab-bt" role="tabpanel" aria-labelledby="tab-bt-btn">
+              <!-- Status da conexao Bluetooth -->
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-secondary" id="bt-conn-badge">Não conectado</span>
+                <span class="small text-muted" id="bt-conn-detail"></span>
+              </div>
+              <!-- Botoes de acao Bluetooth -->
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-bt-connect-modal">
+                  <i class="fas fa-bluetooth-b me-1"></i>Conectar Impressora Bluetooth
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" id="btn-bt-print-test" disabled>
+                  <i class="fas fa-print me-1"></i>Teste Bluetooth
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-bt-disconnect" disabled>
+                  <i class="fas fa-xmark me-1"></i>Desconectar
+                </button>
+              </div>
+              <!-- Log Bluetooth -->
+              <pre id="bt-log-area" class="p-2 mb-2 rounded" style="max-height:120px;overflow:auto;background:#0f172a;color:#e2e8f0;font-size:0.72rem;"><span id="bt-log-lines"></span></pre>
+              <div class="form-text small mt-1">
+                <i class="fas fa-info-circle me-1"></i>Requer Chrome/Edge com Bluetooth. Impressoras Zebra com Bluetooth Low Energy (série ZQ / Link-OS). Funciona em <code>localhost</code> ou <code>https://</code>.
               </div>
             </div>
           </div>
@@ -2461,7 +2503,15 @@
                   </div>
                 </div>
 
-                <div class="d-flex gap-2 justify-content-center">
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                  <!-- Pedido 1.102: etiquetas múltiplas — nova em branco e importar adicionando views -->
+                  <button type="button" class="icon-btn icon-btn-success" id="btn-nova-etiqueta" title="Nova etiqueta em branco — a etiqueta atual é guardada como outra 'view' do projeto (imprimir envia todas)" aria-label="Nova etiqueta em branco (guarda a atual)">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                  <label class="icon-btn icon-btn-success mb-0 cursor-pointer" title="Importar etiqueta (.bin/.json) e ADICIONAR como nova view — a atual é guardada, não substituída" aria-label="Importar etiqueta e adicionar como nova view">
+                    <i class="fas fa-file-circle-plus"></i>
+                    <input type="file" id="input-import-etiqueta-add" accept=".bin,.json,.vip" class="d-none">
+                  </label>
                   <button type="button" class="icon-btn icon-btn-muted" id="btn-export-bin" title="Exportar ZPL (.BIN)" aria-label="Exportar ZPL (.BIN)">
                     <i class="fas fa-file-download"></i>
                   </button>
@@ -2475,6 +2525,12 @@
                   <button type="button" class="icon-btn icon-btn-muted" id="btn-share-link" title="Copiar Link do Modelo (compartilhar por URL)" aria-label="Copiar Link do Modelo">
                     <i class="fas fa-link"></i>
                   </button>
+                </div>
+
+                <!-- Seletor de etiquetas do projeto (visível só quando há views guardadas) -->
+                <div class="mb-2 mt-2" id="etiquetas-multi-area" style="display:none;">
+                  <label class="form-label fw-semibold small mb-1" for="sel-etiquetas-multi" title="Alterne qual etiqueta do projeto você está editando — todas são impressas juntas no botão Imprimir">Etiquetas do projeto</label>
+                  <select class="form-select form-select-sm" id="sel-etiquetas-multi" aria-label="Alternar entre as etiquetas do projeto"></select>
                 </div>
               </div>
             </div>
@@ -2547,11 +2603,7 @@
               <div class="d-flex flex-wrap gap-3 mb-3" role="radiogroup" aria-label="Tipo de origem dos dados">
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="import-tipo" id="import-tipo-csv" value="csv" checked>
-                  <label class="form-check-label" for="import-tipo-csv"><i class="fas fa-file-csv me-1" aria-hidden="true"></i>CSV / TXT</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="import-tipo" id="import-tipo-xlsx" value="xlsx">
-                  <label class="form-check-label" for="import-tipo-xlsx"><i class="fas fa-file-excel me-1" aria-hidden="true"></i>Excel (.xlsx)</label>
+                  <label class="form-check-label" for="import-tipo-csv"><i class="fas fa-file-csv me-1" aria-hidden="true"></i>Arquivo (CSV / TXT / Excel)</label>
                 </div>
                 <div class="form-check">
                   <input class="form-check-input" type="radio" name="import-tipo" id="import-tipo-gsheets" value="gsheets">
@@ -2623,7 +2675,8 @@
                 <p class="small text-muted mt-1 mb-0">Serve para APIs que devolvem JSON (Supabase, PostgREST, Firebase REST, API própria). Não aceita string de conexão SQL crua — banco sem API usa a ponte local do print-server.js.</p>
               </div>
               <div class="mb-2" id="import-pasta-fields" style="display:none;">
-                <p class="small text-muted mt-1 mb-0">Ao clicar em <b>Ler Colunas</b>, escolha uma pasta — todos os arquivos <code>.csv</code>, <code>.txt</code> e <code>.xlsx</code> dela são lidos: o cabeçalho vem do 1º arquivo e as linhas de todos são empilhadas. Sem sincronização automática: se os arquivos mudarem, clique em Ler Colunas de novo.</p>
+                <p class="small text-muted mt-1 mb-2">Escolha uma pasta — todos os arquivos <code>.csv</code>, <code>.txt</code> e <code>.xlsx</code> dela são lidos: o cabeçalho vem do 1º arquivo e as linhas de todos são empilhadas. Sem sincronização automática: se os arquivos mudarem, importe de novo.</p>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-import-pasta"><i class="fas fa-folder-open me-1" aria-hidden="true"></i>Escolher Pasta e Importar</button>
               </div>
               <div class="mb-2" id="import-ponte-fields" style="display:none;">
                 <div class="row g-2">
@@ -2693,7 +2746,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.15</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.16</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -2815,10 +2868,10 @@
             <i class="bi bi-eye"></i> Pré-visualizar Impressão
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-imgprint" data-bs-dismiss="offcanvas">
-            <i class="bi bi-image"></i> Imprimir como Imagem (^GF)
+            <i class="bi bi-image"></i> Imprimir como Imagem
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-copias" data-bs-dismiss="offcanvas">
-            <i class="fas fa-copy"></i> Imprimir com Cópias (^PQ)
+            <i class="fas fa-copy"></i> Imprimir com Cópias
           </button>
         </div>
       </div>
@@ -4470,7 +4523,53 @@
       campo.addEventListener("blur", confirmar);
     }
 
+    /* Pedido 1.99: máscara de Data e Hora — o texto do elemento é resolvido
+       SEMPRE no momento da renderização/geração, então a etiqueta imprime a
+       data/hora corrente (nunca congelada na hora em que foi inserida). */
+    function resolverMascaraDataHora(mascara, d) {
+      d = d || new Date();
+      function pad(n, l) { var s = String(n); while (s.length < (l || 2)) s = "0" + s; return s; }
+      var meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      var dias = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+      var h12 = d.getHours() % 12; if (h12 === 0) h12 = 12;
+      var mapa = {
+        "AAAA": pad(d.getFullYear(), 4),
+        "AA": pad(d.getFullYear() % 100),
+        "MM": pad(d.getMonth() + 1),
+        "DD": pad(d.getDate()),
+        "HH": pad(d.getHours()),
+        "hh": pad(h12),
+        "mm": pad(d.getMinutes()),
+        "ss": pad(d.getSeconds()),
+        "MMMM": meses[d.getMonth()],
+        "mmm": meses[d.getMonth()].substring(0, 3),
+        "dddd": dias[d.getDay()],
+        "AM/PM": (d.getHours() < 12) ? "AM" : "PM"
+      };
+      var out = String(mascara || "");
+      ["AAAA", "MMMM", "AM/PM", "dddd", "mmm", "AA", "MM", "DD", "HH", "hh", "mm", "ss"].forEach(function (tok) {
+        out = out.split(tok).join(mapa[tok]);
+      });
+      return out;
+    }
+    function atualizarMascarasDataHora(arr) {
+      (arr || elements).forEach(function (el) {
+        if (el && el.mascaraData) el.texto = resolverMascaraDataHora(el.mascaraData);
+      });
+    }
+    document.querySelectorAll(".btn-mascara-datahora").forEach(function (btn) {
+      if (btn) btn.addEventListener("click", function () {
+        var mascara = this.getAttribute("data-mascara") || "DD/MM/AAAA";
+        adicionarElemento("texto", resolverMascaraDataHora(mascara));
+        var el = elements[elements.length - 1];
+        if (el) el.mascaraData = mascara;
+        renderStudio();
+        notify("Data/Hora inserida (" + mascara + "): o valor se atualiza sozinho a cada renderização e impressão.", "success");
+      });
+    });
+
     function renderStudio() {
+      atualizarMascarasDataHora();
       /* Preview via rAF: chamadas em rajada (digitação no inspetor, árvore do lote,
          seleção) coalescem em no máximo 1 reconstrução de preview por frame. */
       scheduleRenderPreview();
@@ -5708,6 +5807,7 @@
     var __ctxFonteZPL = document.createElement("canvas").getContext("2d");
 
     function gerarZPLBloco(elementosList, tamKey, rot) {
+      atualizarMascarasDataHora(elementosList); /* Pedido 1.99: data/hora corrente no ZPL também */
       var sz = SIZES[tamKey] || SIZES["100x50"];
       var W = sz.w, H = sz.h;
 
@@ -6583,6 +6683,7 @@
         density: getDensityMode(),
         quality: getQualityMode(),
         batchSpecialTree: batchSpecialTree,
+        etiquetasMulti: etiquetasMulti, /* Pedido 1.102: views do projeto no cache de 24h */
         timestamp: Date.now() /* Reinicia contador de 24h a cada alteração ou atividade */
       };
       try {
@@ -6628,6 +6729,10 @@
         /* Restaura o canvas completo: elementos, rotação, margens e unidade
            (cache 24h deve salvar TUDO o que o usuário faz até o último movimento). */
         if (Array.isArray(data.elements)) elements = data.elements;
+        if (Array.isArray(data.etiquetasMulti)) {
+          etiquetasMulti = data.etiquetasMulti; /* Pedido 1.102: restaura as views do projeto */
+          renderSeletorEtiquetasMulti();
+        }
         if (data.rotAtual !== undefined) rotAtual = (data.rotAtual === 90 || data.rotAtual === 270) ? data.rotAtual : 0;
         if (data.margens) {
           margens.top = data.margens.top || 0;
@@ -6768,6 +6873,7 @@
           batchSpecialTree = JSON.parse(JSON.stringify(BATCH_TREE_PADRAO));
           loteEspecialAtivo = false;
         }
+        loteEspecialBindings = null; /* combinações não acompanham o modelo — a paginação volta ao lote de importação */
         $("tmpl-name-input").value = name;
         selectedElId = null;
         selectedElIds = [];
@@ -6811,6 +6917,9 @@
       selectedElId = null;
       selectedElIds = [];
       loteEspecialAtivo = false;
+      loteEspecialBindings = null;
+      etiquetasMulti = []; /* Pedido 1.102: "Novo" zera as views do projeto também */
+      renderSeletorEtiquetasMulti();
       importDados = { colunas: [], linhas: [] };
       batchSpecialTree = JSON.parse(JSON.stringify(BATCH_TREE_PADRAO));
       $("tmpl-name-input").value = "";
@@ -7090,6 +7199,79 @@
     }
 
     // IMPORTAR ARQUIVO .BIN (Comandos ZPL)
+    /* ---------- Pedido 1.102: projeto com várias etiquetas (views) ----------
+       A etiqueta em edição é sempre a "atual"; as outras ficam guardadas em
+       etiquetasMulti. O botão Imprimir envia TODAS (guardadas + atual). */
+    var etiquetasMulti = [];
+    function guardarEtiquetaAtualEmMulti() {
+      if (!elements.length) return;
+      etiquetasMulti.push({
+        nome: ((getModelName() || "Etiqueta") + " " + (etiquetasMulti.length + 1)).trim(),
+        elements: JSON.parse(JSON.stringify(elements))
+      });
+      renderSeletorEtiquetasMulti();
+      notify("Etiqueta guardada como view do projeto (" + etiquetasMulti.length + " guardada(s)).", "success");
+    }
+    function renderSeletorEtiquetasMulti() {
+      var area = $("etiquetas-multi-area");
+      var sel = $("sel-etiquetas-multi");
+      if (!area || !sel) return;
+      area.style.display = etiquetasMulti.length ? "block" : "none";
+      var html = '<option value="-1">Etiqueta atual (editando)</option>';
+      etiquetasMulti.forEach(function (etq, i) {
+        html += '<option value="' + i + '">' + etq.nome + '</option>';
+      });
+      sel.innerHTML = html;
+      sel.value = "-1";
+    }
+    function trocarEtiquetaView(idx) {
+      var i = parseInt(idx, 10);
+      if (isNaN(i) || i < 0 || i >= etiquetasMulti.length) return;
+      var atual = JSON.parse(JSON.stringify(elements));
+      var alvo = etiquetasMulti[i];
+      etiquetasMulti[i] = { nome: alvo.nome, elements: atual }; /* a atual vai para o slot; a guardada vem para edição */
+      elements = alvo.elements;
+      selectedElId = null;
+      selectedElIds = [];
+      renderStudio();
+      renderSeletorEtiquetasMulti();
+      notify("Editando: " + alvo.nome + " — a anterior continua guardada no projeto.", "info");
+    }
+    if ($("btn-nova-etiqueta")) {
+      $("btn-nova-etiqueta").addEventListener("click", function () {
+        if (elements.length) guardarEtiquetaAtualEmMulti();
+        elements = [];
+        selectedElId = null;
+        selectedElIds = [];
+        loteEspecialAtivo = false;
+        loteEspecialBindings = null;
+        renderStudio();
+        renderSeletorEtiquetasMulti();
+        notify("Nova etiqueta em branco criada. Alterne entre as etiquetas do projeto pelo seletor — Imprimir envia todas.", "success");
+      });
+    }
+    if ($("sel-etiquetas-multi")) {
+      $("sel-etiquetas-multi").addEventListener("change", function () { trocarEtiquetaView(this.value); });
+    }
+    var importarComoNovaView = false;
+    if ($("input-import-etiqueta-add")) {
+      $("input-import-etiqueta-add").addEventListener("change", function (e) {
+        var arq = e.target.files && e.target.files[0];
+        if (!arq) return;
+        importarComoNovaView = true;
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(arq);
+          $("input-import-bin").files = dt.files;
+          $("input-import-bin").dispatchEvent(new Event("change", { bubbles: true }));
+        } catch (err) {
+          importarComoNovaView = false;
+          notify("Seu navegador não suporta importar como nova view — use o botão 'Importar Modelo' comum.", "danger");
+        }
+        this.value = "";
+      });
+    }
+
     $("input-import-bin").addEventListener("change", function (e) {
       var file = e.target.files[0];
       if (!file) return;
@@ -7097,6 +7279,10 @@
       var reader = new FileReader();
       reader.onload = function (evt) {
         var conteudo = evt.target.result;
+        if (importarComoNovaView && elements.length) {
+          guardarEtiquetaAtualEmMulti(); /* Pedido 1.102: importa e ADICIONA — a etiqueta atual vira outra view */
+        }
+        importarComoNovaView = false;
         /* Auto-detecção: .bin de MODELO (JSON com marcador) ou .bin de ZPL (comandos) */
         var payload = null;
         try { payload = JSON.parse(conteudo); } catch (err) { payload = null; }
@@ -7383,38 +7569,37 @@
 
     /* ---------------- Barra de Status: total de etiquetas a gerar ---------------- */
     var loteEspecialAtivo = false; /* só acende quando o usuário realmente usa o lote/import */
+    var loteEspecialBindings = null; /* Pedido 1.101: combinações do Lote Especial gerado — alimentam a paginação unificada */
     function atualizarBarraStatusLote() {
       var barra = $("status-bar-lote");
       if (!barra) return;
       var texto = $("status-bar-texto");
       var detalhe = $("status-bar-detalhe");
-      var total = 0;
-      var origem = "";
+      /* Pedido 1.106: sem lote e sem importação, a etiqueta atual conta como 1 — nunca "0 etiquetas". */
+      var total = 1;
+      var origem = "etiqueta atual";
+      var temLoteImport = false;
 
       if (loteEspecialAtivo && batchSpecialTree && batchSpecialTree.length) {
         var combos = gerarCombinacoesComBinding(batchSpecialTree);
         total = combos ? combos.length : 0;
         origem = "etiqueta em lote";
+        temLoteImport = true;
       } else if (typeof importDados !== "undefined" && importDados.linhas && importDados.linhas.length) {
         total = importDados.linhas.length;
         origem = "importar dados";
+        temLoteImport = true;
       }
 
-      /* A barra só aparece quando há mesmo um lote/importação ativo — mesmo com
-         1 única etiqueta; em modo normal o rodapé fica limpo. */
+      /* A barra fica sempre visível; "Salvar Lote" segue restrito ao lote/importação. */
       var btnSalvarLote = $("btn-mobile-salvar-lote");
-      if (!origem) {
-        barra.style.display = "none";
-        if (btnSalvarLote) btnSalvarLote.classList.add("d-none");
-        return;
-      }
+      if (btnSalvarLote) btnSalvarLote.classList.toggle("d-none", !temLoteImport);
       barra.style.display = "flex";
-      if (btnSalvarLote) btnSalvarLote.classList.remove("d-none");
       texto.textContent = (total === 1) ? "1 etiqueta será gerada" : total + " etiquetas serão geradas";
-      /* "Testar 1" só faz sentido com várias etiquetas: com 1 única, imprimir
-         já testa a etiqueta inteira — o botão fica oculto. */
+      /* Pedido 1.107: "Testar 1" agora mora na sb-desktop-bar — só aparece para
+         lote/importação com 2+ etiquetas; com 1 única, imprimir já testa. */
       var btnTeste = $("btn-test-print-lote");
-      if (btnTeste) btnTeste.classList.toggle("d-none", total <= 1);
+      if (btnTeste) btnTeste.classList.toggle("d-none", !(temLoteImport && total > 1));
       var qtdCopias = parseInt(localStorage.getItem(CHAVE_ULTIMA_QTD), 10) || 1;
       detalhe.textContent = (qtdCopias > 1)
         ? "(" + total + " × " + qtdCopias + " = " + (total * qtdCopias) + " impressões) — " + origem
@@ -7424,7 +7609,7 @@
     /* Etiqueta de teste (lote/importação): envia apenas a 1ª etiqueta, 1 cópia. */
     function imprimirEtiquetaTesteLote() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
 
       var zplBase = null;
       var multi = gerarZPLTodasLinhas();
@@ -7548,7 +7733,10 @@
     var IMPORT_CAMPOS_SISTEMA = [
       { value: "texto",   label: "Texto" },
       { value: "sub",     label: "Subtítulo" },
-      { value: "nome",    label: "Nome do Produto" }
+      { value: "nome",    label: "Nome do Produto" },
+      { value: "serie",   label: "Série" },
+      { value: "qr",      label: "QR Code" },
+      { value: "barcode", label: "Código de Barras" }
     ];
     var importDados = { colunas: [], linhas: [] };
 
@@ -7752,6 +7940,10 @@
         notify("Não foi possível ler a pasta selecionada.", "danger");
       });
     }
+    /* Pedido 1.97: botão direto de escolher pasta na área da "Pasta Local" */
+    if ($("btn-import-pasta")) {
+      $("btn-import-pasta").addEventListener("click", importLerPastaLocal);
+    }
 
     /* ---------- ODBC / Banco tradicional via ponte local (print-server.js, porta 3001) ---------- */
     function importLerPonteLocal() {
@@ -7802,30 +7994,37 @@
         row.className = "import-map-row";
 
         var label = document.createElement("label");
-        label.setAttribute("for", "import-map-" + i);
+        label.setAttribute("for", "import-map-" + i + "-texto");
         label.textContent = coluna;
 
-        var select = document.createElement("select");
-        select.className = "form-select form-select-sm";
-        select.id = "import-map-" + i;
-        select.dataset.coluna = coluna;
-        select.setAttribute("aria-label", "Campo do sistema para a coluna " + coluna);
+        /* Pedido 1.96: cada coluna pode ser vinculada a QUANTOS campos o
+           usuário precisar (ex.: série como Texto E QR Code) — checkboxes */
+        var campos = document.createElement("div");
+        campos.className = "import-map-campos";
 
-        var optIgnorar = document.createElement("option");
-        optIgnorar.value = "ignorar";
-        optIgnorar.textContent = "Ignorar";
-        select.appendChild(optIgnorar);
+        var salvos = importCamposDaColuna(mapaSalvo[coluna]);
         IMPORT_CAMPOS_SISTEMA.forEach(function (campo) {
-          var opt = document.createElement("option");
-          opt.value = campo.value;
-          opt.textContent = campo.label;
-          select.appendChild(opt);
+          var wrap = document.createElement("div");
+          wrap.className = "form-check form-check-inline mb-0";
+          var cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "form-check-input";
+          cb.id = "import-map-" + i + "-" + campo.value;
+          cb.dataset.coluna = coluna;
+          cb.dataset.campo = campo.value;
+          cb.setAttribute("aria-label", campo.label + " para a coluna " + coluna);
+          if (salvos.indexOf(campo.value) !== -1) cb.checked = true;
+          var lb = document.createElement("label");
+          lb.className = "form-check-label";
+          lb.setAttribute("for", cb.id);
+          lb.textContent = campo.label;
+          wrap.appendChild(cb);
+          wrap.appendChild(lb);
+          campos.appendChild(wrap);
         });
 
-        if (mapaSalvo[coluna] && mapaSalvo[coluna] !== "ignorar") select.value = mapaSalvo[coluna];
-
         row.appendChild(label);
-        row.appendChild(select);
+        row.appendChild(campos);
         lista.appendChild(row);
       });
 
@@ -7855,8 +8054,14 @@
 
     function importObterMapeamento() {
       var mapa = {};
-      document.querySelectorAll("#import-mapping-container select").forEach(function (sel) {
-        mapa[sel.dataset.coluna] = sel.value;
+      var porColuna = {};
+      document.querySelectorAll("#import-mapping-container input[data-coluna][data-campo]").forEach(function (cb) {
+        if (!cb.checked) return;
+        if (!porColuna[cb.dataset.coluna]) porColuna[cb.dataset.coluna] = [];
+        porColuna[cb.dataset.coluna].push(cb.dataset.campo);
+      });
+      importDados.colunas.forEach(function (c) {
+        mapa[c] = (porColuna[c] && porColuna[c].length) ? porColuna[c].join(",") : "ignorar";
       });
       return mapa;
     }
@@ -7882,6 +8087,7 @@
       if (campo === "barcode") return el.tipo === "barcode";
       if (campo === "nome") return el.tipo === "nome" || el.classe === "nome";
       if (campo === "sub") return el.tipo === "sub" || el.classe === "sub";
+      if (campo === "serie") return el.tipo === "serie" || el.classe === "serie";
       if (campo === "texto") return el.tipo === "texto" && el.classe !== "nome" && el.classe !== "sub" && el.classe !== "serie";
       return false;
     }
@@ -8106,37 +8312,26 @@
 
         if (!file) { notify("Selecione um arquivo antes de ler as colunas.", "danger"); return; }
 
-        if (tipo === "csv") {
-          var reader = new FileReader();
-          reader.onload = function (evt) {
-            var res = importParseCSV(evt.target.result);
-            if (!res) { notify("Não foi possível ler colunas do arquivo CSV/TXT.", "danger"); return; }
-            importDados = res;
-            importRenderMapeamento();
-            atualizarBarraStatusLote();
-            notify(res.colunas.length + " colunas encontradas.", "success");
-          };
-          reader.onerror = function () { notify("Falha ao ler o arquivo CSV/TXT.", "danger"); };
-          reader.readAsText(file, "UTF-8");
-          return;
-        }
-
-        if (tipo === "xlsx") {
-          if (typeof XLSX === "undefined") {
+        /* Pedido 1.97: 1 radio de arquivo — o tipo real é detectado pela
+           extensão (.xlsx via SheetJS; qualquer outro como CSV/TXT) */
+        if (tipo === "csv" || tipo === "xlsx") {
+          var ehXlsx = /\.xlsx$/i.test(file.name);
+          if (ehXlsx && typeof XLSX === "undefined") {
             notify("Biblioteca XLSX não carregada. Verifique sua conexão e recarregue a página.", "danger");
             return;
           }
-          var readerX = new FileReader();
-          readerX.onload = function (evt) {
-            var res = importParseXLSX(evt.target.result);
-            if (!res) { notify("Não foi possível ler a planilha. Verifique se o arquivo é um .xlsx válido.", "danger"); return; }
+          var readerArq = new FileReader();
+          readerArq.onload = function (evt) {
+            var res = ehXlsx ? importParseXLSX(evt.target.result) : importParseCSV(evt.target.result);
+            if (!res) { notify("Não foi possível ler colunas do arquivo (CSV, TXT ou Excel).", "danger"); return; }
             importDados = res;
             importRenderMapeamento();
             atualizarBarraStatusLote();
             notify(res.colunas.length + " colunas encontradas.", "success");
           };
-          readerX.onerror = function () { notify("Falha ao ler o arquivo Excel.", "danger"); };
-          readerX.readAsArrayBuffer(file);
+          readerArq.onerror = function () { notify("Falha ao ler o arquivo.", "danger"); };
+          if (ehXlsx) readerArq.readAsArrayBuffer(file);
+          else readerArq.readAsText(file, "UTF-8");
           return;
         }
 
@@ -8164,14 +8359,15 @@
         if (!validacao.ok) { notify(validacao.msg, "danger"); return; }
         var primeira = importDados.linhas[0] || [];
 
-        /* Coleta itens mapeados na ordem das colunas */
+        /* Coleta itens mapeados na ordem das colunas — cada coluna pode gerar
+           vários itens (pedido 1.96: ex.: série como Texto E QR Code) */
+        var idxColsAplicar = obterIdxColsLote();
         var itens = [];
-        importDados.colunas.forEach(function (coluna, i) {
-          var sel = $("import-map-" + i);
-          var campo = sel ? sel.value : "ignorar";
-          if (campo === "ignorar") return;
-          if (campo === "qr" || campo === "barcode") campo = "texto"; /* pedido 1.92: lote insere sempre texto (mapas salvos antigos) */
-          itens.push({ campo: campo, coluna: coluna, valor: (primeira[i] != null) ? String(primeira[i]) : "" });
+        importDados.colunas.forEach(function (coluna) {
+          importCamposDaColuna(validacao.mapa[coluna]).forEach(function (campo) {
+            var v = primeira[idxColsAplicar[coluna]];
+            itens.push({ campo: campo, coluna: coluna, valor: (v != null) ? String(v) : "" });
+          });
         });
         if (!itens.length) { notify("Nenhuma coluna mapeada. Escolha ao menos um campo do sistema.", "danger"); return; }
 
@@ -8254,59 +8450,93 @@
         return e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie";
       });
     }
-    function obterColunasMapeadasLote(mapa) {
-      return importDados.colunas.filter(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
+    /* Pedido 1.96: campos de uma coluna — "texto,qr" → ["texto","qr"];
+       mapas salvos antigos ("texto", "qr") seguem válidos. */
+    function importCamposDaColuna(valor) {
+      if (!valor || valor === "ignorar") return [];
+      return String(valor).split(",").map(function (s) { return s.trim(); }).filter(function (c) {
+        return IMPORT_CAMPOS_SISTEMA.some(function (cc) { return cc.value === c; });
+      });
+    }
+    /* Pares coluna×campo na ordem (coluna por coluna, campo a campo) —
+       cada par é um alvo do lote (pedido 1.96). */
+    function obterParesMapeadosLote(mapa) {
+      var pares = [];
+      importDados.colunas.forEach(function (coluna) {
+        importCamposDaColuna(mapa[coluna]).forEach(function (campo) {
+          pares.push({ coluna: coluna, campo: campo });
+        });
+      });
+      return pares;
     }
     function obterIdxColsLote() {
       var idxCols = {};
       importDados.colunas.forEach(function (c, i) { idxCols[c] = i; });
       return idxCols;
     }
-    function obterValoresMapeadosLote(linha, colunasMapeadas, idxCols) {
-      return colunasMapeadas.map(function (col) {
-        return (linha && linha[idxCols[col]] != null) ? String(linha[idxCols[col]]) : "";
+    /* Garante um alvo para cada par do lote (pedido 1.96): os textos entram
+       nos elementos de texto (sempre do primeiro inserido) e qr/código de
+       barras nos seus elementos; os faltantes são criados empilhados abaixo
+       de tudo — sem sobreposição (mesmo autoajuste do "Aplicar"). */
+    function garantirAlvosLote(pares) {
+      var alvos = new Array(pares.length);
+      var textos = obterAlvosTextoLote();
+      var codigos = elements.filter(function (e) { return e.tipo === "qr" || e.tipo === "barcode"; });
+      var iT = 0, iC = 0;
+      pares.forEach(function (par, i) {
+        if (par.campo === "qr" || par.campo === "barcode") {
+          if (iC < codigos.length) alvos[i] = codigos[iC++];
+        } else if (iT < textos.length) {
+          alvos[i] = textos[iT++];
+        }
       });
-    }
-    /* Garante slots de texto suficientes para os valores do lote: cria os
-       faltantes empilhados abaixo de tudo que já existe — sem sobreposição
-       (mesmo autoajuste do "Aplicar"). */
-    function garantirAlvosTextoLote(necessarios) {
-      var alvos = obterAlvosTextoLote();
-      if (alvos.length >= necessarios) return alvos;
-      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
-      var W = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
-      var H = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
-      var m = Math.round(W * 0.035);
-      var GAP = Math.max(6, Math.round(H * 0.03));
-      var baseY = m;
-      elements.forEach(function (e) {
-        var eh = (e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie") ? ((e.fonte || 28) * 1.4) : (e.h || 0);
-        var fundo = (e.y || 0) + eh;
-        if (fundo > baseY) baseY = fundo;
-      });
-      baseY += GAP;
-      while (alvos.length < necessarios) {
-        adicionarElemento("texto", "");
-        var el = elements[elements.length - 1];
-        if (!el) break;
-        el.fonte = 28;
-        el.h = Math.round(28 * 1.4);
-        el.x = m;
-        el.y = baseY;
-        if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
-        baseY = el.y + el.fonte * 1.4 + GAP;
-        alvos.push(el);
+      var faltam = alvos.filter(function (a) { return !a; }).length;
+      if (faltam) {
+        var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+        var W = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
+        var H = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
+        var m = Math.round(W * 0.035);
+        var GAP = Math.max(6, Math.round(H * 0.03));
+        var baseY = m;
+        elements.forEach(function (e) {
+          var eh = (e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie") ? ((e.fonte || 28) * 1.4) : (e.h || 0);
+          var fundo = (e.y || 0) + eh;
+          if (fundo > baseY) baseY = fundo;
+        });
+        baseY += GAP;
+        pares.forEach(function (par, i) {
+          if (alvos[i]) return;
+          adicionarElemento(par.campo, "");
+          var el = elements[elements.length - 1];
+          if (!el) return;
+          if (el.tipo === "texto") {
+            el.fonte = 28;
+            if (typeof ajustarFonteParaCaber === "function") el.fonte = ajustarFonteParaCaber(el.texto || "", el.fonte, W - 2 * m);
+            el.h = Math.round(el.fonte * 1.4);
+          } else if (el.tipo === "qr") {
+            var lado = Math.max(60, Math.min(200, W - 2 * m));
+            el.w = lado; el.h = lado;
+          } else if (el.tipo === "barcode") {
+            el.h = 110; el.w = Math.min(300, W - 2 * m);
+          }
+          el.x = m;
+          el.y = baseY;
+          if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
+          baseY = el.y + ((el.tipo === "texto") ? (el.fonte * 1.4) : el.h) + GAP;
+          alvos[i] = el;
+        });
       }
       renderStudio();
       return alvos;
     }
     /* Aplica uma linha do lote aos elementos REAIS do Estúdio (a etiqueta
        exibida passa a ser a da linha idxLinha — o padrão visível do lote). */
-    function aplicarLinhaLoteNoEstudio(idxLinha, colunasMapeadas, idxCols) {
-      var vals = obterValoresMapeadosLote(importDados.linhas[idxLinha] || [], colunasMapeadas, idxCols);
-      var alvos = obterAlvosTextoLote();
-      alvos.forEach(function (alvo, i) {
-        if (i < vals.length) alvo.texto = vals[i];
+    function aplicarLinhaLoteNoEstudio(idxLinha, pares, idxCols) {
+      var linha = importDados.linhas[idxLinha] || [];
+      var alvos = garantirAlvosLote(pares);
+      pares.forEach(function (par, i) {
+        var v = linha[idxCols[par.coluna]];
+        if (alvos[i]) alvos[i].texto = (v != null) ? String(v) : "";
       });
       renderStudio();
     }
@@ -8319,9 +8549,8 @@
       if (elements.length) return true;
       var validacao = importValidarMapeamento();
       if (!validacao.ok) return false;
-      var mapa = validacao.mapa;
-      var colunasMapeadas = obterColunasMapeadasLote(mapa);
-      if (!colunasMapeadas.length) return false;
+      var pares = obterParesMapeadosLote(validacao.mapa);
+      if (!pares.length) return false;
 
       var sz = SIZES[tamAtualKey] || SIZES["100x50"];
       var W = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
@@ -8331,17 +8560,21 @@
 
       var idxCols = obterIdxColsLote();
       var primeira = importDados.linhas[0] || [];
-      var itens = colunasMapeadas.map(function (col) {
-        var campo = mapa[col];
+      var itens = pares.map(function (par) {
         return {
-          campo: campo,
-          fonte: (campo === "nome" ? 50 : 28),
-          valor: (primeira[idxCols[col]] != null) ? String(primeira[idxCols[col]]) : ""
+          campo: par.campo,
+          valor: (primeira[idxCols[par.coluna]] != null) ? String(primeira[idxCols[par.coluna]]) : ""
         };
       });
 
+      function alturaItem(it) {
+        if (it.campo === "qr") return Math.min(200, W - 2 * m);
+        if (it.campo === "barcode") return 110;
+        return (it.campo === "nome" ? 50 : 28) * 1.4;
+      }
+
       /* Se o total não cabe na etiqueta, reduz proporcionalmente (autoajuste) */
-      var totalItens = itens.reduce(function (acc, it) { return acc + it.fonte * 1.4 + GAP; }, 0);
+      var totalItens = itens.reduce(function (acc, it) { return acc + alturaItem(it) + GAP; }, 0);
       var alturaDisponivel = Math.max(0, H - 2 * m);
       var escala = 1;
       if (totalItens > alturaDisponivel && totalItens > 0) {
@@ -8351,30 +8584,84 @@
 
       var cursorY = m;
       itens.forEach(function (it) {
-        adicionarElemento("texto", it.valor);
+        adicionarElemento(it.campo, it.valor);
         var el = elements[elements.length - 1];
         if (!el) return;
-        el.fonte = Math.max(10, Math.round(it.fonte * escala));
-        if (typeof ajustarFonteParaCaber === "function") el.fonte = ajustarFonteParaCaber(el.texto || "", el.fonte, W - 2 * m);
-        el.h = Math.round(el.fonte * 1.4);
+        if (el.tipo === "texto") {
+          el.fonte = Math.max(10, Math.round((it.campo === "nome" ? 50 : 28) * escala));
+          if (typeof ajustarFonteParaCaber === "function") el.fonte = ajustarFonteParaCaber(el.texto || "", el.fonte, W - 2 * m);
+          el.h = Math.round(el.fonte * 1.4);
+        } else if (el.tipo === "qr") {
+          var lado = Math.max(60, Math.round(Math.min(200, W - 2 * m) * escala));
+          el.w = lado; el.h = lado;
+        } else if (el.tipo === "barcode") {
+          el.h = Math.max(40, Math.round(110 * escala));
+          el.w = Math.min(300, W - 2 * m);
+        }
         el.x = m;
         el.y = cursorY;
         if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
-        cursorY = el.y + el.fonte * 1.4 + GAP;
+        cursorY = el.y + ((el.tipo === "texto") ? (el.fonte * 1.4) : el.h) + GAP;
       });
       renderStudio();
-      notify("Etiqueta criada automaticamente para o lote: " + itens.length + " textos (uma coluna por elemento), sem sobreposição.", "success");
+      notify("Etiqueta criada automaticamente para o lote: " + itens.length + " elementos (um por campo mapeado), sem sobreposição.", "success");
       return true;
     }
 
     /* Paginação do lote na sb-desktop-bar: ‹ [nº] /total › */
+    /* Pedido 1.101: navegação unificada — o lote corrente pode ser o de
+       importação (linhas mapeadas) ou o Lote Especial (combinações geradas). */
+    function ehLoteEspecialNavegavel() {
+      return !!(loteEspecialAtivo && loteEspecialBindings && loteEspecialBindings.length);
+    }
+    function aplicarStepMapEmArray(arr, stepMap) {
+      arr.forEach(function (el) {
+        Object.keys(stepMap).forEach(function (targetKey) {
+          var val = stepMap[targetKey];
+          if (targetKey === "serie" && (el.classe === "serie" || el.id === "el_serie")) {
+            el.texto = "" + val;
+          } else if (targetKey === "qr" && (el.tipo === "qr" || el.tipo === "barcode" || el.id === "el_qr")) {
+            el.texto = val;
+          } else if (targetKey === "nome" && (el.classe === "nome" || el.id === "el_nome")) {
+            el.texto = val;
+          } else if (el.id === targetKey) {
+            el.texto = val;
+          }
+        });
+      });
+      return arr;
+    }
+    function aplicarStepMapAosElementos(stepMap) {
+      aplicarStepMapEmArray(elements, stepMap);
+    }
+    function loteNavegarPara(idx) {
+      if (ehLoteEspecialNavegavel()) {
+        var total = loteEspecialBindings.length;
+        var i = Math.max(0, Math.min(total - 1, idx));
+        aplicarStepMapAosElementos(loteEspecialBindings[i] || {});
+        lotePaginaAtual = i;
+        renderStudio();
+        atualizarNavLote();
+      } else {
+        irParaLote(idx);
+      }
+    }
+
+    /* Paginação do lote na sb-desktop-bar: ‹ [nº] /total › Ir — ativa quando
+       há mais de 1 etiqueta (importação mapeada ou Lote Especial gerado). */
     function atualizarNavLote() {
       var nav = $("lote-nav"); if (!nav) return;
-      var total = importDados.linhas.length || 0;
+      var total = 0;
       var ativo = false;
-      if (total >= 1) {
-        var mapa = importObterMapeamento();
-        ativo = Object.keys(mapa).some(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
+      if (ehLoteEspecialNavegavel()) {
+        total = loteEspecialBindings.length;
+        ativo = total >= 2;
+      } else {
+        total = importDados.linhas.length || 0;
+        if (total >= 2) {
+          var mapa = importObterMapeamento();
+          ativo = Object.keys(mapa).some(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
+        }
       }
       nav.classList.toggle("d-none", !ativo);
       if (!ativo) return;
@@ -8391,23 +8678,24 @@
       if (!total) { atualizarNavLote(); return; }
       var validacao = importValidarMapeamento();
       if (!validacao.ok) { atualizarNavLote(); return; }
-      var colunasMapeadas = obterColunasMapeadasLote(validacao.mapa);
-      if (!colunasMapeadas.length) { atualizarNavLote(); return; }
+      var pares = obterParesMapeadosLote(validacao.mapa);
+      if (!pares.length) { atualizarNavLote(); return; }
 
       /* Pedido 1.93: sem etiqueta criada, a navegação também cria a
-         etiqueta sozinha; com etiqueta, apenas garante os slots de texto */
-      if (!elements.length) {
-        if (!garantirEtiquetaLote()) { atualizarNavLote(); return; }
-      } else {
-        garantirAlvosTextoLote(colunasMapeadas.length);
-      }
+         etiqueta sozinha; com etiqueta, aplicarLinha garante os alvos */
+      if (!elements.length && !garantirEtiquetaLote()) { atualizarNavLote(); return; }
       var i = Math.max(0, Math.min(total - 1, idx));
-      aplicarLinhaLoteNoEstudio(i, colunasMapeadas, obterIdxColsLote());
+      aplicarLinhaLoteNoEstudio(i, pares, obterIdxColsLote());
       lotePaginaAtual = i;
       atualizarNavLote();
     }
-    if ($("lote-nav-prev")) $("lote-nav-prev").addEventListener("click", function () { irParaLote(lotePaginaAtual - 1); });
-    if ($("lote-nav-next")) $("lote-nav-next").addEventListener("click", function () { irParaLote(lotePaginaAtual + 1); });
+    if ($("lote-nav-prev")) $("lote-nav-prev").addEventListener("click", function () { loteNavegarPara(lotePaginaAtual - 1); });
+    if ($("lote-nav-next")) $("lote-nav-next").addEventListener("click", function () { loteNavegarPara(lotePaginaAtual + 1); });
+    if ($("lote-nav-ir")) $("lote-nav-ir").addEventListener("click", function () {
+      var n = parseInt(($("lote-nav-num") || {}).value, 10);
+      if (!n || n < 1) n = 1;
+      loteNavegarPara(n - 1);
+    });
     if ($("lote-nav-num")) {
       $("lote-nav-num").addEventListener("input", function () {
         this.value = this.value.replace(/\D+/g, "").slice(0, 5); /* apenas números */
@@ -8419,7 +8707,7 @@
         var n = parseInt(this.value, 10);
         if (!n || n < 1) n = 1;
         this.blur();
-        irParaLote(n - 1);
+        loteNavegarPara(n - 1);
       });
     }
     var loteMapCols = document.querySelector(".import-map-colunas");
@@ -8427,40 +8715,41 @@
     atualizarNavLote();
 
     /* Núcleo compartilhado entre o botão "Gerar Todas as Linhas" e o "Imprimir":
-       devolve {zpl, total, colunasMapeadas, idxCols} com uma etiqueta por
-       linha — todas no formato/posições da etiqueta do projeto, apenas
-       trocando os dados. */
+       devolve {zpl, total, pares, idxCols} com uma etiqueta por linha — todas
+       no formato/posições da etiqueta do projeto, apenas trocando os dados.
+       Cada PAR coluna×campo (pedido 1.96: uma coluna pode gerar vários
+       elementos — ex.: série como Texto E QR Code) tem seu alvo garantido. */
     function gerarZPLTodasLinhas() {
       if (!importDados.colunas.length || !importDados.linhas.length) return null;
       var validacao = importValidarMapeamento();
       if (!validacao.ok) return null;
-      var colunasMapeadas = obterColunasMapeadasLote(validacao.mapa);
-      if (!colunasMapeadas.length) return null;
+      var pares = obterParesMapeadosLote(validacao.mapa);
+      if (!pares.length) return null;
 
       /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho */
       if (!elements.length && !garantirEtiquetaLote()) return null;
       var idxCols = obterIdxColsLote();
 
-      var alvos = garantirAlvosTextoLote(colunasMapeadas.length);
+      var alvos = garantirAlvosLote(pares);
       /* Binding por ÍNDICE (clone é elements.map — posições 1:1): imune a
          ids duplicados/colisões de Date.now() na criação em rajada. */
-      var idxAlvos = alvos.map(function (alvo) { return elements.indexOf(alvo); });
+      var idxAlvos = alvos.map(function (alvo) { return alvo ? elements.indexOf(alvo) : -1; });
 
       var blocos = [];
       importDados.linhas.forEach(function (linha) {
         var clone = elements.map(function (el) { return Object.assign({}, el); });
-        var vals = obterValoresMapeadosLote(linha, colunasMapeadas, idxCols);
-        alvos.forEach(function (alvo, i) {
-          if (i >= vals.length) return;
+        pares.forEach(function (par, i) {
           var k = idxAlvos[i];
-          if (k !== -1 && k < clone.length) clone[k].texto = vals[i];
+          if (k === -1 || k >= clone.length) return;
+          var v = linha[idxCols[par.coluna]];
+          clone[k].texto = (v != null) ? String(v) : "";
         });
         var bloco = gerarZPLBloco(clone, tamAtualKey, rotAtual);
         if (bloco) blocos.push(bloco);
       });
 
       if (!blocos.length) return null;
-      return { zpl: blocos.join("\n\n"), total: blocos.length, colunasMapeadas: colunasMapeadas, idxCols: idxCols };
+      return { zpl: blocos.join("\n\n"), total: blocos.length, pares: pares, idxCols: idxCols };
     }
 
     if ($("btn-import-gerar-todas")) {
@@ -8479,7 +8768,7 @@
         if (!r) { notify("Não foi possível gerar as etiquetas.", "danger"); return; }
 
         /* A 1ª etiqueta fica visível no Estúdio e é o padrão para as demais */
-        aplicarLinhaLoteNoEstudio(0, r.colunasMapeadas, r.idxCols);
+        aplicarLinhaLoteNoEstudio(0, r.pares, r.idxCols);
         lotePaginaAtual = 0;
         ativarAbaStudio("tab-canvas");
         atualizarNavLote();
@@ -8487,6 +8776,7 @@
         var modalImp = bootstrap.Modal.getInstance($("modal-import-dados"));
         if (modalImp) modalImp.hide();
         loteEspecialAtivo = false;
+        loteEspecialBindings = null;
         $("zpl").value = r.zpl;
         atualizarBarraStatusLote();
         notify(r.total + " etiquetas geradas (uma por linha). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
@@ -8524,12 +8814,71 @@
       });
     }
 
+    /* Pedido 1.94: sem etiqueta criada, o Lote Especial cria a etiqueta
+       sozinho — um elemento de TEXTO por nível de sequência (raízes e
+       subníveis), empilhados do topo sem sobreposição, cada nível ligado
+       ao seu elemento, com o valor da 1ª combinação (regras do lote). */
+    function garantirEtiquetaLoteEspecial() {
+      if (elements.length) return true;
+      if (!batchSpecialTree || !batchSpecialTree.length) {
+        notify("Defina ao menos um nível de sequência.", "warning");
+        return false;
+      }
+      var nos = [];
+      (function coletar(nodes) {
+        (nodes || []).forEach(function (n) {
+          nos.push(n);
+          if (n.children && n.children.length) coletar(n.children);
+        });
+      })(batchSpecialTree);
+      if (!nos.length) {
+        notify("Defina ao menos um nível de sequência.", "warning");
+        return false;
+      }
+
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var W = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
+      var H = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
+      var m = Math.round(W * 0.035);
+      var GAP = Math.max(6, Math.round(H * 0.03));
+
+      var itens = nos.map(function (n) {
+        var vals = gerarValoresNivel(n);
+        return { node: n, valor: (vals && vals.length) ? String(vals[0]) : "" };
+      });
+
+      /* Se o total não cabe na etiqueta, reduz proporcionalmente (autoajuste) */
+      var totalItens = itens.reduce(function (acc) { return acc + 28 * 1.4 + GAP; }, 0);
+      var alturaDisponivel = Math.max(0, H - 2 * m);
+      var escala = 1;
+      if (totalItens > alturaDisponivel && totalItens > 0) {
+        escala = alturaDisponivel / totalItens;
+        if (escala < 0.45) { escala = 0.45; notify("Total de elementos reduzido ao mínimo e ainda pode não caber — considere uma etiqueta maior.", "warning"); }
+      }
+
+      var cursorY = m;
+      itens.forEach(function (it) {
+        adicionarElemento("texto", it.valor);
+        var el = elements[elements.length - 1];
+        if (!el) return;
+        el.fonte = Math.max(10, Math.round(28 * escala));
+        if (typeof ajustarFonteParaCaber === "function") el.fonte = ajustarFonteParaCaber(el.texto || "", el.fonte, W - 2 * m);
+        el.h = Math.round(el.fonte * 1.4);
+        el.x = m;
+        el.y = cursorY;
+        if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
+        cursorY = el.y + el.fonte * 1.4 + GAP;
+        it.node.targetElementId = el.id;
+      });
+      renderStudio();
+      renderBatchSpecialTreeUI();
+      notify("Etiqueta criada automaticamente para o Lote Especial: " + itens.length + " textos (um por nível de sequência), sem sobreposição.", "success");
+      return true;
+    }
+
     if ($("btn-batch-special-generate")) {
       $("btn-batch-special-generate").addEventListener("click", function () {
-        if (elements.length === 0) {
-          notify("Crie a etiqueta antes de gerar o lote especial.", "danger");
-          return;
-        }
+        if (!elements.length && !garantirEtiquetaLoteEspecial()) return;
         loteEspecialAtivo = true;
 
         var stepBindings = gerarCombinacoesComBinding(batchSpecialTree);
@@ -8565,10 +8914,26 @@
             var snZpl = gerarZPLBloco(snClone, tamAtualKey, rotAtual);
             if (snZpl) {
               snZpl = snZpl.replace(/\^XZ\s*$/, "^PQ" + snCount + "\n^XZ");
+              /* Pedido 1.101: as combinações do ^SN também alimentam a paginação unificada */
+              loteEspecialBindings = gerarValoresNivel(snNode).map(function (v) {
+                var m = {}; m[snTarget] = v; return m;
+              });
+              /* Pedido 1.100: a 1ª etiqueta fica visível no Estúdio como padrão — sem pular para a aba ZPL */
+              elements.forEach(function (el) {
+                var alvoSn = (snTarget === "serie" && (el.classe === "serie" || el.id === "el_serie")) ||
+                             (snTarget === "nome" && (el.classe === "nome" || el.id === "el_nome")) ||
+                             (el.id === snTarget);
+                if (alvoSn && (el.tipo === "texto" || el.tipo === "sub" || el.tipo === "serie" || el.tipo === "nome")) {
+                  el.texto = snData;
+                }
+              });
+              renderStudio();
               $("zpl").value = snZpl;
-              mostrarAbaZPL();
-              notify("Lote Especial de " + snCount + " etiquetas via serialização nativa ^SN + ^PQ (1 bloco).", "success");
+              ativarAbaStudio("tab-canvas");
+              lotePaginaAtual = 0;
+              notify("Lote Especial de " + snCount + " etiquetas via serialização nativa ^SN + ^PQ (1 bloco). A 1ª está no Estúdio.", "success");
               atualizarBarraStatusLote();
+              atualizarNavLote();
               return;
             }
           }
@@ -8576,33 +8941,27 @@
 
         var batchZPL = [];
         stepBindings.forEach(function (stepMap) {
-          var clonedElements = elements.map(function (el) {
-            var copy = Object.assign({}, el);
-            Object.keys(stepMap).forEach(function (targetKey) {
-              var val = stepMap[targetKey];
-              if (targetKey === "serie" && (copy.classe === "serie" || copy.id === "el_serie")) {
-                copy.texto = "" + val;
-              } else if (targetKey === "qr" && (copy.tipo === "qr" || copy.tipo === "barcode" || copy.id === "el_qr")) {
-                copy.texto = val;
-              } else if (targetKey === "nome" && (copy.classe === "nome" || copy.id === "el_nome")) {
-                copy.texto = val;
-              } else if (copy.id === targetKey) {
-                copy.texto = val;
-              }
-            });
-            return copy;
-          });
-
+          var clonedElements = elements.map(function (el) { return Object.assign({}, el); });
+          aplicarStepMapEmArray(clonedElements, stepMap);
           batchZPL.push(gerarZPLBloco(clonedElements, tamAtualKey, rotAtual));
         });
 
         var fullBatchCode = batchZPL.join("\n\n");
+
+        /* Pedido 1.101: guarda as combinações para a paginação unificada */
+        loteEspecialBindings = stepBindings;
+
+        /* Pedido 1.100: a 1ª combinação fica visível no Estúdio como padrão — sem pular para a aba ZPL */
+        if (stepBindings[0]) aplicarStepMapAosElementos(stepBindings[0]);
+        renderStudio();
         $("zpl").value = fullBatchCode;
 
-        mostrarAbaZPL();
+        ativarAbaStudio("tab-canvas");
 
-        notify("Lote Especial de " + stepBindings.length + " etiquetas gerado em ZPL com sucesso!", "success");
+        notify("Lote Especial de " + stepBindings.length + " etiquetas geradas. A 1ª está no Estúdio e é o padrão para as demais.", "success");
+        lotePaginaAtual = 0;
         atualizarBarraStatusLote();
+        atualizarNavLote();
       });
     }
 
@@ -8704,7 +9063,7 @@
         }
         if (zplCode) {
           var ip = localStorage.getItem(CHAVE_IP);
-          if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
+          if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
           abrirModalQuantidadeImpressao(function (qtd) {
             var zplFinal = (qtd > 1) ? injetarQuantidadeZPL(zplCode, qtd) : zplCode;
             enviarImpressao(ip, zplFinal);
@@ -8987,8 +9346,154 @@
       });
     }
 
+    /* ---------------- Suporte Bluetooth (Web Bluetooth / BLE — Zebra) — Pedido 1.95 ---------------- */
+    var btDevice = null, btServer = null, btChar = null;
+    var ZEBRA_BLE_SVC = "e7810e71-73ae-499d-8c15-faa9aef0c3f2";
+    var ZEBRA_BLE_CHR = "e7810e73-73ae-499d-8c15-faa9aef0c3f2";
+    var btEncoder = new TextEncoder();
+
+    function logBt(msg, tipo) {
+      var linesEl = $("bt-log-lines");
+      var areaEl = $("bt-log-area");
+      if (!linesEl) return;
+      var cor = (tipo === "ok") ? "#22c55e" : (tipo === "err") ? "#ef4444" : "#e2e8f0";
+      var linha = document.createElement("div");
+      linha.style.color = cor;
+      linha.textContent = "[" + new Date().toLocaleTimeString("pt-BR") + "] " + msg;
+      linesEl.appendChild(linha);
+      if (areaEl) areaEl.scrollTop = areaEl.scrollHeight;
+    }
+
+    function atualizarEstadoBtUI() {
+      var badge = $("bt-conn-badge");
+      var detail = $("bt-conn-detail");
+      var btnConnect = $("btn-bt-connect-modal");
+      var btnTest = $("btn-bt-print-test");
+      var btnDisc = $("btn-bt-disconnect");
+      var on = !!(btChar && btDevice && btDevice.gatt && btDevice.gatt.connected);
+      if (badge) {
+        badge.className = "badge " + (on ? "bg-success" : "bg-secondary");
+        badge.textContent = on ? "Conectado via Bluetooth" : "Não conectado";
+      }
+      if (detail) detail.textContent = on ? (btDevice.name || "Impressora Zebra") : "";
+      if (btnConnect) btnConnect.disabled = on;
+      if (btnTest) btnTest.disabled = !on;
+      if (btnDisc) btnDisc.disabled = !on;
+    }
+
+    /* Localiza a característica de impressão: prefere a oficial da Zebra;
+       como plano B, aceita a 1ª característica gravável do aparelho. */
+    function procurarCaracteristicaImpressao(server) {
+      return server.getPrimaryServices().then(function (svcs) {
+        var alvo = null;
+        (svcs || []).forEach(function (s) { if (s.uuid === ZEBRA_BLE_SVC) alvo = s; });
+        function varrer(svc) {
+          return svc.getCharacteristics().then(function (chs) {
+            for (var i = 0; i < chs.length; i++) {
+              if (chs[i].properties && (chs[i].properties.write || chs[i].properties.writeWithoutResponse)) return chs[i];
+            }
+            return null;
+          });
+        }
+        if (alvo) return varrer(alvo);
+        var achado = Promise.resolve(null);
+        (svcs || []).forEach(function (svc) {
+          achado = achado.then(function (chr) { return chr ? chr : varrer(svc); });
+        });
+        return achado;
+      });
+    }
+
+    async function conectarWebBluetooth() {
+      if (!("bluetooth" in navigator)) {
+        logBt("Web Bluetooth indisponível neste navegador. Use Google Chrome ou Microsoft Edge.", "err");
+        notify("Web Bluetooth indisponível. Use Chrome ou Edge.", "danger");
+        return;
+      }
+      try {
+        btDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ services: [ZEBRA_BLE_SVC] }, { namePrefix: "Z" }, { namePrefix: "Zebra" }],
+          optionalServices: [ZEBRA_BLE_SVC]
+        });
+        logBt("Selecionada: " + (btDevice.name || "dispositivo sem nome"), "ok");
+        btDevice.addEventListener("gattserverdisconnected", function () {
+          btServer = null; btChar = null;
+          atualizarEstadoBtUI();
+          logBt("Impressora Bluetooth desconectada.", "err");
+          notify("Impressora Bluetooth desconectada.", "warning");
+        });
+        btServer = await btDevice.gatt.connect();
+        btChar = await procurarCaracteristicaImpressao(btServer);
+        if (!btChar) {
+          logBt("Nenhuma característica de escrita encontrada nesta impressora.", "err");
+          notify("Nenhum canal de impressão Bluetooth compatível encontrado.", "danger");
+          try { btServer.disconnect(); } catch (e) {}
+          btServer = null; btDevice = null; btChar = null;
+          atualizarEstadoBtUI();
+          return;
+        }
+        atualizarEstadoBtUI();
+        localStorage.setItem("etiquetasZebra.modoConexao", "bluetooth");
+        logBt("Conectado a " + (btDevice.name || "Zebra") + " (característica " + btChar.uuid + ")", "ok");
+        notify("✅ Impressora Bluetooth conectada com sucesso!", "success");
+      } catch (e) {
+        if (e && (e.name === "NotFoundError" || e.code === 8)) {
+          logBt("Seleção Bluetooth cancelada.", "err");
+          return;
+        }
+        logBt("Erro ao conectar à impressora Bluetooth: " + e.message, "err");
+        notify("Falha na conexão Bluetooth: " + e.message, "danger");
+        btDevice = null; btServer = null; btChar = null;
+        atualizarEstadoBtUI();
+      }
+    }
+
+    async function desconectarWebBluetooth() {
+      if (btServer) {
+        try { btServer.disconnect(); } catch (e) {}
+      }
+      btServer = null; btDevice = null; btChar = null;
+      atualizarEstadoBtUI();
+      logBt("Impressora Bluetooth desconectada.", "ok");
+      notify("Impressora Bluetooth desconectada.", "dark");
+    }
+
+    async function imprimirWebBluetooth(zpl) {
+      if (!btChar) throw new Error("Nenhuma impressora Bluetooth conectada.");
+      var bytes = btEncoder.encode(zpl);
+      var total = bytes.byteLength;
+      var PEDACO = 180;
+      for (var off = 0; off < total; off += PEDACO) {
+        await btChar.writeValue(bytes.slice(off, Math.min(off + PEDACO, total)));
+      }
+      logBt("ZPL enviado com sucesso via Bluetooth (" + total + " bytes).", "ok");
+    }
+
+    if ($("btn-bt-connect-modal")) $("btn-bt-connect-modal").addEventListener("click", conectarWebBluetooth);
+    if ($("btn-bt-disconnect")) $("btn-bt-disconnect").addEventListener("click", desconectarWebBluetooth);
+    if ($("btn-bt-print-test")) {
+      $("btn-bt-print-test").addEventListener("click", function () {
+        if (!btChar) { notify("Conecte a impressora Bluetooth primeiro.", "warning"); return; }
+        var zplTeste = "^XA\n^CI28\n^PW406\n^LL203\n^FO15,15^GB376,173,2^FS\n^FO30,35^A0N,28,28^FDTESTE DE IMPRESSORA^FS\n^FO30,75^A0N,24,24^FDCanalQb Zebra Designer — Bluetooth^FS\n^FO30,110^A0N,24,24^FD1234567890^FS\n^FO300,60^BQN,2,4^FDQA,TESTE-1234567890^FS\n^FO30,150^A0N,20,20^FD" + new Date().toLocaleString("pt-BR") + "^FS\n^XZ\n";
+        imprimirWebBluetooth(zplTeste)
+          .then(function () { notify("✅ Teste enviado via Bluetooth!", "success"); })
+          .catch(function (err) { notify("Erro no teste Bluetooth: " + err.message, "danger"); });
+      });
+    }
+
     /* ---------------- Impressão Híbrida (HTTP Direct, Cloud & Local Server) ---------------- */
     function enviarImpressao(ip, zpl) {
+      if (btChar && btDevice && btDevice.gatt && btDevice.gatt.connected) {
+        notify("Enviando etiqueta diretamente para a impressora Bluetooth...", "dark");
+        imprimirWebBluetooth(zpl)
+          .then(function () {
+            notify("✅ Etiqueta impressa com sucesso via Bluetooth!", "success");
+          })
+          .catch(function (err) {
+            notify("Erro ao imprimir via Bluetooth: " + err.message, "danger");
+          });
+        return;
+      }
       if (usbDevice && usbDevice.opened) {
         notify("Enviando etiqueta diretamente para a impressora USB...", "dark");
         imprimirWebUSB(zpl)
@@ -9143,7 +9648,7 @@
         return;
       }
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
       abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
     }
 
@@ -9151,7 +9656,7 @@
 
     function abrirModalImprimirZPLBruto() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
       $("zpl-print-ip").textContent = ip;
       if (bsModalPrintZpl) bsModalPrintZpl.show();
     }
@@ -9256,15 +9761,37 @@
           todas com o formato/posições da etiqueta do projeto, só trocando os dados
           (mesma base do "Gerar Todas as Linhas"). Sem importação ativa, segue o
           caminho normal: imagem (^GF) ou ZPL da etiqueta atual. */
+      /* Pedido 1.102: com Lote Especial gerado, "Imprimir" envia TODAS as
+         etiquetas do lote — regeneradas da etiqueta atual + combinações —
+         em vez de imprimir apenas a etiqueta corrente do Estúdio. */
       var zpl;
-      var multi = gerarZPLTodasLinhas();
-      if (multi) {
-        zpl = multi.zpl;
-        if (!isEditingZpl) $("zpl").value = multi.zpl;
-      } else if (localStorage.getItem("etiquetasZebra.printAsImage") === "1" || temTextoGirado()) {
-        zpl = gerarZPLImagem();
+      if (ehLoteEspecialNavegavel()) {
+        var blocosLote = [];
+        loteEspecialBindings.forEach(function (stepMap) {
+          var cloneLote = elements.map(function (el) { return Object.assign({}, el); });
+          aplicarStepMapEmArray(cloneLote, stepMap);
+          var blocoLote = gerarZPLBloco(cloneLote, tamAtualKey, rotAtual);
+          if (blocoLote) blocosLote.push(blocoLote);
+        });
+        zpl = blocosLote.length ? blocosLote.join("\n\n") : baseZpl;
+        if (!isEditingZpl) $("zpl").value = zpl;
       } else {
-        zpl = renderZPL();
+        var multi = gerarZPLTodasLinhas();
+        if (multi) {
+          zpl = multi.zpl;
+          if (!isEditingZpl) $("zpl").value = multi.zpl;
+        } else if (localStorage.getItem("etiquetasZebra.printAsImage") === "1" || temTextoGirado()) {
+          zpl = gerarZPLImagem();
+        } else {
+          zpl = renderZPL();
+        }
+      }
+      /* Pedido 1.102: projeto com várias etiquetas — imprime também as views guardadas */
+      if (etiquetasMulti.length) {
+        var zplViews = etiquetasMulti.map(function (etq) {
+          return gerarZPLBloco(etq.elements, tamAtualKey, rotAtual);
+        }).filter(Boolean).join("\n\n");
+        if (zplViews) zpl = zplViews + "\n\n" + zpl;
       }
       if (qtd && qtd > 1) zpl = injetarQuantidadeZPL(zpl, qtd);
 
@@ -9317,7 +9844,7 @@
       if (modoOp) zplCal += "^MM" + modoOp;
       zplCal += "^PR" + vel + "^PW" + pw + "^LL" + ll + "^XZ";
       enviarImpressao(ip, zplCal);
-      notify("Calibração enviada: ribbon ^MT" + modo + " · tonalidade ^MD" + escuro + " · mídia ^MN" + midia + (modoOp ? " · modo ^MM" + modoOp : "") + " · velocidade ^PR" + vel + " · papel " + sz.mmW + "×" + sz.mmH + " mm (^PW" + pw + "/^LL" + ll + ").", "success");
+      notify("Calibração enviada: ribbon " + modo + " · tonalidade " + escuro + " · mídia " + midia + (modoOp ? " · modo " + modoOp : "") + " · velocidade " + vel + " · papel " + sz.mmW + "×" + sz.mmH + " mm.", "success");
     }
 
     /* ---------------- Event Listeners Globais ---------------- */
@@ -9327,7 +9854,8 @@
       if (el) el.addEventListener("input", atualizarOuCriarPresetCampos);
     });
 
-    $("btn-rotacao").addEventListener("click", function () {
+    var btnRotacaoAntigo = $("btn-rotacao");
+    if (btnRotacaoAntigo) btnRotacaoAntigo.addEventListener("click", function () {
       rotAtual = ROT_SEQ[(ROT_SEQ.indexOf(rotAtual) + 1) % ROT_SEQ.length];
       renderStudio();
     });
@@ -9424,7 +9952,7 @@
         var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
         localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
         atualizarBtnImgPrint();
-        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada (^GF)." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
+        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
       });
       atualizarBtnImgPrint();
     }
@@ -9601,6 +10129,7 @@
         elements = [];
         selectedElId = null;
         loteEspecialAtivo = false;
+        loteEspecialBindings = null;
         renderStudio();
         atualizarBarraStatusLote();
         if (bsModalLimpar) bsModalLimpar.hide();
@@ -10183,9 +10712,8 @@
       }
 
       // 3. Sync Tamanho & Orientação
-      var rotLbl = $("rot-label");
       var mobRotLbl = $("mobile-hero-rot-label");
-      if (rotLbl && mobRotLbl) mobRotLbl.textContent = rotLbl.textContent;
+      if (mobRotLbl) mobRotLbl.textContent = (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal";
 
       // 4. Sync Contagem de Elementos
       atualizarContagemElementos(typeof elements !== "undefined" ? elements.length : 0);
@@ -10244,7 +10772,7 @@
     var mobHeroTam = $("mobile-hero-tamanho-btn");
     if (mobHeroTam) {
       mobHeroTam.addEventListener("click", function() {
-        var dskTam = $("btn-tamanho");
+        var dskTam = $("btn-tamanho") || $("sb-tamanho");
         if (dskTam) dskTam.click();
       });
     }
@@ -10260,7 +10788,7 @@
     var mobHeroRot = $("mobile-hero-rotacao-btn");
     if (mobHeroRot) {
       mobHeroRot.addEventListener("click", function() {
-        var dskRot = $("btn-rotacao");
+        var dskRot = $("btn-rotacao") || $("sb-rot");
         if (dskRot) dskRot.click();
         atualizarRotuloOrientacao();
       });
@@ -10385,7 +10913,7 @@
       navImgPrint.addEventListener("click", function() {
         var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
         localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
-        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada (^GF)." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
+        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
       });
     }
 
@@ -10554,8 +11082,8 @@
       });
 
       /* Etiqueta */
-      dnvAcao("dnv-etq-tamanho", function () { var btn = $("btn-tamanho"); if (btn) btn.click(); });
-      dnvAcao("dnv-etq-rotacao", function () { var btn = $("btn-rotacao"); if (btn) btn.click(); });
+      dnvAcao("dnv-etq-tamanho", function () { var btn = $("btn-tamanho") || $("sb-tamanho"); if (btn) btn.click(); });
+      dnvAcao("dnv-etq-rotacao", function () { var btn = $("btn-rotacao") || $("sb-rot"); if (btn) btn.click(); });
 
       /* Impressora */
       dnvAcao("dnv-imp-ip", function () { if (typeof abrirModalIp === "function") abrirModalIp(); });
@@ -10564,7 +11092,7 @@
       dnvAcao("dnv-imp-imgprint", function () {
         var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
         localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
-        notify(novo ? "Impressao como IMAGEM ativada (^GF)." : "Impressao ZPL vetorial padrao reativada.", novo ? "success" : "dark");
+        notify(novo ? "Impressao como IMAGEM ativada." : "Impressao ZPL vetorial padrao reativada.", novo ? "success" : "dark");
       });
       dnvAcao("dnv-imp-copias", function () {
         if (!$("zpl").value) { notify("Gere ou adicione elementos a etiqueta primeiro.", "danger"); return; }
@@ -11020,7 +11548,7 @@
                     <li><strong>Espessura</strong> de linha/moldura em dots (campo, botões ±1) — vale para todas as formas, inclusive retas e curvas.</li>
                     <li><strong>Estilos de moldura</strong>: sólida, tracejada, pontilhada, dupla, arredondada, sombra.</li>
                     <li><strong>Estilos de linha</strong>: sólida, tracejada, pontilhada, grossa, dupla, gradiente.</li>
-                    <li><strong>Quebra automática (^FB)</strong>: todo texto quebra sozinho no limite da caixa (ou da margem direita da etiqueta) — no ZPL sai sempre com <code>^FB</code>. Ajuste fino: largura do bloco, máx. de linhas e alinhamento (esquerda/centro/direita/justificado).</li>
+                    <li><strong>Quebra automática</strong>: todo texto quebra sozinho no limite da caixa (ou da margem direita da etiqueta) — no ZPL sai sempre com quebra de bloco. Ajuste fino: largura do bloco, máx. de linhas e alinhamento (esquerda/centro/direita/justificado).</li>
                   </ul>
                 </div>
               </div>
