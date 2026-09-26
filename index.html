@@ -1143,6 +1143,14 @@
       font-size: 0.8rem;
       flex-shrink: 0;
     }
+    /* Itens de estado (Espelho & Reverso): check verde quando ativos */
+    .dnv-dropdown-item .dnv-check {
+      margin-left: auto;
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+    .dnv-dropdown-item.dnv-item-ativo { color: var(--bs-success); font-weight: 600; }
+    .dnv-dropdown-item.dnv-item-ativo .dnv-icon { color: var(--bs-success); }
     .dnv-dropdown-divider {
       border: none;
       border-top: 1px solid var(--zebra-border);
@@ -1245,7 +1253,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.12</span>
+      <span class="brand-ver">v2.13</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1387,6 +1395,26 @@
             </div>
           </div>
           <hr class="dnv-dropdown-divider">
+          <!-- Espelhos de impressão (exclusivos entre si) e Reverso (^LR) —
+               itens de estado: alternam on/off sem fechar o menu -->
+          <span class="dnv-dropdown-header">Espelho & Reverso</span>
+          <button type="button" class="dnv-dropdown-item" id="btn-toggle-espelho-v" role="menuitem" aria-pressed="false" title="Espelho VERTICAL na impressão (topo↔base) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+            <i class="bi bi-symmetry-vertical dnv-icon"></i> Espelho Vertical
+            <i class="bi bi-check-lg dnv-check d-none text-success"></i>
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="btn-toggle-espelho-h" role="menuitem" aria-pressed="false" title="Espelho HORIZONTAL na impressão (^PM, esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+            <i class="bi bi-symmetry-horizontal dnv-icon"></i> Espelho Horizontal
+            <i class="bi bi-check-lg dnv-check d-none text-success"></i>
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="btn-toggle-espelho-vh" role="menuitem" aria-pressed="false" title="Inversão VERTICAL + HORIZONTAL (gira a etiqueta 180° na impressão)">
+            <i class="bi bi-arrow-repeat dnv-icon"></i> Inverter Vertical + Horizontal
+            <i class="bi bi-check-lg dnv-check d-none text-success"></i>
+          </button>
+          <button type="button" class="dnv-dropdown-item" id="btn-toggle-reverso" role="menuitem" aria-pressed="false" title="Reverso branco-sobre-preto (^LR) — inverte cores de toda a etiqueta">
+            <i class="bi bi-circle-half dnv-icon"></i> Reverso (Branco sobre Preto)
+            <i class="bi bi-check-lg dnv-check d-none text-success"></i>
+          </button>
+          <hr class="dnv-dropdown-divider">
           <span class="dnv-dropdown-header">Impressão</span>
           <button type="button" class="dnv-dropdown-item" id="dnv-imp-preview" role="menuitem">
             <i class="bi bi-eye dnv-icon text-info"></i> Pré-visualizar
@@ -1476,7 +1504,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.12</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.13</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1638,13 +1666,8 @@
                   <span class="ribbon-grip" title="Arraste para reordenar o ribbon Etiqueta" aria-label="Arrastar para reordenar o ribbon Etiqueta"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
                   <button type="button" class="icon-btn ribbon-toggle" data-label="Etiqueta" title="Exibir / Ocultar ícones do Ribbon Etiqueta" aria-label="Exibir ou ocultar ícones do Ribbon Etiqueta" aria-expanded="true"><i class="fas fa-tag"></i></button>
                   <div class="ribbon-body">
-                  <!-- Espelhos de impressão (exclusivos entre si) e Reverso (^LR) -->
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-espelho-v" title="Espelho VERTICAL na impressão (topo↔base) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito." aria-label="Espelho vertical na impressão"><i class="bi bi-symmetry-vertical"></i></button>
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-espelho-h" title="Espelho HORIZONTAL na impressão (^PM, esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito." aria-label="Espelho horizontal na impressão"><i class="bi bi-symmetry-horizontal"></i></button>
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-espelho-vh" title="Inversão VERTICAL + HORIZONTAL (gira a etiqueta 180° na impressão)" aria-label="Inverter vertical e horizontal na impressão"><i class="bi bi-arrow-repeat"></i></button>
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-toggle-reverso" title="Reverso branco-sobre-preto (^LR) — inverte cores de toda a etiqueta" aria-label="Inverter cores da etiqueta"><i class="bi bi-circle-half"></i></button>
-
-                  <div class="vr mx-1"></div>
+                  <!-- Espelhos de impressão e Reverso migrados para o menu
+                       Impressora da navbar (seção "Espelho & Reverso") -->
 
                   <!-- Toggles on/off (OFF em preto e branco, ON colorido — regra universal) -->
                   <input class="btn-check" type="checkbox" id="toggle-regua" checked autocomplete="off">
@@ -2608,7 +2631,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.12</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.13</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -3712,8 +3735,12 @@
     /* Largura da caixa de quebra automática de um texto (dots): fbWidth explícito
        ou o espaço restante até a margem direita da etiqueta. */
     function larguraQuebraTexto(el, dW) {
-      if (el.fbWidth) return Math.max(1, Math.round(el.fbWidth));
-      return Math.max(60, Math.round(dW - (el.x || 0) - mmToDots(margens.right)));
+      /* ^FB nunca pode ultrapassar o limite direito da etiqueta: firmwares Zebra
+         descartam/clipam o campo inteiro quando o bloco passa do ^PW (saída em
+         branco). O clamp vale para editor e ZPL (função compartilhada). */
+      var disponivel = Math.max(1, Math.round(dW - (el.x || 0) - mmToDots(margens.right)));
+      if (el.fbWidth) return Math.max(1, Math.min(Math.round(el.fbWidth), disponivel));
+      return Math.max(1, disponivel);
     }
     /* Conta as linhas de um texto com quebra automática (dots) — mesma política
        greedy por palavras do ^FB da impressora. */
@@ -8823,20 +8850,32 @@
       });
     }
 
+    /* Existe algum texto com rotação individual (≠ 0°) na etiqueta atual?
+       ^FB sob campo girado (^A0I/R/B) desloca ou perde o texto em firmwares
+       Zebra — nesses casos a impressão sobe para o modo imagem ^GF, que
+       imprime exatamente como o preview do editor. */
+    function temTextoGirado() {
+      return elements.some(function (el) {
+        if (!(el.tipo === "texto" || el.tipo === "sub" || el.tipo === "nome" || el.tipo === "serie")) return false;
+        var r = ((el.rotacao || 0) % 360 + 360) % 360;
+        return r !== 0;
+      });
+    }
+
     function imprimirFTP(qtd) {
       var baseZpl = $("zpl").value;
       if (!baseZpl) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
 
       /* Importação com várias linhas mapeadas: imprime uma etiqueta POR LINHA —
-         todas com o formato/posições da etiqueta do projeto, só trocando os dados
-         (mesma base do "Gerar Todas as Linhas"). Sem importação ativa, segue o
-         caminho normal: imagem (^GF) ou ZPL da etiqueta atual. */
+          todas com o formato/posições da etiqueta do projeto, só trocando os dados
+          (mesma base do "Gerar Todas as Linhas"). Sem importação ativa, segue o
+          caminho normal: imagem (^GF) ou ZPL da etiqueta atual. */
       var zpl;
       var multi = gerarZPLTodasLinhas();
       if (multi) {
         zpl = multi.zpl;
         if (!isEditingZpl) $("zpl").value = multi.zpl;
-      } else if (localStorage.getItem("etiquetasZebra.printAsImage") === "1") {
+      } else if (localStorage.getItem("etiquetasZebra.printAsImage") === "1" || temTextoGirado()) {
         zpl = gerarZPLImagem();
       } else {
         zpl = renderZPL();
@@ -9026,16 +9065,19 @@
       aplicarTema();
     }
 
-    /* Espelho (^PM) e Reverso (^LR) — persistem em localStorage, entram no prologue ZPL */
+    /* Espelho (^PM) e Reverso (^LR) — persistem em localStorage, entram no prologue ZPL.
+       Itens de estado do menu Impressora (seção "Espelho & Reverso"): check verde quando ativos. */
+    function marcarItemMenuAtivo(b, ativo) {
+      var ck = b.querySelector(".dnv-check");
+      if (ck) ck.classList.toggle("d-none", !ativo);
+      b.classList.toggle("dnv-item-ativo", ativo);
+      b.setAttribute("aria-pressed", ativo ? "true" : "false");
+    }
     function ligarToggleFlag(btnId, chave, msgOn, msgOff) {
       var b = $(btnId);
       if (!b) return;
       function atualizar() {
-        var ativo = localStorage.getItem(chave) === "1";
-        b.classList.toggle("icon-btn-success", ativo);
-        b.classList.toggle("icon-btn-muted", !ativo);
-        b.classList.toggle("icon-btn-off", !ativo); /* OFF = preto e branco; ON = colorido */
-        b.setAttribute("aria-pressed", ativo ? "true" : "false");
+        marcarItemMenuAtivo(b, localStorage.getItem(chave) === "1");
       }
       b.addEventListener("click", function () {
         var novo = !(localStorage.getItem(chave) === "1");
@@ -9058,11 +9100,7 @@
         modos.forEach(function (par) {
           var b = $(par[0]);
           if (!b) return;
-          var ativo = atual === par[1];
-          b.classList.toggle("icon-btn-success", ativo);
-          b.classList.toggle("icon-btn-muted", !ativo);
-          b.classList.toggle("icon-btn-off", !ativo); /* OFF = preto e branco; ON = colorido */
-          b.setAttribute("aria-pressed", ativo ? "true" : "false");
+          marcarItemMenuAtivo(b, atual === par[1]);
         });
       }
       modos.forEach(function (par) {
@@ -9623,6 +9661,14 @@
       ro.observe($("preview"));
       if (canvasAreaEl) ro.observe(canvasAreaEl);
     }
+
+    /* Logo/brand da navbar: um clique abre o painel de Estúdio */
+    document.addEventListener("click", function (e) {
+      var brand = e.target.closest(".navbar-brand");
+      if (!brand) return;
+      e.preventDefault();
+      if (typeof ativarAbaStudio === "function") ativarAbaStudio("tab-canvas");
+    });
 
     // Central de Ajuda: Botão Flutuante, botão do footer e Tecla F1
     /* Cada dispositivo mostra a ajuda específica: PC/Mac veem os atalhos de
