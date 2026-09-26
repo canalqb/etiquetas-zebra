@@ -759,7 +759,12 @@
        tira a opacidade 0 quando a classe "show" chega (callback pós-transição);
        se esse callback atrasar/falhar, o painel fica "active" mas transparente.
        Forçamos opacidade 1 assim que "active" entra — o conteúdo aparece sempre. */
-    #studio-tab-content > .tab-pane.fade.active { opacity: 1 !important; }
+    #sec-studio .tab-pane.fade.active { opacity: 1 !important; }
+    /* tab-zpl e tab-list são irmãos do #studio-tab-content (não filhos): sem o
+       seletor-filho do Bootstrap (.tab-content > .tab-pane), o painel inativo
+       ficava com opacidade 0 mas display:block — invisível e ocupando altura.
+       Força display:none em todo painel inativo do Studio. */
+    #sec-studio .tab-pane.fade:not(.active) { display: none; }
 
     /* ===== MOBILE (≤991px): ribbons viram menu expansivo lateral esquerdo =====
        Mesmos grupos, cliques, toggles e atalhos — só o layout muda: cada ribbon
@@ -1289,7 +1294,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.19</span>
+      <span class="brand-ver">v2.20</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1540,7 +1545,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.19</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.20</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2774,7 +2779,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.19</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.20</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
