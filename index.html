@@ -1264,7 +1264,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.16</span>
+      <span class="brand-ver">v2.17</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1515,7 +1515,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.16</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.17</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1621,7 +1621,7 @@
                   </div>
                   <!-- Pedido 1.99: máscara de Data e Hora — atualiza sozinha a cada renderização/impressão -->
                   <div class="btn-group dropup">
-                    <button type="button" class="icon-btn icon-btn-warning" id="btn-add-datahora" data-bs-toggle="dropdown" data-bs-display="dynamic" title="Data e Hora — insere um texto que atualiza sozinho com a data/hora atual (funciona com QR e código de barras também, via mapeamento)" aria-label="Inserir máscara de data e hora" aria-expanded="false"><i class="fas fa-calendar-clock"></i></button>
+                    <button type="button" class="icon-btn icon-btn-warning" id="btn-add-datahora" data-bs-toggle="dropdown" data-bs-display="dynamic" title="Data e Hora — insere um texto que atualiza sozinho com a data/hora atual (funciona com QR e código de barras também, via mapeamento)" aria-label="Inserir máscara de data e hora" aria-expanded="false"><i class="fas fa-calendar-days"></i></button>
                     <ul class="dropdown-menu" aria-labelledby="btn-add-datahora" style="min-width:14rem;">
                       <li><h6 class="dropdown-header">Data</h6></li>
                       <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA">DD/MM/AAAA</button></li>
@@ -1839,10 +1839,10 @@
                       <button type="button" class="icon-btn icon-btn-info icon-btn-sm" id="sel-btn-paste" title="Colar (Ctrl+V)"><i class="fas fa-paste"></i></button>
                       <button type="button" class="icon-btn icon-btn-danger icon-btn-sm" id="sel-btn-del" title="Deletar selecionados (Delete)"><i class="fas fa-trash"></i></button>
                       <div class="vr mx-1" style="height:16px;"></div>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top" title="Alinhar ao topo da etiqueta" aria-label="Alinhar ao topo"><i class="fas fa-arrow-up-to-line"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom" title="Alinhar à parte inferior da etiqueta" aria-label="Alinhar à parte inferior"><i class="fas fa-arrow-down-to-line"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left" title="Alinhar à esquerda da etiqueta" aria-label="Alinhar à esquerda"><i class="fas fa-arrow-left-to-line"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right" title="Alinhar à direita da etiqueta" aria-label="Alinhar à direita"><i class="fas fa-arrow-right-to-line"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top" title="Alinhar ao topo da etiqueta" aria-label="Alinhar ao topo"><i class="bi bi-align-top"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom" title="Alinhar à parte inferior da etiqueta" aria-label="Alinhar à parte inferior"><i class="bi bi-align-bottom"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left" title="Alinhar à esquerda da etiqueta" aria-label="Alinhar à esquerda"><i class="bi bi-align-start"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right" title="Alinhar à direita da etiqueta" aria-label="Alinhar à direita"><i class="bi bi-align-end"></i></button>
                       <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-center" title="Centralizar na etiqueta" aria-label="Centralizar na etiqueta"><i class="fas fa-arrows-to-dot"></i></button>
                       <div class="vr mx-1" style="height:16px;"></div>
                       <button type="button" class="icon-btn icon-btn-dark icon-btn-sm" id="btn-style-bold" title="Negrito (Simulado)"><i class="fas fa-bold"></i></button>
@@ -2067,12 +2067,12 @@
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link py-1 px-2" id="tab-usb-btn" data-bs-toggle="pill" data-bs-target="#tab-usb" type="button" role="tab" aria-controls="tab-usb" aria-selected="false" style="font-size:0.82rem;" onclick="iniciarDiagnosticoUSB()">
-                <i class="fas fa-usb me-1"></i>USB (WebUSB)
+                <i class="fab fa-usb me-1"></i>USB (WebUSB)
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link py-1 px-2" id="tab-bt-btn" data-bs-toggle="pill" data-bs-target="#tab-bt" type="button" role="tab" aria-controls="tab-bt" aria-selected="false" style="font-size:0.82rem;">
-                <i class="fas fa-bluetooth-b me-1"></i>Bluetooth
+                <i class="fab fa-bluetooth-b me-1"></i>Bluetooth
               </button>
             </li>
           </ul>
@@ -2153,7 +2153,7 @@
               <!-- Botoes de acao Bluetooth -->
               <div class="d-flex flex-wrap gap-2 mb-2">
                 <button type="button" class="btn btn-sm btn-outline-primary" id="btn-bt-connect-modal">
-                  <i class="fas fa-bluetooth-b me-1"></i>Conectar Impressora Bluetooth
+                  <i class="fab fa-bluetooth-b me-1"></i>Conectar Impressora Bluetooth
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-success" id="btn-bt-print-test" disabled>
                   <i class="fas fa-print me-1"></i>Teste Bluetooth
@@ -2746,7 +2746,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.16</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.17</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
