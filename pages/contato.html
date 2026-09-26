@@ -8,7 +8,7 @@
 <meta name="robots" content="index, follow">
 <meta name="author" content="CanalQb">
 <meta property="og:title" content="Fale com o CanalQb — Contato Direto">
-<meta property="og:description" content="Canais oficiais de contato do projeto Etiquetas Zebra.">
+<meta property="og:description" content="Canais oficiais de contato do projeto Impressão em Zebras.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="">
 <link rel="canonical" href="">
@@ -54,14 +54,14 @@ footer.rodape{border-top:1px solid var(--borda);background:var(--card);margin-to
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"ContactPage","name":"Fale com o CanalQb — Contato Direto","inLanguage":"pt-BR","isPartOf":{"@type":"WebSite","name":"CanalQb Etiquetas Zebra"}}
+{"@context":"https://schema.org","@type":"ContactPage","name":"Fale com o CanalQb — Contato Direto","inLanguage":"pt-BR","isPartOf":{"@type":"WebSite","name":"CanalQb Impressão em Zebras"}}
 </script>
 </head>
 <body>
 <a class="skip-link" href="#conteudo">Ir para o conteúdo principal</a>
 <header class="topo">
   <div class="topo-in">
-    <a class="brand" href="../index.html"><i class="fa-solid fa-barcode" aria-hidden="true"></i><span>CanalQb · Etiquetas Zebra</span></a>
+    <a class="brand" href="../index.html"><i class="fa-solid fa-barcode" aria-hidden="true"></i><span>CanalQb · Impressão em Zebras</span></a>
     <div class="acoes" role="group" aria-label="Ações da página">
       <a class="btn" href="../index.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao editor</a>
       <button type="button" class="btn" id="btn-tema" aria-pressed="false"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> Tema</button>
@@ -76,7 +76,7 @@ footer.rodape{border-top:1px solid var(--borda);background:var(--card);margin-to
 
     <section aria-labelledby="s1">
       <h2 id="s1">Qual é o canal oficial de contato?</h2>
-      <p>O canal oficial é o formulário público do projeto no GitHub. Ao enviá-lo, sua mensagem é aberta como um chamado (issue) visível ao mantenedor, com título e corpo preenchidos automaticamente — sem cadastro de e-mail, sem formulário proprietário e sem banco de dados intermediário. Esse modelo mantém todo o histórico de atendimento aberto e auditável por qualquer pessoa.</p>
+      <p>O canal oficial é o e-mail do mantenedor: <a href="mailto:qrodrigob@gmail.com">qrodrigob@gmail.com</a>. Ao usar o formulário abaixo, sua mensagem é aberta pronta no seu aplicativo de e-mail, com título e corpo preenchidos automaticamente — sem cadastro, sem formulário proprietário e sem banco de dados intermediário. A conversa fica entre você e o mantenedor.</p>
       <form id="form-contato" novalidate>
         <div>
           <label for="motivo">Motivo do contato</label>
@@ -94,15 +94,15 @@ footer.rodape{border-top:1px solid var(--borda);background:var(--card);margin-to
           <label for="mensagem">Sua mensagem</label>
           <textarea id="mensagem" name="mensagem" rows="6" placeholder="Descreva sua dúvida ou problema. Se for um erro, informe o modelo da impressora, o tamanho da etiqueta e o que aconteceu."></textarea>
         </div>
-        <button type="submit" class="btn btn-primario"><i class="fa-brands fa-github" aria-hidden="true"></i> Abrir chamado oficial no GitHub</button>
-        <p class="meta">Nenhuma informação desta página é enviada a servidores nossos: o texto vai direto ao GitHub quando você confirma.</p>
+        <button type="submit" class="btn btn-primario"><i class="fa-solid fa-envelope" aria-hidden="true"></i> Abrir mensagem no seu e-mail</button>
+        <p class="meta">Nenhuma informação desta página é enviada a servidores: o texto abre no seu aplicativo de e-mail e você decide se envia.</p>
       </form>
     </section>
 
     <section aria-labelledby="s2">
       <h2 id="s2">Quais outros canais existem?</h2>
       <ul>
-        <li><i class="fa-brands fa-github" aria-hidden="true"></i> <strong>Repositório público:</strong> <a href="https://github.com/canalqb/etiquetas-zebra" rel="noopener" target="_blank">github.com/canalqb/etiquetas-zebra</a> — código-fonte, documentação e todas as chamados abertos.</li>
+        <li><i class="fa-solid fa-globe" aria-hidden="true"></i> <strong>Blog do dono do projeto:</strong> <a href="https://canalqb.com.br" rel="noopener" target="_blank">canalqb.com.br</a> — conteúdos, novidades e informações sobre o projeto.</li>
         <li><i class="fa-brands fa-youtube" aria-hidden="true"></i> <strong>Canal CanalQb:</strong> <a href="https://www.youtube.com/@CanalQb" rel="noopener" target="_blank">youtube.com/@CanalQb</a> — tutoriais de uso do editor e de impressão térmica.</li>
       </ul>
     </section>
@@ -127,8 +127,8 @@ footer.rodape{border-top:1px solid var(--borda);background:var(--card);margin-to
 <footer class="rodape">
   <div class="rodape-in">
     <div>
-      <p><strong>CanalQb · Etiquetas Zebra</strong></p>
-      <p>Projeto independente. Página estática hospedada em GitHub Pages.</p>
+      <p><strong>CanalQb · Impressão em Zebras</strong></p>
+      <p>Projeto gratuito criado e mantido pelo dono do blog canalqb.com.br.</p>
       <p>URL desta página: <span id="url-atual">detectada automaticamente pelo navegador</span></p>
       <p>© <span id="ano">2026</span> CanalQb. Conteúdo jurídico fornecido como referência, sem valor de aconselhamento legal.</p>
     </div>
@@ -191,8 +191,8 @@ footer.rodape{border-top:1px solid var(--borda);background:var(--card);margin-to
     if (!msg) { window.showToast("Escreva sua mensagem antes de enviar."); return; }
     var titulo = encodeURIComponent("[Site] " + motivo + " — contato pela página");
     var corpo = encodeURIComponent(msg + "\n\n— Enviado pela página de contato: " + location.href);
-    window.open("https://github.com/canalqb/etiquetas-zebra/issues/new?title=" + titulo + "&body=" + corpo, "_blank", "noopener");
-    window.showToast("Abrindo o chamado oficial no GitHub em nova aba…");
+    location.href = "mailto:qrodrigob@gmail.com?subject=" + titulo + "&body=" + corpo;
+    window.showToast("Abrindo a mensagem no seu aplicativo de e-mail…");
     form.reset();
   });
 })();

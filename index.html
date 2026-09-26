@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>CanalQb - Designer &amp; Gerador de Etiquetas Zebra ZPL</title>
-  <meta name="description" content="CanalQb - Designer e Gerador de Etiquetas Zebra ZPL II. Crie, personalize e imprima etiquetas profissionais com QR Code, código de barras e mais. Impressão direta via FTP sem drivers.">
+  <title>CanalQb Impressão em Zebras</title>
+  <meta name="description" content="CanalQb Impressão em Zebras — crie, personalize e imprima etiquetas para impressoras Zebra direto do navegador: textos, QR Code, código de barras, imagens, lotes com numeração automática e modelos prontos. Grátis, sem cadastro e sem instalar nada.">
   <meta name="robots" content="index, follow">
-  <meta property="og:title" content="CanalQb - Designer &amp; Gerador de Etiquetas Zebra ZPL">
-  <meta property="og:description" content="Crie e imprima etiquetas Zebra ZPL II profissionais com QR Code, barcode e editor visual.">
+  <meta property="og:title" content="CanalQb Impressão em Zebras">
+  <meta property="og:description" content="Crie e imprima etiquetas para impressoras Zebra com QR Code, código de barras e editor visual — direto do navegador.">
   <meta property="og:type" content="website">
   
   <!-- Favicons & Web Manifest (PWA) -->
@@ -153,11 +153,37 @@
     /* Canvas / Preview Container */
     .preview-stage-wrap {
       position: relative;
-      min-height: 576px;
+      min-height: 320px;
       min-width: 200px;
-      resize: both;
+      resize: none;
       overflow: auto;
     }
+    /* Alça de altura ajustável do estúdio (Pedido 1.110): arraste ou duplo clique */
+    .stage-resize-handle {
+      height: 14px;
+      width: 120px;
+      margin: 3px auto 0;
+      border-radius: 8px;
+      cursor: ns-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+    .stage-resize-handle::before {
+      content: "";
+      width: 56px;
+      height: 4px;
+      border-radius: 4px;
+      background: #94a3b8;
+      opacity: .55;
+      transition: background .15s, opacity .15s;
+    }
+    .stage-resize-handle:hover::before, .stage-resize-handle.ativo::before {
+      background: var(--rb-accent, #4c8df7);
+      opacity: 1;
+    }
+
     .preview-stage {
       background-color: #e2e8f0;
       background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
@@ -1261,10 +1287,10 @@
     <div class="d-flex align-items-center justify-content-between flex-grow-1 w-100">
 
     <!-- Brand -->
-    <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
+    <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.17</span>
+      <span class="brand-ver">v2.18</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1513,16 +1539,16 @@
       <div class="d-flex justify-content-between align-items-start mb-2">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
-            <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
+            <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.17</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.18</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
         </span>
       </div>
 
-      <h1 class="h6 fw-bold text-white mb-1">Designer &amp; Gerador de Etiquetas Zebra</h1>
+      <h1 class="h6 fw-bold text-white mb-1">CanalQb Impressão em Zebras</h1>
       <p class="text-white-50 mb-2 small" style="font-size:0.75rem; line-height: 1.35;">
         Crie, personalize e envie etiquetas térmicas com QR Code, Barcode e gráficos direto do seu dispositivo móvel.
       </p>
@@ -1553,7 +1579,7 @@
         <div class="col-md-8">
           <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill hero-badge mb-1">
             <i class="bi bi-printer-fill text-warning"></i>
-            <span>CanalQb - Design Etiqueta</span>
+            <span>CanalQb Impressão em Zebras</span>
           </div>
         </div>
         <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end gap-1 flex-wrap">
@@ -1794,6 +1820,9 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Alça de altura ajustável do estúdio (Pedido 1.110): arraste ou duplo clique -->
+                <div class="stage-resize-handle" id="stage-resize-handle" role="separator" aria-orientation="horizontal" title="Arraste para ajustar a altura do estúdio — duplo clique restaura o padrão" aria-label="Ajustar altura do estúdio"></div>
 
                 <!-- Barra de status: total de etiquetas do lote / dados importados -->
                 <!-- Pedido 1.106: sempre visível — no modo normal a etiqueta atual conta como 1 -->
@@ -2639,7 +2668,7 @@
                   <input type="text" class="form-control form-control-sm" id="import-gs-clientid" placeholder="xxxxx.apps.googleusercontent.com" aria-label="Google OAuth Client ID para planilhas privadas" autocomplete="off" spellcheck="false">
                   <button type="button" class="btn btn-outline-secondary" id="btn-import-gs-clientid-salvar" title="Salvar Client ID neste navegador"><i class="fas fa-save" aria-hidden="true"></i>Salvar</button>
                 </div>
-                <p class="small text-muted mt-1 mb-0">Só é necessário para planilha privada: no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre todos os endereços onde o app roda — <code>http://localhost</code> (XAMPP) e a URL do GitHub Pages (ex.: <code>https://seuusuario.github.io</code>). Sem Client ID, apenas planilhas públicas são lidas. O login exige abrir o app via http(s) — não funciona em <code>file://</code>.</p>
+                <p class="small text-muted mt-1 mb-0">Só é necessário para planilha privada: no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre todos os endereços onde o app roda — <code>http://localhost</code> (XAMPP) e o endereço público onde o site está hospedado (ex.: <code>https://www.seudominio.com.br</code>). Sem Client ID, apenas planilhas públicas são lidas. O login exige abrir o app via http(s) — não funciona em <code>file://</code>.</p>
               </div>
               <div class="mb-2" id="import-webhook-fields" style="display:none;">
                 <label class="form-label small fw-bold" for="webhook-url">URL do Webhook</label>
@@ -2746,9 +2775,10 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.17</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.18</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
-        <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
+        <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
+        <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
       </div>
     </div>
   </footer>
@@ -2757,7 +2787,7 @@
   <footer class="container mt-0 mb-3" id="footer-legal" aria-label="Páginas legais e institucionais">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2" role="group" aria-label="Links para as páginas legais">
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="sobre" data-titulo="Sobre o CanalQb Etiquetas Zebra">Sobre</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="sobre" data-titulo="Sobre o CanalQb Impressão em Zebras">Sobre</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="contato" data-titulo="Fale com o CanalQb — Contato Direto">Contato</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-privacidade" data-titulo="Política de Privacidade">Privacidade</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-cookies" data-titulo="Política de Cookies">Cookies</button>
@@ -2889,7 +2919,7 @@
           <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" id="nav-btn-ajuda" data-bs-dismiss="offcanvas">
             <i class="fas fa-circle-question me-1"></i> Central de Ajuda (F1)
           </button>
-          <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="small text-secondary text-decoration-none">canalqb.com.br</a>
+          <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="small text-secondary text-decoration-none">Blog do dono do projeto: canalqb.com.br</a>
         </div>
       </div>
     </div>
@@ -10498,6 +10528,51 @@
       canvasAreaEl.addEventListener("scroll", renderRulerTracks, { passive: true });
     }
 
+    // ---- Alça de altura ajustável do estúdio (Pedido 1.110) ----
+    (function () {
+      var wrapAlt = $("stage-wrap"), alca = $("stage-resize-handle");
+      if (!wrapAlt || !alca) return;
+      var CHAVE_ALT = "etiquetasZebra.alturaStage";
+      var PADRAO_ALT = 634, MIN_ALT = 320;
+      var salvoAlt = null;
+      try {
+        salvoAlt = parseInt(localStorage.getItem(CHAVE_ALT), 10);
+        if (isNaN(salvoAlt) || salvoAlt < MIN_ALT || salvoAlt > 3000) salvoAlt = null;
+      } catch (e) {}
+      if (salvoAlt) wrapAlt.style.height = salvoAlt + "px";
+      var altArrastando = false, altY0 = 0, altH0 = 0;
+      alca.addEventListener("pointerdown", function (ev) {
+        altArrastando = true;
+        altY0 = ev.clientY;
+        altH0 = wrapAlt.getBoundingClientRect().height;
+        alca.classList.add("ativo");
+        document.body.style.userSelect = "none";
+        try { alca.setPointerCapture(ev.pointerId); } catch (e) {}
+        ev.preventDefault();
+      });
+      alca.addEventListener("pointermove", function (ev) {
+        if (!altArrastando) return;
+        var maxAlt = Math.max(MIN_ALT, Math.round(window.innerHeight * 0.85));
+        var novaAlt = Math.max(MIN_ALT, Math.min(altH0 + (ev.clientY - altY0), maxAlt));
+        wrapAlt.style.height = Math.round(novaAlt) + "px";
+      });
+      function fimAjusteAltura() {
+        if (!altArrastando) return;
+        altArrastando = false;
+        alca.classList.remove("ativo");
+        document.body.style.userSelect = "";
+        try { localStorage.setItem(CHAVE_ALT, String(Math.round(wrapAlt.getBoundingClientRect().height))); } catch (e) {}
+        notify("Altura do estúdio ajustada e salva.", "dark");
+      }
+      alca.addEventListener("pointerup", fimAjusteAltura);
+      alca.addEventListener("pointercancel", fimAjusteAltura);
+      alca.addEventListener("dblclick", function () {
+        wrapAlt.style.height = PADRAO_ALT + "px";
+        try { localStorage.removeItem(CHAVE_ALT); } catch (e) {}
+        notify("Altura do estúdio restaurada para o padrão.", "info");
+      });
+    })();
+
     // ---- Rubber band no stage-wrap (inicia fora da etiqueta) ----
     var stageWrapEl = $("stage-wrap");
     if (stageWrapEl) {
@@ -10664,7 +10739,7 @@
           notify("Modelo carregado do link compartilhado!", "success");
         }
       } catch (e) {}
-      /* Limpeza do hash: confiável em http/https (GitHub Pages). Em file:// o
+      /* Limpeza do hash: confiável em http/https (hospedagem web). Em file:// o
          Chrome pode restaurar o fragmento após reload — hash residual é
          inofensivo (recarregar apenas reaplica o mesmo modelo). */
       if (location.protocol === "https:" || location.protocol === "http:") {
@@ -11370,20 +11445,19 @@
       <div class="modal-content shadow-lg border-0" style="max-height: 90vh;">
         <div class="modal-header bg-dark text-white py-2 px-3">
           <h5 class="modal-title d-flex align-items-center gap-2" id="modalAjudaLabel">
-            <i class="bi bi-life-preserver text-primary"></i> Central de Ajuda & Manual do CanalQb Designer
+            <i class="bi bi-life-preserver text-primary"></i> Central de Ajuda & Manual — CanalQb Impressão em Zebras
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body p-4" style="overflow-y: auto; background-color: #f8fafc;">
-          
           <!-- Hero Banner -->
           <div class="p-4 rounded-3 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
             <div class="d-flex align-items-center gap-2 mb-1 text-warning fw-semibold small">
-              <i class="bi bi-patch-check-fill"></i> Documentação Oficial do Sistema
+              <i class="bi bi-patch-check-fill"></i> Guia completo em linguagem simples
             </div>
-            <h3 class="fw-bold mb-1 text-white">CanalQb Zebra Designer (ZPL II)</h3>
+            <h3 class="fw-bold mb-1 text-white">CanalQb Impressão em Zebras</h3>
             <p class="mb-0 text-white-50 small">
-              Guia completo de recursos, atalhos de teclado, pré-visualização ao vivo e geração de etiquetas térmicas Zebra.
+              Aqui você aprende, passo a passo, o que dá para fazer e o que faz cada botão do aplicativo — sem precisar entender nada de técnica.
             </p>
           </div>
 
@@ -11391,20 +11465,371 @@
           <div class="card p-3 mb-4 border-0 shadow-sm bg-white" id="ajuda-indice">
             <h6 class="fw-bold text-primary mb-2"><i class="bi bi-list-ul me-1"></i>Índice — toque/clique para ir direto à seção</h6>
             <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-sm btn-outline-primary ajuda-so-pc" href="#ajuda-secao-1"><i class="bi bi-keyboard me-1"></i>1. Atalhos</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-2"><i class="bi bi-palette me-1"></i>2. Studio Visual</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-3"><i class="fas fa-shapes me-1"></i>3. Paleta & Inspetor</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-4"><i class="bi bi-aspect-ratio me-1"></i>4. Tamanho & Mídia</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-5"><i class="bi bi-stack me-1"></i>5. Lote & Importação</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-6"><i class="bi bi-folder-check me-1"></i>6. Modelos</a>
-              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-7"><i class="bi bi-printer me-1"></i>7. Impressão</a>
-              <a class="btn btn-sm btn-outline-primary ajuda-so-mobile" href="#ajuda-secao-8"><i class="fas fa-mobile-screen me-1"></i>8. Celular (Mobile)</a>
+              <a class="btn btn-sm btn-outline-danger" href="#ajuda-secao-1"><i class="bi bi-heart-fill me-1"></i>1. Apoie o Projeto (PIX)</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-2"><i class="bi bi-stars me-1"></i>2. O que você pode fazer</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-3"><i class="bi bi-menu-button-wide me-1"></i>3. Menus da barra superior</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-4"><i class="fas fa-shapes me-1"></i>4. Paleta de elementos</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-5"><i class="bi bi-sliders me-1"></i>5. Barra de status</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-6"><i class="bi bi-sliders2 me-1"></i>6. Editor de elemento</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-7"><i class="bi bi-stack me-1"></i>7. Importar dados e Lote</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-8"><i class="bi bi-folder-check me-1"></i>8. Modelos e arquivos</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-9"><i class="bi bi-printer me-1"></i>9. Impressão</a>
+              <a class="btn btn-sm btn-outline-primary ajuda-so-pc" href="#ajuda-secao-10"><i class="bi bi-keyboard me-1"></i>10. Atalhos</a>
+              <a class="btn btn-sm btn-outline-primary ajuda-so-mobile" href="#ajuda-secao-11"><i class="fas fa-mobile-screen me-1"></i>11. Celular</a>
             </div>
           </div>
 
-          <!-- Section 1: Atalhos de Teclado (PC/Mac — oculta em telas de toque) -->
+          <!-- Section 1: Apoie o Projeto (PIX) — primeiro assunto -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-1"><i class="bi bi-heart-fill text-danger me-2"></i>1. Apoie o Projeto (PIX)</h5>
+            <div class="card p-3 p-lg-4 border-0 shadow-sm border-start border-4 border-danger">
+              <p class="small text-muted mb-2">
+                Este aplicativo é <strong>totalmente gratuito</strong> e foi feito para atender desde pequenos lojistas até grandes empresas.
+                Por trás dele existem <strong>muitas horas de trabalho</strong>: cada botão, cada ajuste e cada novidade é desenhado, testado
+                em impressoras reais e mantido com carinho para que tudo funcione de primeira no seu dia a dia.
+              </p>
+              <p class="small text-muted mb-2">
+                Se o projeto está ajudando você ou sua empresa, <strong>considere enviar um PIX de qualquer valor</strong>.
+                É o jeito mais simples de fortalecer este e outros projetos que são distribuídos de graça:
+              </p>
+              <div class="text-center p-3 my-2 rounded-3" style="background:#f1f5f9;">
+                <div class="small text-muted mb-1"><i class="bi bi-cash-coin me-1"></i> Chave PIX (e-mail)</div>
+                <div class="fs-5 fw-bold text-dark">qrodrigob@gmail.com</div>
+              </div>
+              <p class="small text-muted mb-0">
+                Se não puder contribuir agora, sem problema algum — use o aplicativo à vontade, é seu.
+                <strong>Muito obrigado pelo carinho e por utilizar o projeto!</strong>
+                Ele é criado e mantido pelo dono do blog <a href="https://canalqb.com.br" target="_blank" rel="noopener">canalqb.com.br</a>.
+              </p>
+            </div>
+          </div>
+
+          <!-- Section 2: O que você pode fazer -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-2"><i class="bi bi-stars text-primary me-2"></i>2. O que você pode fazer</h5>
+            <div class="card p-3 border-0 shadow-sm">
+              <p class="small text-muted mb-2">Tudo isso já está pronto para usar — sem instalar nada e sem pagar nada:</p>
+              <ul class="small text-muted mb-0 ps-3">
+                <li><strong>Etiquetas de vários tamanhos</strong>: 40×25, 100×50, 100×100, 100×150 mm ou um tamanho seu, na horizontal ou vertical.</li>
+                <li><strong>Textos</strong> livres, subtítulos e nomes de produto, com quebra de linha automática e alinhamento.</li>
+                <li><strong>QR Code e código de barras</strong> com o conteúdo que você quiser (link, código do produto, série...).</li>
+                <strong>Imagens e logos</strong> do seu computador ou celular.
+                <li><strong>Formas</strong>: linhas, molduras, círculos, diagonais, cantos arredondados, linhas retas e curvas.</li>
+                <li><strong>Data e hora</strong> que se atualizam sozinhas na hora de imprimir (vários formatos prontos).</li>
+                <li><strong>Numeração automática</strong>: gere sequências como SN-001, SN-002... com prefixo e quantidade de dígitos.</li>
+                <li><strong>Importar planilhas</strong> do Excel, CSV ou Google e gerar uma etiqueta para cada linha.</li>
+                <li><strong>Várias etiquetas diferentes</strong> no mesmo projeto — ao imprimir, todas saem juntas.</li>
+                <li><strong>Modelos prontos</strong> de um clique, e os seus próprios modelos salvos no navegador.</li>
+                <li><strong>Pré-visualização</strong> fiel do papel e <strong>salvar a etiqueta como imagem</strong> (PNG).</li>
+                <li><strong>Impressão</strong> por cabo USB, rede (IP) ou Bluetooth, com quantidade de cópias.</li>
+                <li><strong>Celular e computador</strong>: funciona nos dois, com tema claro ou escuro.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 3: Menus da barra superior -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-3"><i class="bi bi-menu-button-wide text-primary me-2"></i>3. Menus da barra superior</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-folder-open me-1"></i>Menu Arquivo</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Nova Etiqueta em Branco</strong> — recomeça do zero (pede confirmação antes de apagar tudo).</li>
+                    <li><strong>Carregar Modelo (.bin)</strong> — abre um modelo que você salvou antes.</li>
+                    <li><strong>Salvar Modelo Atual</strong> — guarda o modelo no navegador para usar depois.</li>
+                    <li><strong>Geração em Lote</strong> — abre o painel de numeração automática (veja a seção 7).</li>
+                    <li><strong>Importar Dados (Excel, CSV)</strong> — abre o painel de importação de planilhas (seção 7).</li>
+                    <li><strong>Carregar arquivo .ZPL</strong> — traz uma etiqueta salva em arquivo de código.</li>
+                    <li><strong>Download ZPL</strong> — baixa o arquivo de código da etiqueta atual.</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-tag me-1"></i>Menu Etiqueta</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Tamanho da Etiqueta</strong> — escolhe um tamanho pronto ou digita medidas personalizadas.</li>
+                    <li><strong>Alternar Orientação</strong> — vira a etiqueta entre horizontal e vertical.</li>
+                    <li><strong>Modelos Prontos</strong> — abre a galeria com 5 layouts prontos para cada tamanho.</li>
+                  </ul>
+                  <h6 class="fw-bold text-primary mt-3 mb-2"><i class="fas fa-circle-question me-1"></i>Menu Ajuda</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Central de Ajuda (F1)</strong> — abre esta página.</li>
+                    <li><strong>Tema Escuro / Claro</strong> — muda o visual do aplicativo.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-print me-1"></i>Menu Impressora</h6>
+                  <div class="row g-3">
+                    <div class="col-lg-4">
+                      <ul class="small text-muted mb-0 ps-3">
+                        <li><strong>Configurar Impressora</strong> — escolhe o jeito de conectar: Rede (IP), USB ou Bluetooth (seção 9).</li>
+                        <li><strong>Pré-visualizar</strong> — mostra na tela como o papel vai sair.</li>
+                        <li><strong>Imprimir como Imagem</strong> — imprime a etiqueta exatamente como está desenhada (à prova de enrolamento de papel).</li>
+                        <li><strong>Imprimir com Cópias</strong> — pergunta quantas cópias imprimir.</li>
+                        <li><strong>Imprimir Agora</strong> — envia direto para a impressora configurada.</li>
+                      </ul>
+                    </div>
+                    <div class="col-lg-4">
+                      <ul class="small text-muted mb-0 ps-3">
+                        <li><strong>Calibrar Impressora</strong> — abre um painel para a impressora "aprender" o tamanho do papel:
+                          <ul class="ps-3 mt-1">
+                            <li><strong>Modo Ribbon</strong>: com fita (transferência térmica) ou sem fita (papel térmico direto).</li>
+                            <li><strong>Tipo de mídia</strong>: contínua, com intervalos, com marca preta ou com ranhuras.</li>
+                            <li><strong>Modo operacional</strong>: arrancar, descolar, cortador e outros.</li>
+                            <li><strong>Tonalidade</strong>: intensidade da queima (10 a 30) — se a impressão sair clara, aumente.</li>
+                            <li><strong>Tamanho do Papel</strong> e <strong>Velocidade</strong> (2 a 14).</li>
+                            <li><strong>Qualidade</strong>: tons de cinza ou só preto e branco.</li>
+                            <li><strong>Calibrar Agora</strong> — envia a calibração (o papel anda e volta sozinho).</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="col-lg-4">
+                      <ul class="small text-muted mb-0 ps-3">
+                        <li><strong>Espelho e Reverso</strong> — quatro efeitos de impressão:
+                          <ul class="ps-3 mt-1">
+                            <li><strong>Espelho Vertical</strong> e <strong>Espelho Horizontal</strong> — espelham a etiqueta (útil para transferência térmica).</li>
+                            <li><strong>Inverter Vertical + Horizontal</strong> — gira 180°.</li>
+                            <li><strong>Reverso</strong> — imprime branco sobre preto.</li>
+                          </ul>
+                        </li>
+                      </ul>
+                      <p class="small text-muted mb-0 mt-2 ps-3"><i class="bi bi-info-circle me-1"></i> Os efeitos aparecem na Pré-visualização antes de você imprimir.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 mt-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
+              <span class="small fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> O chip de status (canto direito):</span>
+              <p class="small text-muted mb-0">
+                Ao lado dos menus fica o <strong>pontinho com o IP da impressora</strong>: <span class="text-success fw-semibold">verde</span> = impressora respondendo,
+                <span class="text-danger fw-semibold">vermelho</span> = falha na conexão, cinza = nada configurado. Clique para abrir a configuração ou
+                <strong>clique duplo</strong> para trocar o IP na hora.
+              </p>
+            </div>
+          </div>
+
+          <!-- Section 4: Paleta de elementos (ribbons) -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-4"><i class="fas fa-shapes text-primary me-2"></i>4. Paleta de elementos (botões do Estúdio)</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-lg-4">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-shapes me-1"></i>Elementos Clássicos</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><i class="fas fa-font me-1"></i> <strong>Texto Livre</strong> — escreva qualquer coisa.</li>
+                    <li><i class="fas fa-align-left me-1"></i> <strong>Subtítulo</strong> — texto menor para o topo.</li>
+                    <li><i class="fas fa-heading me-1"></i> <strong>Nome do Produto</strong> — texto de destaque grande.</li>
+                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre.</li>
+                    <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código de barras comum.</li>
+                    <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
+                    <li><i class="fas fa-calendar-days me-1"></i> <strong>Data e Hora</strong> — escolha o formato (ex.: DD/MM/AAAA) e o texto se atualiza sozinho; funciona dentro de QR e código de barras também.</li>
+                    <li><i class="fas fa-clone me-1"></i> <strong>Clonar</strong> — duplica o elemento selecionado (Ctrl+D).</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-draw-polygon me-1"></i>Elementos Geométricos</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><i class="fas fa-minus me-1"></i> <strong>Linha Divisória</strong> — separa áreas da etiqueta.</li>
+                    <li><i class="far fa-square me-1"></i> <strong>Moldura Externa</strong> — retângulo de borda.</li>
+                    <li><i class="fas fa-circle me-1"></i> <strong>Círculo / Elipse</strong>.</li>
+                    <li><i class="fas fa-slash me-1"></i> <strong>Diagonal</strong> — linha cruzada.</li>
+                    <li><i class="fas fa-vector-square me-1"></i> <strong>Cantos Arredondados</strong> — retângulo suave.</li>
+                    <li><i class="bi bi-slash-lg me-1"></i> <strong>Linha Reta</strong> — mude o ângulo redimensionando a caixa; o botão do editor inverte a direção.</li>
+                    <li><i class="bi bi-bezier2 me-1"></i> <strong>Linha Curva</strong> — arraste o ponto azul do meio para curvar.</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-tag me-1"></i>Ribbon Etiqueta (guias)</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><i class="fas fa-ruler-horizontal me-1"></i> <strong>Régua</strong> — mostra/oculta as réguas com medidas.</li>
+                    <li><i class="fas fa-table-cells me-1"></i> <strong>Grade do Palco</strong> — quadradinhos ao redor da etiqueta.</li>
+                    <li><i class="fas fa-border-all me-1"></i> <strong>Grade da Etiqueta</strong> — quadradinhos dentro da etiqueta.</li>
+                    <li><i class="fas fa-magnet me-1"></i> <strong>Ajuste Magnético</strong> — gruda as pontas das linhas umas nas outras e alinha elementos.</li>
+                  </ul>
+                  <p class="small text-muted mb-0 mt-2 ps-3"><i class="bi bi-info-circle me-1"></i> Botões acesos = ligado; apagados = desligado.</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
+              <span class="small fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> Como usar a paleta:</span>
+              <p class="small text-muted mb-0">
+                <strong>Clique</strong> num botão para adicionar o elemento ou <strong>arraste</strong> até o lugar desejado. Todo elemento novo nasce em um
+                espaço livre, sem cobrir os outros. O <strong>duplo clique</strong> em qualquer texto abre a edição ali mesmo; QR e código de barras
+                abrem uma janelinha para digitar o conteúdo. A setinha do início de cada grupo esconde/mostra aquele grupo de botões.
+              </p>
+            </div>
+          </div>
+
+          <!-- Section 5: Barra de status -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-5"><i class="bi bi-sliders text-primary me-2"></i>5. Barra de status (logo abaixo da paleta)</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-zoom-in me-1"></i>Zoom, unidade e ajustes</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>− / +</strong> — diminui e aumenta o zoom; o número no meio mostra o valor. <strong>Ajustar à Tela</strong> encaixa tudo na janela e <strong>100%</strong> volta ao tamanho real.</li>
+                    <li><strong>Unidade</strong> — mm, cm, polegadas ou pontos: as réguas e o editor passam a usar essa medida.</li>
+                    <li><strong>Margens</strong> — abre o ajuste fino para quando a impressão sai deslocada: mexa em Esquerda/Superior/Inferior/Direita até a etiqueta sair reta.</li>
+                    <li><strong>Limpar</strong> — apaga tudo da etiqueta (com confirmação).</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-layer-group me-1"></i>Chips, navegação e abas</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Chips</strong> — mostram o <strong>tamanho</strong>, a <strong>orientação</strong> e o <strong>DPI</strong> atuais; clique em cada um para trocar.</li>
+                    <li><strong>Setas ‹ › com número</strong> — navegam entre as etiquetas (do projeto ou geradas por lote/importação). Digite um número e toque em <strong>Ir</strong> para pular direto.</li>
+                    <li><strong>Testar 1</strong> — aparece só em modo lote/importação: imprime apenas a primeira etiqueta, uma cópia, para você conferir antes de mandar tudo.</li>
+                    <li><strong>Abas Estúdio / ZPL / Elementos</strong> — trocam a visão: o desenho, o código técnico ou a lista de elementos.</li>
+                    <li><strong>Imprimir</strong> — pergunta a quantidade e envia para a impressora configurada.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <p class="small text-muted mt-2 mb-0"><i class="bi bi-info-circle me-1"></i> A barra também informa <strong>quantas etiquetas serão geradas</strong> e de onde elas vêm ("etiqueta atual", "etiqueta em lote" ou "importar dados").</p>
+          </div>
+
+          <!-- Section 6: Editor de elemento -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-6"><i class="bi bi-sliders2 text-primary me-2"></i>6. Editor de elemento e aba Elementos</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-type-bold me-1"></i>Quando você seleciona um elemento</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Conteúdo</strong> — o texto ou o dado de QR/código de barras.</li>
+                    <li><strong>X / Y</strong> — posição exata na etiqueta; <strong>Fonte</strong> — tamanho do texto; <strong>Largura</strong> — tamanho da caixa.</li>
+                    <li><strong>Rotação</strong> — Horizontal, Vertical, Invertida, Vertical Invertida e o botão que gira 90°.</li>
+                    <li><strong>Espessura</strong> — grossura de linhas e molduras.</li>
+                    <li><strong>Estilos de moldura</strong> — sólida, tracejada, pontilhada, dupla, arredondada, sombra.</li>
+                    <li><strong>Estilos de linha</strong> — sólida, tracejada, pontilhada, grossa, dupla, gradiente.</li>
+                    <li><strong>Quebra automática</strong> — todo texto quebra sozinho dentro da caixa; ajuste largura do bloco, máximo de linhas e alinhamento (esquerda, centro, direita, justificado).</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-layers me-1"></i>Barra de seleção e aba Elementos</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li>Com um ou mais elementos marcados, a barra oferece <strong>Copiar, Recortar, Colar e Excluir</strong>.</li>
+                    <li><strong>Negrito</strong>, <strong>Itálico</strong> e <strong>Sublinhado</strong> para textos.</li>
+                    <li><strong>Alinhamento</strong> — encaixa vários elementos alinhados no topo, na base, na esquerda ou na direita.</li>
+                    <li>A aba <strong>Elementos</strong> lista tudo que existe na etiqueta com contagem ao vivo — clique num item para localizá-lo e editá-lo.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
+              <p class="small text-muted mb-0">
+                <span class="fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> Edição direta:</span>
+                <strong>duplo clique</strong> em qualquer texto edita ali mesmo na etiqueta.
+                <span class="ajuda-so-pc">Aperte <kbd>Enter</kbd> para confirmar, <kbd>Shift</kbd> + <kbd>Enter</kbd> para pular uma linha e <kbd>Esc</kbd> para cancelar.</span>
+                <span class="ajuda-so-mobile">No celular, toque fora do campo para salvar o que digitou.</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Section 7: Importar dados e Lote -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-7"><i class="bi bi-stack text-primary me-2"></i>7. Importar dados e Lote (uma etiqueta para cada item)</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-import me-1"></i>Importar Dados (planilhas)</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li>Importe <strong>planilhas do Excel</strong>, arquivos <strong>CSV/TXT</strong> e <strong>planilhas online do Google</strong> — ou fontes avançadas (webhook, banco de dados/API, pasta compartilhada e ponte local).</li>
+                    <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
+                    <li><strong>Aplicar</strong> cria os elementos na etiqueta; <strong>Gerar Todas as Linhas</strong> cria uma etiqueta por linha da planilha.</li>
+                    <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-diagram-3-fill me-1"></i>Geração em Lote (numeração automática)</h6>
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li>Monte <strong>níveis de contagem</strong> (ex.: Rua → Lote → Caixa) com o botão <span class="badge bg-primary">+ Subnível</span>.</li>
+                    <li>Cada nível escolhe <strong>qual campo recebe a numeração</strong> (texto, QR, código de barras...), o <strong>prefixo</strong> (ex.: SN-), o <strong>número inicial e final</strong> e a <strong>quantidade de dígitos</strong> (001, 0001...).</li>
+                    <li>A ordem pode ser <strong>normal ou invertida</strong>, nível por nível.</li>
+                    <li>A primeira combinação aparece ao vivo na tela; depois use <strong>Gerar Lote</strong> ou <strong>Imprimir Lote</strong>. Também dá para salvar e recarregar o modelo do lote.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 8: Modelos e arquivos -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-8"><i class="bi bi-folder-check text-primary me-2"></i>8. Modelos, várias etiquetas e arquivos</h5>
+            <div class="card p-3 border-0 shadow-sm">
+              <ul class="small text-muted mb-0 ps-3">
+                <li><strong>Modelos Prontos</strong> — galeria com 5 layouts para cada tamanho de etiqueta (menu Etiqueta).</li>
+                <li><strong>Salvar Modelo Atual</strong> — guarda quantos modelos quiser no próprio navegador (menu Arquivo).</li>
+                <li><strong>Exportar/importar arquivo .bin</strong> — faz backup do modelo ou transfere para outro computador; o <strong>link de compartilhamento</strong> envia o modelo inteiro pela URL.</li>
+                <li><strong>Várias etiquetas no mesmo projeto</strong> — o botão <strong>+</strong> guarda a etiqueta atual e cria outra em branco; também dá para importar uma etiqueta e adicionar junto. Alterne entre elas pelas setas da barra de status — <strong>ao imprimir, todas são enviadas</strong>.</li>
+                <li><strong>Aba ZPL</strong> — mostra o código técnico que a impressora entende; você pode copiar ou baixar, mas <strong>não precisa mexer em nada disso</strong> — o aplicativo cuida sozinho.</li>
+                <li><strong>Salvamento automático</strong> — se a página fechar, seu trabalho volta sozinho por até 24 horas.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Section 9: Impressão -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-9"><i class="bi bi-printer text-primary me-2"></i>9. Impressão: conecte e imprima</h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-network-wired me-1"></i>Rede (IP)</h6>
+                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu.</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fab fa-usb me-1"></i>USB (cabo)</h6>
+                  <p class="small text-muted mb-0">Conecte a impressora com o cabo na aba <strong>USB</strong> e toque em <strong>Conectar</strong> — o navegador mostra a lista de aparelhos conectados. Também tem botão de teste de impressão.</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fab fa-bluetooth-b me-1"></i>Bluetooth</h6>
+                  <p class="small text-muted mb-0">Na aba <strong>Bluetooth</strong>, toque em <strong>Conectar impressora Bluetooth</strong>, escolha a sua na lista e pronto — o estado da conexão e um botão de teste ficam na tela.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card p-3 border-0 shadow-sm">
+              <ul class="small text-muted mb-0 ps-3">
+                <li><strong>Imprimir</strong> (botão da barra, menu Impressora ou Ctrl+P) — pergunta a quantidade e envia.</li>
+                <li><strong>Pré-visualizar</strong> — mostra o papel exatamente como vai sair; dá para salvar como imagem PNG.</li>
+                <li><strong>Calibrar</strong> — se o papel andar errado ou a impressão sair clara, use o painel Calibrar (tonalidade, tipo de papel, velocidade).</li>
+                <li><strong>Impressão deslocada?</strong> Use o botão <strong>Margens</strong> da barra de status e ajuste até sair reta.</li>
+              </ul>
+            </div>
+            <div class="p-3 border-start border-4 border-warning bg-warning bg-opacity-10 rounded mt-3">
+              <span class="small fw-semibold text-dark"><i class="bi bi-exclamation-triangle-fill me-1"></i> Se não imprimir:</span>
+              <p class="small text-muted mb-0">
+                "Conexão recusada" ou pontinho vermelho = o IP está errado, a impressora está desligada ou fora da mesma rede.
+                No USB/Bluetooth, confira o cabo e se a conexão ainda está ativa. Use sempre o botão <strong>Testar</strong> antes de imprimir.
+              </p>
+            </div>
+          </div>
+
+          <!-- Section 10: Atalhos (PC) -->
           <div class="mb-4 ajuda-so-pc">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-1"><i class="bi bi-keyboard text-primary me-2"></i>1. Teclas de Atalho & Produtividade</h5>
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-10"><i class="bi bi-keyboard text-primary me-2"></i>10. Teclas de Atalho (computador)</h5>
             <div class="table-responsive">
               <table class="table table-hover table-bordered align-middle bg-white shadow-sm rounded overflow-hidden">
                 <thead class="table-dark small">
@@ -11418,17 +11843,17 @@
                   <tr>
                     <td><span class="badge bg-primary">Desfazer</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">Z</kbd></td>
-                    <td>Desfaz a última alteração realizada no canvas (posição, texto, dimensões).</td>
+                    <td>Desfaz a última alteração (posição, texto, dimensões).</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-primary">Refazer</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">Y</kbd> ou <kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">Shift</kbd> + <kbd class="bg-light text-dark border shadow-sm">Z</kbd></td>
-                    <td>Refaz a última ação desfeita no histórico.</td>
+                    <td>Refaz a última ação desfeita.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-secondary">Copiar</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">C</kbd></td>
-                    <td>Copia todos os elementos atualmente selecionados.</td>
+                    <td>Copia os elementos selecionados.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-secondary">Recortar</span></td>
@@ -11438,42 +11863,47 @@
                   <tr>
                     <td><span class="badge bg-secondary">Colar</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">V</kbd></td>
-                    <td>Cola os elementos copiados/recortados na posição atual do cursor.</td>
+                    <td>Cola na posição do cursor.</td>
                   </tr>
                   <tr>
-                    <td><span class="badge bg-success">Imprimir Direto</span></td>
+                    <td><span class="badge bg-secondary">Clonar</span></td>
+                    <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">D</kbd></td>
+                    <td>Duplica o elemento selecionado.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-success">Imprimir</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">P</kbd></td>
-                    <td>Envia a etiqueta para o IP da impressora Zebra configurada (abre IP se não houver).</td>
+                    <td>Abre a impressão (pede o IP se ainda não houver impressora configurada).</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-info text-dark">Redimensionar</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">Arraste</kbd></td>
-                    <td>Segurar Ctrl enquanto arrasta o mouse ajusta a largura/altura/fonte do elemento.</td>
+                    <td>Segure Ctrl enquanto arrasta para ajustar largura, altura e fonte.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-warning text-dark">Rotacionar</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Shift</kbd> + <kbd class="bg-light text-dark border shadow-sm">Arraste</kbd></td>
-                    <td>Gira os elementos selecionados em incrementos de 90° (0°, 90°, 180°, 270°).</td>
+                    <td>Gira o elemento em passos de 90°.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-danger">Excluir</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Delete</kbd> / <kbd class="bg-light text-dark border shadow-sm">Backspace</kbd></td>
-                    <td>Remove os elementos selecionados do canvas.</td>
+                    <td>Remove os elementos selecionados.</td>
                   </tr>
                   <tr>
-                    <td><span class="badge bg-dark">Desmarcar Tudo</span></td>
+                    <td><span class="badge bg-dark">Desmarcar</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Esc</kbd></td>
-                    <td>Limpa a seleção atual (nenhum elemento fica marcado).</td>
+                    <td>Limpa a seleção atual.</td>
                   </tr>
                   <tr>
-                    <td><span class="badge bg-dark">Seleção Múltipla</span></td>
+                    <td><span class="badge bg-dark">Seleção múltipla</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">Clique</kbd></td>
-                    <td>Permite selecionar ou desmarcar múltiplos elementos individualmente.</td>
+                    <td>Marque vários elementos um por um.</td>
                   </tr>
                   <tr>
-                    <td><span class="badge bg-dark">Seleção por Arraste</span></td>
-                    <td><kbd class="bg-light text-dark border shadow-sm">Arraste Retangular</kbd></td>
-                    <td>Desenha uma caixa de seleção para selecionar múltiplos elementos. Pode iniciar fora da etiqueta.</td>
+                    <td><span class="badge bg-dark">Seleção por área</span></td>
+                    <td><kbd class="bg-light text-dark border shadow-sm">Arraste</kbd></td>
+                    <td>Arraste um retângulo vazio para selecionar tudo que estiver dentro.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-primary">Ajuda</span></td>
@@ -11485,265 +11915,42 @@
             </div>
           </div>
 
-          <!-- Section 2: Studio Visual -->
-          <div class="mb-4">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-2"><i class="bi bi-palette text-primary me-2"></i>2. Studio Visual: Canvas, Réguas e Zoom</h5>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-1"><i class="bi bi-rulers me-1"></i>Réguas Dinâmicas e Ponto Zero (0,0)</h6>
-                  <p class="small text-muted mb-2">
-                    O Canvas emula a etiqueta física sobre a mesa de impressão. O ponto <strong>(0,0)</strong> fica travado rigorosamente no canto superior esquerdo do papel. Áreas cinzas externas indicam valores negativos fora do papel.
-                  </p>
-                  <p class="small text-muted mb-0">
-                    Clique no <strong>canto das réguas</strong> (ou no botão de bordas) para abrir os <strong>limites de margem</strong>. As réguas e as grades podem ser ocultadas pelos interruptores abaixo do canvas: Régua, Grade do Palco, Grade da Etiqueta e <strong>Ajuste Magnético</strong> (snap).
-                  </p>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-1"><i class="bi bi-zoom-in me-1"></i>Zoom e Unidades</h6>
-                  <p class="small text-muted mb-2">
-                    Barra de zoom com <strong>+ / −</strong>, <strong>Auto Fit</strong> (ajusta à tela) e <strong>Reset 100%</strong>.
-                  </p>
-                  <p class="small text-muted mb-0">
-                    Seletor de unidade: <strong>mm</strong>, <strong>cm</strong>, <strong>pol</strong> (polegadas) ou <strong>dots</strong> — todas as medidas do inspetor e das réguas seguem a unidade escolhida.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="p-3 mt-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
-              <span class="small fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> Dica de Alinhamento:</span>
-              <p class="small text-muted mb-0">
-                Se a impressão física sair torta na impressora, abra as <strong>Margens</strong> e ajuste Esquerda/Superior/Inferior/Direita em mm. O sistema injetará o ajuste de hardware <code>^LH</code> no código ZPL! Use também o botão <strong>Limpar Canvas</strong> (com confirmação) para recomeçar do zero.
-              </p>
-            </div>
-          </div>
-
-          <!-- Section 3: Elementos -->
-          <div class="mb-4">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-3"><i class="fas fa-shapes text-primary me-2"></i>3. Paleta de Elementos & Inspetor</h5>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-grid-1x2 me-1"></i>Ribbons de Elementos (clique ou arraste para o canvas)</h6>
-                  <ul class="small text-muted mb-2 ps-3">
-                    <li><strong>Ribbon "Elementos"</strong> (1º): <strong>Texto Livre</strong>, <strong>Subtítulo</strong>, <strong>Nome do Produto</strong>, <strong>QR Code</strong>, <strong>Código de Barras 128</strong>, <strong>Importar Imagem / Logo</strong>, <strong>Importar Dados</strong> e <strong>Clonar</strong> (Ctrl+D).</li>
-                    <li><strong>Ribbon "Elementos Formas"</strong> (2º): <strong>Linha Divisória</strong>, <strong>Moldura Externa</strong>, <strong>Círculo / Elipse</strong>, <strong>Diagonal</strong>, <strong>Cantos Arredondados</strong>, <strong>Linha Reta</strong> e <strong>Linha Curva</strong>.</li>
-                  </ul>
-                  <ul class="small text-muted mb-0 ps-3">
-                    <li><strong>Linha Reta</strong>: a linha ocupa a diagonal da caixa — redimensione a caixa para mudar o ângulo (no inspetor, o botão ↗/↘ inverte a direção).</li>
-                    <li><strong>Linha Curva</strong>: arraste o <strong>ponto azul central</strong> para cima/baixo para curvar a linha.</li>
-                    <li><strong>Anexação de pontas</strong>: com o <strong>Ajuste Magnético (snap)</strong> ligado, ao arrastar uma linha a ponta gruda na ponta de outra (ex.: 6 linhas anexadas formam um hexágono). Desligue o snap para encaixes livres.</li>
-                    <li><strong>Sem sobreposição automática</strong>: todo elemento novo nasce em espaço livre — sobrepor só arrastando por decisão sua.</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-sliders me-1"></i>Inspetor do Elemento (barra acima do canvas)</h6>
-                  <ul class="small text-muted mb-0 ps-3">
-                    <li>Conteúdo/texto, posição <strong>X/Y</strong>, <strong>Fonte</strong> (dots) e <strong>Largura</strong>.</li>
-                    <li><strong>Rotação individual</strong>: Horizontal, Vertical, Invertido 180° e Vertical Invertido (botão girar 90°).</li>
-                    <li><strong>Espessura</strong> de linha/moldura em dots (campo, botões ±1) — vale para todas as formas, inclusive retas e curvas.</li>
-                    <li><strong>Estilos de moldura</strong>: sólida, tracejada, pontilhada, dupla, arredondada, sombra.</li>
-                    <li><strong>Estilos de linha</strong>: sólida, tracejada, pontilhada, grossa, dupla, gradiente.</li>
-                    <li><strong>Quebra automática</strong>: todo texto quebra sozinho no limite da caixa (ou da margem direita da etiqueta) — no ZPL sai sempre com quebra de bloco. Ajuste fino: largura do bloco, máx. de linhas e alinhamento (esquerda/centro/direita/justificado).</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="p-3 mt-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
-              <span class="small fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> Edição de texto in-loco:</span>
-              <p class="small text-muted mb-0">
-                <strong>Duplo clique</strong> em qualquer texto (inclusive dentro de formas) abre a edição direto no canvas. <span class="ajuda-so-pc"><kbd>Enter</kbd> confirma, <kbd>Shift</kbd> + <kbd>Enter</kbd> insere quebra de linha manual e <kbd>Esc</kbd> cancela.</span><span class="ajuda-so-mobile">No teclado do celular, <kbd>Enter</kbd> insere quebra de linha — <strong>basta tocar fora do campo</strong> para salvar o que foi digitado.</span> QR Code e Código de Barras abrem um mini modal para editar o dado. A quebra automática vale para todos os textos — não é preciso ativar nada.
-              </p>
-            </div>
-            <div class="card p-3 border-0 shadow-sm">
-              <h6 class="fw-bold text-primary mb-2"><i class="bi bi-type-bold me-1"></i>Barra de Seleção & Aba Elementos</h6>
-              <p class="small text-muted mb-0">
-                Com um ou mais elementos marcados, a barra flutuante oferece <strong>Copiar / Recortar / Colar / Excluir</strong>, <strong>Negrito (simulado por dupla impressão)</strong>, <strong>Itálico (apenas visual)</strong> e <strong>Sublinhado</strong>. A aba <strong>Elementos</strong> lista tudo que existe na etiqueta com contagem ao vivo — clique para localizar e editar.
-              </p>
-            </div>
-          </div>
-
-          <!-- Section 4: Tamanho, Orientação e Mídia -->
-          <div class="mb-4">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-4"><i class="bi bi-aspect-ratio text-primary me-2"></i>4. Tamanho, Orientação, Densidade e Mídia</h5>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-ruler-combined me-1"></i>Tamanho & Orientação</h6>
-                  <p class="small text-muted mb-2">
-                    Presets prontos: <strong>40×25</strong>, <strong>100×50</strong>, <strong>100×100</strong> e <strong>100×150 mm</strong> — ou crie um <strong>tamanho personalizado</strong>. O botão de orientação alterna <strong>Horizontal ↔ Vertical</strong> (0°/90°/180°/270°).
-                  </p>
-                  <p class="small text-muted mb-0">
-                    <strong>Impressão de etiquetas verticais:</strong> a impressora Zebra imprime sempre no formato horizontal. O editor converte automaticamente — troca <code>^PW</code>/<code>^LL</code> e rotaciona cada elemento — garantindo que nada seja cortado.
-                  </p>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-speedometer2 me-1"></i>Densidade & Mídia</h6>
-                  <ul class="small text-muted mb-0 ps-3">
-                    <li><strong>DPI/dpmm</strong> (badge no topo): 152, 203, 300 ou 600 DPI.</li>
-                    <li><strong>Tonalidade</strong> (intensidade de queima) enviada como <code>^MD</code>.</li>
-                    <li><strong>Ribbon</strong>: Sem ribbon (térmica direta, <code>^MTD</code>) ou Com ribbon (transferência térmica, <code>^MTT</code>).</li>
-                    <li><strong>Qualidade da imagem</strong>: Escala de Cinza (dithering) ou Preto e Branco bitonal (alto contraste).</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 5: Geração em Lote -->
-          <div class="mb-4">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-5"><i class="bi bi-stack text-primary me-2"></i>5. Geração em Lote (Sequências Hierárquicas)</h5>
-            <div class="row g-3">
-              <div class="col-md-7">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-diagram-3-fill me-1"></i>Árvore de Níveis</h6>
-                  <p class="small text-muted mb-2">
-                    Sequenciador hierárquico com <strong>Nível 1</strong> fixo e botão <span class="badge bg-primary">+ Subnível</span> para criar níveis aninhados (Rua <i class="fas fa-arrow-right" aria-hidden="true"></i> Lote <i class="fas fa-arrow-right" aria-hidden="true"></i> Caixa). Cada nível tem:
-                  </p>
-                  <ul class="small text-muted mb-0 ps-3">
-                    <li><strong>Campo Incremental</strong> — vincula a sequência à Série, QR Code/Barcode, Nome do Produto ou qualquer texto da etiqueta.</li>
-                    <li><strong>Prefixo</strong> — texto fixo antes do número (ex.: <code>SN-</code>).</li>
-                    <li><strong>Início / Fim / Dígitos</strong> — intervalo da contagem com preenchimento de zeros (ex.: dígitos 3 ⇒ <code>001</code>).</li>
-                    <li><strong>Inverso</strong> — alterna a ordem Normal (1 <i class="fas fa-arrow-right" aria-hidden="true"></i> X) / Inversa (X <i class="fas fa-arrow-right" aria-hidden="true"></i> 1) por nível.</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-5">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-gear-fill me-1"></i>Ações do Lote</h6>
-                  <p class="small text-muted mb-2">
-                    A 1ª combinação é atualizada ao vivo no Canvas. Depois use <strong>Gerar Lote</strong> (todas as etiquetas aparecem na aba Código ZPL), <strong>Imprimir Lote</strong> direto ou <strong>Exportar/Importar .VIP</strong> do modelo especial.
-                  </p>
-                  <p class="small text-muted mb-0">
-                    <strong>Modo otimizado:</strong> com 1 nível, ordem normal e campo de texto, o sistema usa serialização nativa <code>^SN</code> + <code>^PQ</code> — a própria impressora incrementa a contagem em 1 único bloco.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="row g-3 mt-0">
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-activity me-1"></i>Barra de Status & Etiqueta de Teste</h6>
-                  <p class="small text-muted mb-0">
-                    A barra abaixo do canvas aparece <strong>apenas em modo lote ou importação</strong> (inclusive com 1 única etiqueta) e mostra o total a gerar + o modo ativo ("etiqueta em lote" / "importar dados"). O botão <strong>Testar 1</strong> imprime <strong>apenas a 1ª etiqueta, 1 cópia</strong> — ideal para conferir o layout antes de mandar o lote inteiro. Em modo normal a barra fica oculta.
-                  </p>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-import me-1"></i>Importar Dados (uma etiqueta por linha)</h6>
-                  <p class="small text-muted mb-0">
-                    Botão <strong>Importar Dados</strong> (ribbon Elementos): Excel (.xlsx), CSV/TXT, <strong>Google Sheets</strong> (link público ou privado da sua conta com Client ID), <strong>Webhook</strong>, <strong>Banco/API</strong>, <strong>Pasta compartilhada</strong> e <strong>Ponte local ODBC</strong> (com o <code>print-server.js</code> rodando). Mapeie cada coluna a um campo, use <strong>Aplicar</strong> (gera os elementos) e <strong>Gerar Todas as Linhas</strong> — na impressão sai 1 etiqueta por linha.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 6: Modelos e Arquivos -->
-          <div class="mb-4">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-6"><i class="bi bi-folder-check text-primary me-2"></i>6. Modelos Salvos, Exportação e Importação</h5>
-            <div class="card p-3 border-0 shadow-sm">
-              <p class="small text-muted mb-0">
-                - <strong>Modelos no Cache</strong>: salve, carregue e exclua modelos completos direto no navegador.<br>
-                - <strong>Nova etiqueta em branco</strong> (botão <strong>Nova</strong>): limpa tudo — elementos, lote especial, dados importados e ZPL gerado — com confirmação.<br>
-                - <strong>Formato .VIP (Modelo Completo)</strong>: salva toda a geometria da etiqueta, DPI, configurações da impressora, elementos visuais e árvore de sequências do lote.<br>
-                - <strong>Formato .BIN / .JSON (Lote ZPL)</strong>: baixe ou carregue blocos ZPL concatenados para envio direto.<br>
-                - <strong>Aba Código ZPL</strong>: visualize o ZPL ao vivo, copie para a área de transferência ou baixe como arquivo <code>.ZPL</code>.<br>
-                - <strong>Salvamento automático</strong>: sua sessão é restaurada automaticamente por até 24h se a página fechar ou recarregar.
-              </p>
-            </div>
-          </div>
-
-          <!-- Section 7: Impressão -->
-          <div class="mb-4">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-7"><i class="bi bi-printer text-primary me-2"></i>7. Impressão: Protocolos, IP e Calibração</h5>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-network-wired me-1"></i>Protocolos de Envio (modal de IP)</h6>
-                  <ul class="small text-muted mb-0 ps-3">
-                    <li><strong>HTTP Direct (/pstprnt)</strong> — envio direto do navegador para <code>http://IP/pstprnt</code> (porta 80). Requer impressora Zebra física acessível na rede.</li>
-                    <li><strong>TCP 9100 (Raw)</strong> e <strong>FTP (Porta 21)</strong> — exigem o servidor local: rode <code>node print-server.js</code> (fica ativo em <code>localhost:3001</code>) e ele repassa o ZPL para o IP informado.</li>
-                    <li><strong>Nuvem / Cloud API</strong> — informe uma URL <code>http(s)://</code> no campo de IP.</li>
-                    <li>O botão <strong>Testar</strong> verifica a impressora e o servidor local antes de imprimir.</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-hdd-rack me-1"></i>Impressora Virtual & Utilitários</h6>
-                  <ul class="small text-muted mb-0 ps-3">
-                    <li><strong>Virtual ZPL Printer (neste PC)</strong>: configure IP <code>127.0.0.1</code> + protocolo <strong>TCP 9100</strong> com o <code>print-server.js</code> rodando — cada impressão gera uma imagem renderizada em <code>Documentos\Virtual ZPL Printer\Image Cache</code>.</li>
-                    <li><strong>Calibrar</strong>: envia comando de calibração de mídia para a Zebra.</li>
-                    <li><strong>Extensão Chrome</strong> (opcional): rota alternativa de envio via postMessage.</li>
-                    <li>O IP e o protocolo escolhidos ficam salvos no navegador e exibidos nos badges do topo.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="card p-3 mt-3 border-0 shadow-sm">
-              <h6 class="fw-bold text-primary mb-2"><i class="bi bi-magic me-1"></i>Espelhos, Reverso, Imagem ^GF e o Chip de IP</h6>
-              <ul class="small text-muted mb-0 ps-3">
-                <li><strong>Espelho V / H / V+H</strong> (ribbon Configuração): espelha a etiqueta inteira — ideal para transferência térmica. O efeito aparece na Pré-visualização de Impressão.</li>
-                <li><strong>Reverso</strong> (<code>^LR</code>): inverte as cores da etiqueta (impressão branca sobre fundo preto).</li>
-                <li><strong>Imprimir como Imagem</strong> (<code>^GF</code>): rasteriza a etiqueta exatamente como desenhada — à prova de reposicionamento de mídia na impressora.</li>
-                <li><strong>Chip de IP</strong> no topo: <strong>duplo clique</strong> edita o IP na hora; o <strong>pontinho ao lado</strong> fica <span class="text-success fw-semibold">verde</span> quando a impressora responde, vermelho quando falha e cinza sem IP.</li>
-              </ul>
-            </div>
-            <div class="p-3 border-start border-4 border-warning bg-warning bg-opacity-10 rounded mt-3">
-              <span class="small fw-semibold text-dark"><i class="bi bi-exclamation-triangle-fill me-1"></i> Erros comuns:</span>
-              <p class="small text-muted mb-0">
-                <code>ERR_CONNECTION_REFUSED localhost:3001</code> = servidor local desligado (rode <code>node print-server.js</code>). <code>POST http://127.0.0.1/pstprnt</code> recusado = protocolo HTTP Direct apontando para o próprio PC (use TCP 9100 para a impressora virtual, ou o IP real da Zebra para HTTP Direct).
-              </p>
-            </div>
-          </div>
-
-          <!-- Section 8: Uso no Celular (Mobile) — visível apenas em telas de toque -->
+          <!-- Section 11: Celular -->
           <div class="mb-4 ajuda-so-mobile">
-            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-8"><i class="fas fa-mobile-screen text-primary me-2"></i>8. Uso no Celular (Mobile)</h5>
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-11"><i class="fas fa-mobile-screen text-primary me-2"></i>11. Uso no Celular</h5>
             <div class="row g-3 mb-3">
               <div class="col-md-6">
                 <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-bars me-1"></i>Menu "Ferramentas"</h6>
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-bars me-1"></i>Menu Ferramentas</h6>
                   <ul class="small text-muted mb-0 ps-3">
-                    <li>No celular os ribbons viram um <strong>menu lateral esquerdo</strong>: toque no botão azul <strong>Ferramentas</strong> (ícone de barras, canto superior esquerdo).</li>
-                    <li>Cada seção (Elementos, Formas, Impressora, Modelos, Configuração, Exibição) abre/fecha ao toque no nome — igual um acordeão.</li>
-                    <li>Fechar: toque no fundo escuro, tecla <kbd>Esc</kbd> ou <kbd>F1</kbd>. Ao <strong>inserir um elemento o menu fecha sozinho</strong>.</li>
-                    <li>Reordenar seções (arrastar pelo "grip") e fixar favoritos é recurso do desktop.</li>
+                    <li>Toque no botão azul <strong>Ferramentas</strong> (barrinhas no rodapé da tela) para abrir todos os elementos e ajustes.</li>
+                    <li>Cada seção (Elementos, Formas, Modelos, Configuração...) abre e fecha ao toque, como um acordeão.</li>
+                    <li>Ao inserir um elemento, o menu fecha sozinho; toque no fundo escuro para fechar sem inserir.</li>
+                    <li>No topo ficam o tamanho, a orientação e o DPI da etiqueta — toque para trocar.</li>
                   </ul>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-hand-pointer me-1"></i>Gestos de Toque no Canvas</h6>
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-hand-pointer me-1"></i>Gestos na etiqueta</h6>
                   <ul class="small text-muted mb-0 ps-3">
-                    <li><strong>Segurar e arrastar</strong> um elemento (1 dedo) — move.</li>
-                    <li><strong>Alça</strong> (quadradinho do canto) — segurar e arrastar redimensiona.</li>
-                    <li><strong>Dois dedos sobre o elemento</strong> — pinça <strong>expande/contrai</strong>: texto muda a fonte, QR/formas mudam o tamanho.</li>
-                    <li><strong>Toque longo</strong> (~meio segundo parado) — abre o <strong>Editor de Elemento</strong> em modal (mesma ação do botão direito no PC).</li>
-                    <li><strong>Toque duplo</strong> — edita texto/formas direto no canvas; QR e código de barras abrem um mini modal. No teclado, <kbd>Enter</kbd> quebra linha e <strong>tocar fora do campo salva</strong>.</li>
-                    <li><strong>Tocar no fundo</strong> (fora dos elementos) — desmarca tudo. Fora do canvas a página rola normalmente.</li>
+                    <li><strong>Segurar e arrastar</strong> — move o elemento.</li>
+                    <li><strong>Alça do canto</strong> — arraste para redimensionar.</li>
+                    <li><strong>Dois dedos</strong> — pinça aumenta/diminui: texto muda a fonte, QR e formas mudam de tamanho.</li>
+                    <li><strong>Toque longo</strong> — abre o Editor de Elemento em tela cheia, com campos grandes para digitar.</li>
+                    <li><strong>Toque duplo</strong> — edita o texto ali mesmo; tocar fora salva.</li>
                   </ul>
                 </div>
               </div>
             </div>
             <div class="card p-3 border-0 shadow-sm">
-              <h6 class="fw-bold text-primary mb-2"><i class="bi bi-sliders2 me-1"></i>Editor de Elemento e Zoom no celular</h6>
               <p class="small text-muted mb-0">
-                Ao selecionar, o <strong>Editor de Elemento</strong> aparece embaixo do canvas com os ícones organizados em várias linhas — nada estoura a tela. Pelo <strong>toque longo</strong> ele abre como <strong>modal</strong>, com campos grandes e confortáveis (ideal para digitar). Zoom do canvas: botões <strong>+ / − / Auto Fit</strong> no menu Ferramentas → Exibição.
+                O botão <strong>Imprimir</strong> fica no rodapé, no centro — sempre ao alcance do polegar. Zoom: botões <strong>+ / − / Ajustar à Tela</strong> dentro de Ferramentas.
               </p>
             </div>
           </div>
 
-        </div>
-        <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
+<div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
           <span class="small text-muted ajuda-so-pc"><i class="bi bi-info-circle me-1"></i> Pressione <kbd>F1</kbd> em qualquer momento para abrir esta ajuda.</span>
           <span class="small text-muted ajuda-so-mobile"><i class="bi bi-info-circle me-1"></i> Toque no botão de interrogação para reabrir esta ajuda a qualquer momento.</span>
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar Ajuda</button>
