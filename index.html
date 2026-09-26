@@ -1261,7 +1261,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.14</span>
+      <span class="brand-ver">v2.15</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1512,7 +1512,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.14</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.15</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2693,7 +2693,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.14</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.15</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -5414,7 +5414,7 @@
     function adicionarElemento(tipo, textoDefault) {
       var sz = SIZES[tamAtualKey] || SIZES["100x50"];
       var W = sz.w, H = sz.h;
-      var newId = "el_" + Date.now();
+      var newId = "el_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
       var m = Math.round(W * 0.035);
       var disponivelW = W - 2 * m;
 
@@ -8311,6 +8311,62 @@
       renderStudio();
     }
 
+    /* Pedido 1.93: se a etiqueta ainda não foi criada, o próprio lote cria —
+       seguindo a lógica do lote: um elemento de TEXTO por coluna mapeada,
+       empilhados a partir do topo, sem sobreposição, valores da 1ª linha e
+       autoajuste de fonte para caber (mesma regra do "Aplicar"). */
+    function garantirEtiquetaLote() {
+      if (elements.length) return true;
+      var validacao = importValidarMapeamento();
+      if (!validacao.ok) return false;
+      var mapa = validacao.mapa;
+      var colunasMapeadas = obterColunasMapeadasLote(mapa);
+      if (!colunasMapeadas.length) return false;
+
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var W = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
+      var H = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
+      var m = Math.round(W * 0.035);
+      var GAP = Math.max(6, Math.round(H * 0.03));
+
+      var idxCols = obterIdxColsLote();
+      var primeira = importDados.linhas[0] || [];
+      var itens = colunasMapeadas.map(function (col) {
+        var campo = mapa[col];
+        return {
+          campo: campo,
+          fonte: (campo === "nome" ? 50 : 28),
+          valor: (primeira[idxCols[col]] != null) ? String(primeira[idxCols[col]]) : ""
+        };
+      });
+
+      /* Se o total não cabe na etiqueta, reduz proporcionalmente (autoajuste) */
+      var totalItens = itens.reduce(function (acc, it) { return acc + it.fonte * 1.4 + GAP; }, 0);
+      var alturaDisponivel = Math.max(0, H - 2 * m);
+      var escala = 1;
+      if (totalItens > alturaDisponivel && totalItens > 0) {
+        escala = alturaDisponivel / totalItens;
+        if (escala < 0.45) { escala = 0.45; notify("Total de elementos reduzido ao mínimo e ainda pode não caber — considere uma etiqueta maior.", "warning"); }
+      }
+
+      var cursorY = m;
+      itens.forEach(function (it) {
+        adicionarElemento("texto", it.valor);
+        var el = elements[elements.length - 1];
+        if (!el) return;
+        el.fonte = Math.max(10, Math.round(it.fonte * escala));
+        if (typeof ajustarFonteParaCaber === "function") el.fonte = ajustarFonteParaCaber(el.texto || "", el.fonte, W - 2 * m);
+        el.h = Math.round(el.fonte * 1.4);
+        el.x = m;
+        el.y = cursorY;
+        if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
+        cursorY = el.y + el.fonte * 1.4 + GAP;
+      });
+      renderStudio();
+      notify("Etiqueta criada automaticamente para o lote: " + itens.length + " textos (uma coluna por elemento), sem sobreposição.", "success");
+      return true;
+    }
+
     /* Paginação do lote na sb-desktop-bar: ‹ [nº] /total › */
     function atualizarNavLote() {
       var nav = $("lote-nav"); if (!nav) return;
@@ -8337,8 +8393,15 @@
       if (!validacao.ok) { atualizarNavLote(); return; }
       var colunasMapeadas = obterColunasMapeadasLote(validacao.mapa);
       if (!colunasMapeadas.length) { atualizarNavLote(); return; }
+
+      /* Pedido 1.93: sem etiqueta criada, a navegação também cria a
+         etiqueta sozinha; com etiqueta, apenas garante os slots de texto */
+      if (!elements.length) {
+        if (!garantirEtiquetaLote()) { atualizarNavLote(); return; }
+      } else {
+        garantirAlvosTextoLote(colunasMapeadas.length);
+      }
       var i = Math.max(0, Math.min(total - 1, idx));
-      garantirAlvosTextoLote(colunasMapeadas.length);
       aplicarLinhaLoteNoEstudio(i, colunasMapeadas, obterIdxColsLote());
       lotePaginaAtual = i;
       atualizarNavLote();
@@ -8368,14 +8431,20 @@
        linha — todas no formato/posições da etiqueta do projeto, apenas
        trocando os dados. */
     function gerarZPLTodasLinhas() {
-      if (!importDados.colunas.length || !importDados.linhas.length || !elements.length) return null;
+      if (!importDados.colunas.length || !importDados.linhas.length) return null;
       var validacao = importValidarMapeamento();
       if (!validacao.ok) return null;
       var colunasMapeadas = obterColunasMapeadasLote(validacao.mapa);
       if (!colunasMapeadas.length) return null;
+
+      /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho */
+      if (!elements.length && !garantirEtiquetaLote()) return null;
       var idxCols = obterIdxColsLote();
 
       var alvos = garantirAlvosTextoLote(colunasMapeadas.length);
+      /* Binding por ÍNDICE (clone é elements.map — posições 1:1): imune a
+         ids duplicados/colisões de Date.now() na criação em rajada. */
+      var idxAlvos = alvos.map(function (alvo) { return elements.indexOf(alvo); });
 
       var blocos = [];
       importDados.linhas.forEach(function (linha) {
@@ -8383,9 +8452,8 @@
         var vals = obterValoresMapeadosLote(linha, colunasMapeadas, idxCols);
         alvos.forEach(function (alvo, i) {
           if (i >= vals.length) return;
-          for (var k = 0; k < clone.length; k++) {
-            if (clone[k].id === alvo.id) { clone[k].texto = vals[i]; break; }
-          }
+          var k = idxAlvos[i];
+          if (k !== -1 && k < clone.length) clone[k].texto = vals[i];
         });
         var bloco = gerarZPLBloco(clone, tamAtualKey, rotAtual);
         if (bloco) blocos.push(bloco);
@@ -8399,7 +8467,10 @@
       $("btn-import-gerar-todas").addEventListener("click", function () {
         if (!importDados.colunas.length) { notify("Leia as colunas antes de gerar as etiquetas.", "danger"); return; }
         if (!importDados.linhas.length) { notify("A origem não possui linhas de dados.", "danger"); return; }
-        if (!elements.length) { notify("A etiqueta atual está vazia — ela é o modelo para todas as linhas. Aplique o mapeamento primeiro.", "warning"); return; }
+
+        /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho
+           (textos empilhados, uma coluna por elemento, sem sobreposição) */
+        if (!elements.length && !garantirEtiquetaLote()) { notify("Não foi possível criar a etiqueta — verifique o mapeamento.", "danger"); return; }
 
         var validacao = importValidarMapeamento();
         if (!validacao.ok) { notify(validacao.msg, "danger"); return; }
