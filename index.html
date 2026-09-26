@@ -1232,12 +1232,20 @@
     button.sb-chip:hover { border-color: var(--bs-primary); }
     .sb-zoom-btn { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; }
     .sb-zoom-btn:focus-visible { outline: 2px solid var(--bs-primary); border-radius: 4px; }
-    .sb-tab { position: relative; border: 0; background: transparent; color: var(--zebra-muted); cursor: pointer; padding: 0.14rem 0.5rem; border-radius: 8px; font-size: 0.85rem; line-height: 1.25; display: inline-flex; align-items: center; }
-    .sb-tab:hover { background: var(--zebra-bg); color: var(--zebra-text); }
+    .sb-tab { position: relative; border: 0; background: transparent; color: var(--zebra-muted); cursor: pointer; padding: 0.18rem 0.55rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.25; display: inline-flex; align-items: center; gap: 0.2rem; transition: background 0.18s, color 0.18s; }
+    .sb-tab:hover { background: rgba(var(--bs-primary-rgb, 13,110,253), 0.10); color: var(--zebra-text); }
     .sb-tab:focus-visible { outline: 2px solid var(--bs-primary); }
-    .sb-tab.aba-ativa { background: var(--bs-primary); }
-    .sb-tab.aba-ativa i { color: #fff; }
+    /* Selecao: azul claro translucido - indica aba ativa sem escurecer o icone */
+    .sb-tab.aba-ativa { background: rgba(var(--bs-primary-rgb, 13,110,253), 0.15); border: 1px solid rgba(var(--bs-primary-rgb, 13,110,253), 0.35); }
+    .sb-tab.aba-ativa i, .sb-tab.aba-ativa span { color: var(--bs-primary); font-weight: 600; }
     .sb-tab .badge-cont { position: absolute; bottom: -4px; right: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--bs-success); color: #fff; font-size: 0.55rem; font-weight: 700; line-height: 15px; text-align: center; box-shadow: 0 0 0 2px var(--zebra-card-bg); }
+    /* Grupo de icones de exibicao na sb-bar esquerda */
+    .sb-exib-group { display: inline-flex; align-items: center; gap: 0.22rem; padding: 0 0.5rem 0 0; border-right: 1px solid var(--zebra-border); margin-right: 0.25rem; flex-shrink: 0; }
+    .sb-exib-btn { border: 0; background: transparent; color: var(--zebra-muted); cursor: pointer; padding: 0.1rem 0.28rem; border-radius: 6px; font-size: 0.78rem; line-height: 1; display: inline-flex; align-items: center; transition: background 0.15s, color 0.15s; }
+    .sb-exib-btn:hover { background: rgba(var(--bs-primary-rgb,13,110,253),0.10); color: var(--bs-primary); }
+    .sb-exib-btn:focus-visible { outline: 2px solid var(--bs-primary); border-radius: 4px; }
+    .sb-exib-select { font-size: 0.70rem; padding: 0.04rem 0.28rem; height: auto; width: 6ch; min-width: 50px; border-color: var(--zebra-border); background: var(--zebra-bg); color: var(--zebra-text); border-radius: 6px; cursor: pointer; }
+    .sb-exib-label { font-size: 0.67rem; color: var(--zebra-muted); font-weight: 500; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -1253,7 +1261,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Designer ZPL">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.13</span>
+      <span class="brand-ver">v2.14</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1323,7 +1331,7 @@
         <div class="dnv-dropdown" id="dnv-dd-impressora" role="menu">
           <span class="dnv-dropdown-header">Configuração</span>
           <button type="button" class="dnv-dropdown-item" id="dnv-imp-ip" role="menuitem">
-            <i class="fas fa-network-wired dnv-icon text-secondary"></i> Configurar IP
+            <i class="fas fa-print dnv-icon text-secondary"></i> Configurar Impressora
           </button>
           <!-- Submenu: Calibrar Impressora (comandos de calibragem) -->
           <div class="dnv-submenu-wrap" id="dnv-sub-cal-wrap">
@@ -1504,7 +1512,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Studio ZPL II
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.13</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.14</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1681,31 +1689,7 @@
 
                   </div>
                   </div>
-
-                  <!-- Ribbon: Exibição (antes canvas-toolbar: zoom, unidade, margens, limpar, régua/grade/snap) -->
-                  <div class="ribbon-group ribbon-exibicao">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Exibição" aria-label="Arrastar para reordenar o ribbon Exibição"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Exibição" title="Exibir / Ocultar ícones do Ribbon Exibição" aria-label="Exibir ou ocultar ícones do ribbon Exibição" aria-expanded="true"><i class="fas fa-sliders"></i></button>
-                  <div class="ribbon-body">
-                  <!-- Zoom -->
-                  <span class="small fw-semibold text-muted me-1" style="font-size:0.78rem;">Zoom:</span>
-                  <button type="button" class="icon-btn icon-btn-muted icon-btn-sm" id="zoom-out" title="Diminuir Zoom (-)"><i class="fas fa-search-minus"></i></button>
-                  <span class="small fw-bold px-1" id="zoom-val">100%</span>
-                  <button type="button" class="icon-btn icon-btn-muted icon-btn-sm" id="zoom-in" title="Aumentar Zoom (+)"><i class="fas fa-search-plus"></i></button>
-                  <button type="button" class="icon-btn icon-btn-primary icon-btn-sm" id="zoom-fit" title="Auto Fit: Ajustar automaticamente ao tamanho da visão"><i class="fas fa-expand-arrows-alt"></i></button>
-                  <button type="button" class="icon-btn icon-btn-muted icon-btn-sm" id="zoom-reset" title="Reset Zoom (100%)"><i class="fas fa-compress-alt"></i></button>
-                  <div class="vr mx-1"></div>
-                  <select class="form-select form-select-sm py-0 px-2" id="select-unidade" style="width: 7.5ch; min-width: 65px; font-size: 0.78rem;" title="Alterar Unidade de Medida">
-                    <option value="mm" selected>mm</option>
-                    <option value="cm">cm</option>
-                    <option value="in">pol</option>
-                    <option value="dots">dots</option>
-                  </select>
-                  <button type="button" class="icon-btn icon-btn-primary icon-btn-sm" id="btn-config-margens" title="Definir limites de margem (Top, Bottom, Left, Right)"><i class="fas fa-border-style"></i></button>
-                  <button type="button" class="icon-btn icon-btn-muted icon-btn-sm" id="btn-limpar-canvas" title="Limpar Canvas (remover todos os elementos)"><i class="fas fa-trash-alt"></i></button>
-
-                  </div>
-                  </div>
+                </div>
                 </div>
 
                 <!-- Interactive Stage (resizable wrapper) -->
@@ -1959,64 +1943,81 @@
                   </table>
                 </div>
               </div>
-
             </div>
-
-            </div>
-
           </div>
         </section>
 
       </div>
 
     <!-- Status Bar Desktop (Fase A — d-none d-lg-flex: visível APENAS ≥ 992px) -->
-    <footer class="sb-bar d-none d-lg-flex mt-2" id="sb-desktop-bar" aria-label="Barra de status e ações desktop" role="contentinfo">
+    <!-- Status Bar Desktop (d-none d-lg-flex: visivel APENAS >= 992px) -->
+    <footer class="sb-bar d-none d-lg-flex mt-2" id="sb-desktop-bar" aria-label="Barra de status e acoes desktop" role="contentinfo">
+
+      <!-- Icones de Exibicao (zoom, unidade, margens, limpar) - movidos do ribbon Exibicao -->
+      <div class="sb-exib-group" aria-label="Controles de Exibicao">
+        <span class="sb-exib-label">Zoom:</span>
+        <button type="button" class="sb-exib-btn" id="zoom-out" title="Diminuir Zoom (-)"><i class="fas fa-search-minus"></i></button>
+        <span class="small fw-bold" id="zoom-val" style="font-size:0.70rem;min-width:3ch;text-align:center;color:var(--zebra-text);">100%</span>
+        <button type="button" class="sb-exib-btn" id="zoom-in" title="Aumentar Zoom (+)"><i class="fas fa-search-plus"></i></button>
+        <button type="button" class="sb-exib-btn" id="zoom-fit" title="Auto Fit"><i class="fas fa-expand-arrows-alt"></i></button>
+        <button type="button" class="sb-exib-btn" id="zoom-reset" title="Reset Zoom (100%)"><i class="fas fa-compress-alt"></i></button>
+        <div class="sb-sep" style="height:14px;"></div>
+        <select class="sb-exib-select form-select form-select-sm" id="select-unidade" title="Alterar Unidade de Medida">
+          <option value="mm" selected>mm</option>
+          <option value="cm">cm</option>
+          <option value="in">pol</option>
+          <option value="dots">dots</option>
+        </select>
+        <button type="button" class="sb-exib-btn" id="btn-config-margens" title="Definir limites de margem"><i class="fas fa-border-style"></i></button>
+        <button type="button" class="sb-exib-btn" id="btn-limpar-canvas" title="Limpar Canvas"><i class="fas fa-trash-alt"></i></button>
+      </div>
+
       <!-- Tamanho da etiqueta (clique = alterar) -->
-      <button type="button" class="sb-chip" id="sb-tamanho" title="Tamanho da etiqueta — clique para alterar">
+      <button type="button" class="sb-chip" id="sb-tamanho" title="Tamanho da etiqueta - clique para alterar">
         <i class="fas fa-ruler-combined text-info"></i>
         <span class="sb-chip-label">Tam:</span>
-        <span class="sb-chip-val" id="sb-tamanho-val">100 × 50 mm</span>
+        <span class="sb-chip-val" id="sb-tamanho-val">100 x 50 mm</span>
       </button>
       <span class="sb-sep"></span>
-      <!-- Orientação (clique = alternar) -->
-      <button type="button" class="sb-chip" id="sb-rot" title="Orientação — clique para alternar (Horizontal / Vertical / invertidas)">
+      <!-- Orientacao (clique = alternar) -->
+      <button type="button" class="sb-chip" id="sb-rot" title="Orientacao - clique para alternar (Horizontal / Vertical / invertidas)">
         <i class="fas fa-arrows-alt-h text-warning"></i>
-        <span class="sb-chip-val" id="sb-rot-val">Horizontal</span>
-      </button>
-      <span class="sb-sep"></span>
-      <!-- Elementos no canvas -->
-      <span class="sb-chip" id="sb-elem" title="Quantidade de elementos no canvas">
-        <i class="bi bi-layers text-primary"></i>
-        <span class="sb-chip-label">Elem:</span>
-        <span class="sb-chip-val" id="sb-elem-val">0</span>
-      </span>
-      <span class="sb-sep"></span>
-      <!-- Zoom: botões funcionais -->
-      <span class="sb-chip" id="sb-zoom" title="Zoom do canvas">
-        <button type="button" class="sb-zoom-btn" id="sb-zoom-out" title="Diminuir zoom" aria-label="Diminuir zoom"><i class="fas fa-magnifying-glass-minus text-danger"></i></button>
-        <span class="sb-chip-val" id="sb-zoom-val">100%</span>
-        <button type="button" class="sb-zoom-btn" id="sb-zoom-in" title="Aumentar zoom" aria-label="Aumentar zoom"><i class="fas fa-magnifying-glass-plus text-success"></i></button>
-      </span>
-      <span class="sb-sep"></span>
-      <!-- IP da impressora (clique = configurar) -->
-      <button type="button" class="sb-chip" id="sb-ip" title="IP da impressora — clique para configurar">
-        <i class="fas fa-network-wired text-danger"></i>
-        <span class="sb-chip-label">IP:</span>
-        <span class="sb-chip-val" id="sb-ip-val">pendente</span>
+        <span class="sb-chip-val" id="sb-rot-label-val">Horizontal</span>
       </button>
       <span class="sb-sep"></span>
       <!-- DPI (clique = alterar densidade) -->
-      <button type="button" class="sb-chip" id="sb-dpi" title="Resolução da impressora — clique para alterar (203 / 300 / 600 DPI)">
+      <button type="button" class="sb-chip" id="sb-dpi" title="Resolucao da impressora - clique para alterar (203 / 300 / 600 DPI)">
         <i class="fas fa-crosshairs text-success"></i>
         <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
       </button>
-      <!-- Alternância de painéis Estúdio/ZPL/Elementos + Imprimir (clone da bottom bar mobile) -->
-      <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Alternar painéis do Studio e imprimir">
-        <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estúdio (canvas)"><i class="bi bi-eye text-primary" aria-hidden="true"></i></button>
-        <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (código)"><i class="bi bi-code-square text-info" aria-hidden="true"></i></button>
-        <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;"><i class="bi bi-list-ul text-success" aria-hidden="true"></i><span class="badge-cont" id="sb-el-badge">0</span></button>
+
+      <!-- Alternancia de paineis Estudio/ZPL/Elementos + Imprimir -->
+      <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Alternar paineis do Studio e imprimir">
+        <!-- Paginacao do lote: navega entre as etiquetas geradas (uma por linha importada) -->
+        <div class="d-flex align-items-center gap-1 d-none" id="lote-nav" role="group" aria-label="Navegar entre as etiquetas do lote" title="Etiqueta exibida no Estudio — navegue entre as etiquetas do lote">
+          <button type="button" class="sb-exib-btn" id="lote-nav-prev" aria-label="Etiqueta anterior" title="Etiqueta anterior"><i class="bi bi-chevron-left"></i></button>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm text-center fw-bold" id="lote-nav-num" style="width:52px;font-size:0.78rem;padding:0.1rem 0.25rem;" aria-label="Ir para a etiqueta número" title="Número da etiqueta — digite e pressione Enter">
+          <span class="small fw-semibold" style="font-size:0.72rem;color:var(--zebra-muted);" id="lote-nav-total">/ 1</span>
+          <button type="button" class="sb-exib-btn" id="lote-nav-next" aria-label="Próxima etiqueta" title="Próxima etiqueta"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estudio (canvas)">
+          <i class="bi bi-eye" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Estudio</span>
+        </button>
+        <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (codigo)">
+          <i class="bi bi-code-square" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">ZPL</span>
+        </button>
+        <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;">
+          <i class="bi bi-list-ul" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Elementos</span>
+          <span class="badge-cont" id="sb-el-badge">0</span>
+        </button>
         <span class="sb-sep"></span>
-        <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta"><i class="fas fa-print text-success" aria-hidden="true"></i></button>
+        <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta">
+          <i class="fas fa-print" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Imprimir</span>
+        </button>
       </div>
     </footer>
 
@@ -2037,38 +2038,99 @@
     </div>
   </div>
 
-  <!-- Modal Configurar IP & Protocolo -->
+  <!-- Modal Configurar Impressora (Rede/USB WebUSB) -->
   <div class="modal fade" id="modal-ip" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalIpLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:500px;">
       <div class="modal-content">
         <div class="modal-header py-2">
-          <h5 class="modal-title fs-6 fw-bold" id="modalIpLabel"><i class="bi bi-router text-primary me-2"></i>Conexão Zebra &amp; Protocolo</h5>
+          <h5 class="modal-title fs-6 fw-bold" id="modalIpLabel"><i class="fas fa-print text-primary me-2"></i>Configurar Impressora</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body py-3">
-          <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1" for="input-ip-modal">IP Local ou URL da Nuvem (Cloud Connect):</label>
-            <input type="text" class="form-control form-control-sm" id="input-ip-modal" placeholder="Ex: 192.168.0.50 ou https://sua-api.com/print">
-          </div>
-          <div class="mb-1">
-            <label class="form-label small fw-semibold mb-1" for="input-protocolo-modal">Protocolo de Impressão:</label>
-            <select id="input-protocolo-modal" class="form-select form-select-sm">
-              <option value="http" selected>HTTP Direct (POST /pstprnt - Sem Instalação / GitHub Pages)</option>
-              <option value="cloud">Nuvem / Webhook (Cloud Connect API HTTPS)</option>
-              <option value="ftp">FTP (Porta 21 - Servidor Local node print-server.js)</option>
-              <option value="tcp">TCP 9100 (Porta Raw - Servidor Local node print-server.js)</option>
-            </select>
-          </div>
-          <div class="form-text small mt-2">O IP e o protocolo selecionado ficam salvos no seu navegador.</div>
-          <div class="mt-2 pt-2 border-top text-center">
-            <button type="button" class="btn btn-link btn-xs text-decoration-none p-0 text-primary fw-semibold" id="btn-abrir-modal-extensao">
-              <i class="bi bi-puzzle me-1"></i>Instalar / Verificar Extensão Chrome
-            </button>
+          <!-- Abas de configuracao -->
+          <ul class="nav nav-pills nav-fill mb-3" id="printer-config-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active py-1 px-2" id="tab-rede-btn" data-bs-toggle="pill" data-bs-target="#tab-rede" type="button" role="tab" aria-controls="tab-rede" aria-selected="true" style="font-size:0.82rem;">
+                <i class="fas fa-network-wired me-1"></i>Rede / Cloud
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link py-1 px-2" id="tab-usb-btn" data-bs-toggle="pill" data-bs-target="#tab-usb" type="button" role="tab" aria-controls="tab-usb" aria-selected="false" style="font-size:0.82rem;" onclick="iniciarDiagnosticoUSB()">
+                <i class="fas fa-usb me-1"></i>USB (WebUSB)
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <!-- Tab Rede -->
+            <div class="tab-pane fade show active" id="tab-rede" role="tabpanel" aria-labelledby="tab-rede-btn">
+              <div class="mb-2">
+                <label class="form-label small fw-semibold mb-1" for="input-ip-modal">IP Local ou URL da Nuvem (Cloud Connect):</label>
+                <input type="text" class="form-control form-control-sm" id="input-ip-modal" placeholder="Ex: 192.168.0.50 ou https://sua-api.com/print">
+              </div>
+              <div class="mb-1">
+                <label class="form-label small fw-semibold mb-1" for="input-protocolo-modal">Protocolo de Impressao:</label>
+                <select id="input-protocolo-modal" class="form-select form-select-sm">
+                  <option value="http" selected>HTTP Direct (POST /pstprnt - Sem Instalacao)</option>
+                  <option value="cloud">Nuvem / Webhook (Cloud Connect API HTTPS)</option>
+                  <option value="ftp">FTP (Porta 21 - Servidor Local node print-server.js)</option>
+                  <option value="tcp">TCP 9100 (Porta Raw - Servidor Local node print-server.js)</option>
+                </select>
+              </div>
+              <div class="form-text small mt-2">O IP e o protocolo ficam salvos no navegador.</div>
+              <div class="mt-2 pt-2 border-top text-center">
+                <button type="button" class="btn btn-link btn-xs text-decoration-none p-0 text-primary fw-semibold" id="btn-abrir-modal-extensao">
+                  <i class="bi bi-puzzle me-1"></i>Instalar / Verificar Extensao Chrome
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab USB WebUSB -->
+            <div class="tab-pane fade" id="tab-usb" role="tabpanel" aria-labelledby="tab-usb-btn">
+              <!-- Diagnostico do navegador -->
+              <div class="card card-body py-2 mb-2 bg-light-subtle" id="usb-diag-box" style="font-size:0.8rem;">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="fas fa-circle" id="usb-diag-ctx-icon" style="color:#6c757d;font-size:0.6rem;"></i>
+                  <span id="usb-diag-ctx">Verificando contexto seguro...</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-circle" id="usb-diag-api-icon" style="color:#6c757d;font-size:0.6rem;"></i>
+                  <span id="usb-diag-api">Verificando WebUSB...</span>
+                </div>
+              </div>
+              <!-- Status da conexao USB -->
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-secondary" id="usb-conn-badge">Nao conectado</span>
+                <span class="small text-muted" id="usb-conn-detail"></span>
+              </div>
+              <!-- Botoes de acao USB -->
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-usb-connect-modal">
+                  <i class="fas fa-plug me-1"></i>Conectar Impressora USB
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" id="btn-usb-print-test" disabled>
+                  <i class="fas fa-print me-1"></i>Teste USB
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-usb-disconnect" disabled>
+                  <i class="fas fa-xmark me-1"></i>Desconectar
+                </button>
+              </div>
+              <!-- Filtro Zebra -->
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="usb-so-zebra" checked>
+                <label class="form-check-label small" for="usb-so-zebra">Listar somente impressoras Zebra (Vendor ID <code>0x0A5F</code>)</label>
+              </div>
+              <!-- Log USB -->
+              <pre id="usb-log-area" class="p-2 mb-0 rounded" style="max-height:120px;overflow:auto;background:#0f172a;color:#e2e8f0;font-size:0.72rem;"><span id="usb-log-lines"></span></pre>
+              <div class="form-text small mt-1">
+                <i class="fas fa-info-circle me-1"></i>Requer Chrome/Edge (WebUSB). Funciona em <code>localhost</code> ou <code>https://</code>.
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer py-2 d-flex justify-content-between">
-          <button type="button" class="btn btn-sm btn-outline-info fw-semibold" id="btn-testar-ip-modal" title="Testar status da impressora e do servidor de impressão">
-            <i class="bi bi-activity me-1"></i> Testar Conexão
+          <button type="button" class="btn btn-sm btn-outline-info fw-semibold" id="btn-testar-ip-modal" title="Testar status da impressora e do servidor de impressao">
+            <i class="bi bi-activity me-1"></i> Testar Conexao
           </button>
           <div>
             <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -2631,7 +2693,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.13</span></span>
+        <span>CanalQb - Designer de Etiquetas Zebra <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.14</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">canalqb</a>
       </div>
@@ -2733,7 +2795,7 @@
           </div>
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-config-ip" data-bs-dismiss="offcanvas">
-              <i class="fas fa-network-wired me-1"></i> Configurar IP
+              <i class="fas fa-print me-1"></i> Configurar Impressora
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
               <i class="fas fa-sliders-h me-1"></i> Calibrar
@@ -3074,6 +3136,7 @@
     function abrirModalIp() {
       if ($("input-ip-modal")) $("input-ip-modal").value = localStorage.getItem(CHAVE_IP) || "";
       if ($("input-protocolo-modal")) $("input-protocolo-modal").value = getProtocolo();
+      if (typeof iniciarDiagnosticoUSB === "function") iniciarDiagnosticoUSB();
       bsModalIp.show();
     }
 
@@ -6221,20 +6284,9 @@
       ctx.fillRect(0, 0, dispW, dispH);
       elements.forEach(function (el) { desenharElementoCanvas(ctx, el, dispW, dispH); });
 
-      if (!saidaOrientada || !rotAtual || rotAtual === 0) return c1;
-
-      var c2 = document.createElement("canvas");
-      c2.width = W; c2.height = H;
-      var ctx2 = c2.getContext("2d");
-      ctx2.fillStyle = "#ffffff";
-      ctx2.fillRect(0, 0, W, H);
-      /* Mesma transformação de centro usada nos ^FO:
-         rot90:  X=y, Y=H-x   |   rot180: X=W-x, Y=H-y   |   rot270: X=W-y, Y=x */
-      if (rotAtual === 90) ctx2.setTransform(0, -1, 1, 0, 0, H);
-      else if (rotAtual === 180) ctx2.setTransform(-1, 0, 0, -1, W, H);
-      else ctx2.setTransform(0, 1, -1, 0, W, 0);
-      ctx2.drawImage(c1, 0, 0);
-      return c2;
+      /* WYSIWYG 1:1: Devolve c1 diretamente na orientacao exata desenhada e visualizada no preview.
+         Elimina qualquer rotacao ou inversao indesejada (ex: 270 graus). */
+      return c1;
     }
 
     /* Converte canvas 1-bit-izado em comando ^GFA (ASCII hex). */
@@ -7372,7 +7424,7 @@
     /* Etiqueta de teste (lote/importação): envia apenas a 1ª etiqueta, 1 cópia. */
     function imprimirEtiquetaTesteLote() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
 
       var zplBase = null;
       var multi = gerarZPLTodasLinhas();
@@ -7491,12 +7543,12 @@
 
     /* ---------------- Importador Genérico de Fontes de Dados ---------------- */
     var IMPORT_MAP_STORAGE_KEY = "etiquetasZebra.importMap";
+    /* Pedido 1.92: elementos inseridos via lote são SEMPRE texto — QR/Código
+       de Barras saíram das opções (o valor da coluna vira texto na etiqueta). */
     var IMPORT_CAMPOS_SISTEMA = [
       { value: "texto",   label: "Texto" },
       { value: "sub",     label: "Subtítulo" },
-      { value: "nome",    label: "Nome do Produto" },
-      { value: "qr",      label: "QR Code" },
-      { value: "barcode", label: "Código de Barras" }
+      { value: "nome",    label: "Nome do Produto" }
     ];
     var importDados = { colunas: [], linhas: [] };
 
@@ -7798,6 +7850,7 @@
       }
 
       container.classList.remove("d-none");
+      atualizarNavLote();
     }
 
     function importObterMapeamento() {
@@ -7808,22 +7861,15 @@
       return mapa;
     }
 
-    /* Valida o mapeamento coluna→campo: cada campo do sistema pode receber apenas UMA coluna. */
+    /* Valida o mapeamento coluna→campo: exige ao menos uma coluna mapeada.
+       (Várias colunas podem apontar o mesmo campo — cada coluna é um valor
+       do lote, aplicado em ordem aos elementos de texto.) */
     function importValidarMapeamento() {
       var mapa = importObterMapeamento();
-      var vistos = {};
-      var duplicados = [];
       var mapeadas = 0;
       Object.keys(mapa).forEach(function (col) {
-        var campo = mapa[col];
-        if (campo === "ignorar") return;
-        mapeadas++;
-        if (vistos[campo]) duplicados.push("'" + vistos[campo] + "' e '" + col + "' → " + campo);
-        else vistos[campo] = col;
+        if (mapa[col] !== "ignorar") mapeadas++;
       });
-      if (duplicados.length) {
-        return { ok: false, msg: "Mapeamento duplicado: " + duplicados.join("; ") + ". Cada campo do sistema deve receber apenas uma coluna." };
-      }
       if (!mapeadas) {
         return { ok: false, msg: "Nenhuma coluna mapeada. Escolha ao menos um campo do sistema." };
       }
@@ -8124,6 +8170,7 @@
           var sel = $("import-map-" + i);
           var campo = sel ? sel.value : "ignorar";
           if (campo === "ignorar") return;
+          if (campo === "qr" || campo === "barcode") campo = "texto"; /* pedido 1.92: lote insere sempre texto (mapas salvos antigos) */
           itens.push({ campo: campo, coluna: coluna, valor: (primeira[i] != null) ? String(primeira[i]) : "" });
         });
         if (!itens.length) { notify("Nenhuma coluna mapeada. Escolha ao menos um campo do sistema.", "danger"); return; }
@@ -8186,56 +8233,166 @@
 
         bootstrap.Modal.getInstance($("modal-import-dados")).hide();
         renderStudio();
+        lotePaginaAtual = 0;
+        atualizarNavLote();
         notify(itens.length + " elementos criados" + (coubeBem ? " sem sobreposição." : " com tamanho reduzido para caber.") + " Ajuste-os como quiser.", "success");
       });
     }
 
     /* ---------- Gerar Todas as Linhas: uma etiqueta por linha importada ---------- */
+    /* Regras do lote (pedido 1.92): os valores mapeados entram SEMPRE nos
+       elementos de texto (texto/sub/nome/serie), na ordem de inserção —
+       sempre do primeiro inserido. Mais elementos que valores: os excedentes
+       mantêm o conteúdo atual. Menos elementos que valores: novos elementos
+       de TEXTO são criados empilhados, sem sobreposição. A 1ª etiqueta fica
+       visível no Estúdio como padrão; a paginação da sb-desktop-bar (‹ nº
+       /total ›) navega entre as etiquetas do lote. */
+    var lotePaginaAtual = 0; /* índice 0-based da etiqueta exibida no Estúdio */
+
+    function obterAlvosTextoLote() {
+      return elements.filter(function (e) {
+        return e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie";
+      });
+    }
+    function obterColunasMapeadasLote(mapa) {
+      return importDados.colunas.filter(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
+    }
+    function obterIdxColsLote() {
+      var idxCols = {};
+      importDados.colunas.forEach(function (c, i) { idxCols[c] = i; });
+      return idxCols;
+    }
+    function obterValoresMapeadosLote(linha, colunasMapeadas, idxCols) {
+      return colunasMapeadas.map(function (col) {
+        return (linha && linha[idxCols[col]] != null) ? String(linha[idxCols[col]]) : "";
+      });
+    }
+    /* Garante slots de texto suficientes para os valores do lote: cria os
+       faltantes empilhados abaixo de tudo que já existe — sem sobreposição
+       (mesmo autoajuste do "Aplicar"). */
+    function garantirAlvosTextoLote(necessarios) {
+      var alvos = obterAlvosTextoLote();
+      if (alvos.length >= necessarios) return alvos;
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var W = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
+      var H = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
+      var m = Math.round(W * 0.035);
+      var GAP = Math.max(6, Math.round(H * 0.03));
+      var baseY = m;
+      elements.forEach(function (e) {
+        var eh = (e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie") ? ((e.fonte || 28) * 1.4) : (e.h || 0);
+        var fundo = (e.y || 0) + eh;
+        if (fundo > baseY) baseY = fundo;
+      });
+      baseY += GAP;
+      while (alvos.length < necessarios) {
+        adicionarElemento("texto", "");
+        var el = elements[elements.length - 1];
+        if (!el) break;
+        el.fonte = 28;
+        el.h = Math.round(28 * 1.4);
+        el.x = m;
+        el.y = baseY;
+        if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
+        baseY = el.y + el.fonte * 1.4 + GAP;
+        alvos.push(el);
+      }
+      renderStudio();
+      return alvos;
+    }
+    /* Aplica uma linha do lote aos elementos REAIS do Estúdio (a etiqueta
+       exibida passa a ser a da linha idxLinha — o padrão visível do lote). */
+    function aplicarLinhaLoteNoEstudio(idxLinha, colunasMapeadas, idxCols) {
+      var vals = obterValoresMapeadosLote(importDados.linhas[idxLinha] || [], colunasMapeadas, idxCols);
+      var alvos = obterAlvosTextoLote();
+      alvos.forEach(function (alvo, i) {
+        if (i < vals.length) alvo.texto = vals[i];
+      });
+      renderStudio();
+    }
+
+    /* Paginação do lote na sb-desktop-bar: ‹ [nº] /total › */
+    function atualizarNavLote() {
+      var nav = $("lote-nav"); if (!nav) return;
+      var total = importDados.linhas.length || 0;
+      var ativo = false;
+      if (total >= 1) {
+        var mapa = importObterMapeamento();
+        ativo = Object.keys(mapa).some(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
+      }
+      nav.classList.toggle("d-none", !ativo);
+      if (!ativo) return;
+      if (lotePaginaAtual > total - 1) lotePaginaAtual = total - 1;
+      if (lotePaginaAtual < 0) lotePaginaAtual = 0;
+      var num = $("lote-nav-num");
+      if (num && document.activeElement !== num) num.value = String(lotePaginaAtual + 1);
+      var tot = $("lote-nav-total"); if (tot) tot.textContent = "/ " + total;
+      var prev = $("lote-nav-prev"); if (prev) prev.disabled = lotePaginaAtual <= 0;
+      var next = $("lote-nav-next"); if (next) next.disabled = lotePaginaAtual >= total - 1;
+    }
+    function irParaLote(idx) {
+      var total = importDados.linhas.length || 0;
+      if (!total) { atualizarNavLote(); return; }
+      var validacao = importValidarMapeamento();
+      if (!validacao.ok) { atualizarNavLote(); return; }
+      var colunasMapeadas = obterColunasMapeadasLote(validacao.mapa);
+      if (!colunasMapeadas.length) { atualizarNavLote(); return; }
+      var i = Math.max(0, Math.min(total - 1, idx));
+      garantirAlvosTextoLote(colunasMapeadas.length);
+      aplicarLinhaLoteNoEstudio(i, colunasMapeadas, obterIdxColsLote());
+      lotePaginaAtual = i;
+      atualizarNavLote();
+    }
+    if ($("lote-nav-prev")) $("lote-nav-prev").addEventListener("click", function () { irParaLote(lotePaginaAtual - 1); });
+    if ($("lote-nav-next")) $("lote-nav-next").addEventListener("click", function () { irParaLote(lotePaginaAtual + 1); });
+    if ($("lote-nav-num")) {
+      $("lote-nav-num").addEventListener("input", function () {
+        this.value = this.value.replace(/\D+/g, "").slice(0, 5); /* apenas números */
+      });
+      $("lote-nav-num").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); this.blur(); }
+      });
+      $("lote-nav-num").addEventListener("change", function () {
+        var n = parseInt(this.value, 10);
+        if (!n || n < 1) n = 1;
+        this.blur();
+        irParaLote(n - 1);
+      });
+    }
+    var loteMapCols = document.querySelector(".import-map-colunas");
+    if (loteMapCols) loteMapCols.addEventListener("change", atualizarNavLote);
+    atualizarNavLote();
+
     /* Núcleo compartilhado entre o botão "Gerar Todas as Linhas" e o "Imprimir":
-       devolve {zpl, total, ignoradas} com uma etiqueta por linha — todas no
-       formato/posições da etiqueta do projeto, apenas trocando os dados. */
+       devolve {zpl, total, colunasMapeadas, idxCols} com uma etiqueta por
+       linha — todas no formato/posições da etiqueta do projeto, apenas
+       trocando os dados. */
     function gerarZPLTodasLinhas() {
       if (!importDados.colunas.length || !importDados.linhas.length || !elements.length) return null;
       var validacao = importValidarMapeamento();
       if (!validacao.ok) return null;
-      var mapa = validacao.mapa;
-
-      var idxCols = {};
-      importDados.colunas.forEach(function (c, i) { idxCols[c] = i; });
-      var colunasMapeadas = Object.keys(mapa).filter(function (col) { return mapa[col] !== "ignorar"; });
+      var colunasMapeadas = obterColunasMapeadasLote(validacao.mapa);
       if (!colunasMapeadas.length) return null;
+      var idxCols = obterIdxColsLote();
 
-      var colunasSemAlvo = {};
+      var alvos = garantirAlvosTextoLote(colunasMapeadas.length);
+
       var blocos = [];
       importDados.linhas.forEach(function (linha) {
         var clone = elements.map(function (el) { return Object.assign({}, el); });
-        var usados = {};
-
-        colunasMapeadas.forEach(function (col) {
-          var campo = mapa[col];
-          var val = (linha[idxCols[col]] != null) ? String(linha[idxCols[col]]) : "";
-          var alvo = null;
-
-          /* 1ª preferência: elemento criado pelo "Aplicar" desta coluna */
-          clone.forEach(function (c) {
-            if (!alvo && !usados[c.id] && c.importColuna === col) alvo = c;
-          });
-          /* 2ª: correspondência por tipo/campo, na ordem dos elementos */
-          if (!alvo) {
-            clone.forEach(function (c) {
-              if (!alvo && !usados[c.id] && c.importColuna === undefined && importCorrespondeCampo(c, campo)) alvo = c;
-            });
+        var vals = obterValoresMapeadosLote(linha, colunasMapeadas, idxCols);
+        alvos.forEach(function (alvo, i) {
+          if (i >= vals.length) return;
+          for (var k = 0; k < clone.length; k++) {
+            if (clone[k].id === alvo.id) { clone[k].texto = vals[i]; break; }
           }
-          if (alvo) { alvo.texto = val; usados[alvo.id] = true; }
-          else { colunasSemAlvo[col] = true; }
         });
-
         var bloco = gerarZPLBloco(clone, tamAtualKey, rotAtual);
         if (bloco) blocos.push(bloco);
       });
 
       if (!blocos.length) return null;
-      return { zpl: blocos.join("\n\n"), total: blocos.length, ignoradas: Object.keys(colunasSemAlvo) };
+      return { zpl: blocos.join("\n\n"), total: blocos.length, colunasMapeadas: colunasMapeadas, idxCols: idxCols };
     }
 
     if ($("btn-import-gerar-todas")) {
@@ -8250,16 +8407,18 @@
         var r = gerarZPLTodasLinhas();
         if (!r) { notify("Não foi possível gerar as etiquetas.", "danger"); return; }
 
-        var aviso = "";
-        if (r.ignoradas.length) {
-          aviso = " Colunas sem elemento correspondente foram ignoradas: " + r.ignoradas.join(", ") + ".";
-        }
+        /* A 1ª etiqueta fica visível no Estúdio e é o padrão para as demais */
+        aplicarLinhaLoteNoEstudio(0, r.colunasMapeadas, r.idxCols);
+        lotePaginaAtual = 0;
+        ativarAbaStudio("tab-canvas");
+        atualizarNavLote();
 
+        var modalImp = bootstrap.Modal.getInstance($("modal-import-dados"));
+        if (modalImp) modalImp.hide();
         loteEspecialAtivo = false;
         $("zpl").value = r.zpl;
-        mostrarAbaZPL();
         atualizarBarraStatusLote();
-        notify(r.total + " etiquetas geradas (uma por linha)." + aviso + " \"Imprimir\" também envia todas de uma vez.", "success");
+        notify(r.total + " etiquetas geradas (uma por linha). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
       });
     }
 
@@ -8474,7 +8633,7 @@
         }
         if (zplCode) {
           var ip = localStorage.getItem(CHAVE_IP);
-          if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+          if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
           abrirModalQuantidadeImpressao(function (qtd) {
             var zplFinal = (qtd > 1) ? injetarQuantidadeZPL(zplCode, qtd) : zplCode;
             enviarImpressao(ip, zplFinal);
@@ -8612,8 +8771,164 @@
       });
     }
 
+    /* ---------------- Suporte USB WebUSB (Zebra) ---------------- */
+    var ZEBRA_VID = 0x0A5F;
+    var usbDevice = null, usbIface = null, usbEndpoint = null;
+    var usbEncoder = new TextEncoder();
+
+    function logUsb(msg, tipo) {
+      var linesEl = $("usb-log-lines");
+      var areaEl = $("usb-log-area");
+      if (!linesEl || !areaEl) return;
+      var div = document.createElement("div");
+      div.textContent = "[" + new Date().toLocaleTimeString("pt-BR") + "] " + msg;
+      if (tipo === "err") div.style.color = "#f87171";
+      if (tipo === "ok") div.style.color = "#4ade80";
+      linesEl.appendChild(div);
+      areaEl.scrollTop = areaEl.scrollHeight;
+    }
+
+    function iniciarDiagnosticoUSB() {
+      var isSecure = window.isSecureContext;
+      var hasUsb = "usb" in navigator;
+      var ctxIcon = $("usb-diag-ctx-icon");
+      var ctxSpan = $("usb-diag-ctx");
+      var apiIcon = $("usb-diag-api-icon");
+      var apiSpan = $("usb-diag-api");
+
+      if (ctxIcon && ctxSpan) {
+        ctxIcon.style.color = isSecure ? "#16a34a" : "#dc2626";
+        ctxSpan.textContent = isSecure ? "Contexto seguro ativo (localhost ou HTTPS)" : "Contexto inseguro — WebUSB requer localhost ou HTTPS";
+      }
+      if (apiIcon && apiSpan) {
+        apiIcon.style.color = hasUsb ? "#16a34a" : "#dc2626";
+        apiSpan.textContent = hasUsb ? "WebUSB disponível no navegador" : "WebUSB não suportado neste navegador (use Chrome/Edge)";
+      }
+      atualizarEstadoUsbUI();
+    }
+
+    function atualizarEstadoUsbUI() {
+      var badge = $("usb-conn-badge");
+      var detail = $("usb-conn-detail");
+      var btnConnect = $("btn-usb-connect-modal");
+      var btnTest = $("btn-usb-print-test");
+      var btnDisc = $("btn-usb-disconnect");
+
+      if (usbDevice && usbDevice.opened) {
+        if (badge) { badge.className = "badge bg-success"; badge.textContent = "Conectado via USB"; }
+        if (detail) { detail.textContent = (usbDevice.productName || "Impressora Zebra") + (usbDevice.serialNumber ? " (SN: " + usbDevice.serialNumber + ")" : ""); }
+        if (btnTest) btnTest.disabled = false;
+        if (btnDisc) btnDisc.disabled = false;
+        if (btnConnect) btnConnect.disabled = true;
+      } else {
+        if (badge) { badge.className = "badge bg-secondary"; badge.textContent = "Não conectado"; }
+        if (detail) { detail.textContent = ""; }
+        if (btnTest) btnTest.disabled = true;
+        if (btnDisc) btnDisc.disabled = true;
+        if (btnConnect) btnConnect.disabled = false;
+      }
+    }
+
+    async function conectarWebUSB() {
+      if (!("usb" in navigator)) {
+        logUsb("WebUSB indisponível neste navegador. Use Google Chrome ou Microsoft Edge.", "err");
+        notify("WebUSB indisponível. Use Chrome ou Edge.", "danger");
+        return;
+      }
+      var apenasZebra = $("usb-so-zebra") ? $("usb-so-zebra").checked : true;
+      var filtros = apenasZebra ? [{ vendorId: ZEBRA_VID }] : [];
+      try {
+        usbDevice = await navigator.usb.requestDevice({ filters: filtros });
+      } catch (e) {
+        logUsb("Seleção USB cancelada: " + e.message, "err");
+        return;
+      }
+      try {
+        await usbDevice.open();
+        if (!usbDevice.configuration) await usbDevice.selectConfiguration(1);
+        usbIface = null;
+        usbEndpoint = null;
+        (usbDevice.configuration ? usbDevice.configuration.interfaces : []).forEach(function (iface) {
+          iface.alternates.forEach(function (alt) {
+            alt.endpoints.forEach(function (ep) {
+              if (ep.direction === "out" && ep.type === "bulk") {
+                if (usbIface === null || (alt.interfaceClass === 7 && usbDevice.configuration.interfaces[usbIface].alternates[0].interfaceClass !== 7)) {
+                  usbIface = iface.interfaceNumber;
+                  usbEndpoint = ep.endpointNumber;
+                }
+              }
+            });
+          });
+        });
+        if (usbIface === null) {
+          logUsb("Nenhum endpoint bulk OUT encontrado nesta impressora.", "err");
+          notify("Nenhum canal de impressão compatível encontrado na impressora USB.", "danger");
+          await usbDevice.close();
+          usbDevice = null;
+          atualizarEstadoUsbUI();
+          return;
+        }
+        await usbDevice.claimInterface(usbIface);
+        atualizarEstadoUsbUI();
+        localStorage.setItem("etiquetasZebra.modoConexao", "usb");
+        logUsb("Conectado a " + (usbDevice.productName || "Zebra") + " (iface: " + usbIface + ", ep: " + usbEndpoint + ")", "ok");
+        notify("✅ Impressora USB conectada com sucesso!", "success");
+      } catch (e) {
+        logUsb("Erro ao conectar à impressora USB: " + e.message, "err");
+        notify("Falha na conexão USB: " + e.message, "danger");
+        usbDevice = null;
+        atualizarEstadoUsbUI();
+      }
+    }
+
+    async function desconectarWebUSB() {
+      if (usbDevice) {
+        try {
+          await usbDevice.close();
+        } catch (e) {}
+        usbDevice = null;
+        usbIface = null;
+        usbEndpoint = null;
+        atualizarEstadoUsbUI();
+        logUsb("Impressora USB desconectada.", "ok");
+        notify("Impressora USB desconectada.", "dark");
+      }
+    }
+
+    async function imprimirWebUSB(zpl) {
+      if (!usbDevice || usbEndpoint === null) {
+        throw new Error("Nenhuma impressora USB conectada.");
+      }
+      var bytes = typeof zpl === "string" ? usbEncoder.encode(zpl) : zpl;
+      await usbDevice.transferOut(usbEndpoint, bytes);
+      logUsb("ZPL enviado com sucesso via USB (" + (bytes.byteLength || bytes.length) + " bytes).", "ok");
+    }
+
+    if ($("btn-usb-connect-modal")) $("btn-usb-connect-modal").addEventListener("click", conectarWebUSB);
+    if ($("btn-usb-disconnect")) $("btn-usb-disconnect").addEventListener("click", desconectarWebUSB);
+    if ($("btn-usb-print-test")) {
+      $("btn-usb-print-test").addEventListener("click", function () {
+        if (!usbDevice) { notify("Conecte a impressora USB primeiro.", "warning"); return; }
+        var zplTeste = "^XA\n^CI28\n^PW406\n^LL203\n^FO15,15^GB376,173,2^FS\n^FO30,35^A0N,28,28^FDTESTE DE IMPRESSORA^FS\n^FO30,75^A0N,24,24^FDCanalQb Zebra Designer — WebUSB^FS\n^FO30,110^A0N,24,24^FD1234567890^FS\n^FO300,60^BQN,2,4^FDQA,TESTE-1234567890^FS\n^FO30,150^A0N,20,20^FD" + new Date().toLocaleString("pt-BR") + "^FS\n^XZ\n";
+        imprimirWebUSB(zplTeste)
+          .then(function () { notify("✅ Teste enviado via USB!", "success"); })
+          .catch(function (err) { notify("Erro no teste USB: " + err.message, "danger"); });
+      });
+    }
+
     /* ---------------- Impressão Híbrida (HTTP Direct, Cloud & Local Server) ---------------- */
     function enviarImpressao(ip, zpl) {
+      if (usbDevice && usbDevice.opened) {
+        notify("Enviando etiqueta diretamente para a impressora USB...", "dark");
+        imprimirWebUSB(zpl)
+          .then(function () {
+            notify("✅ Etiqueta impressa com sucesso via USB!", "success");
+          })
+          .catch(function (err) {
+            notify("Erro ao imprimir via USB: " + err.message, "danger");
+          });
+        return;
+      }
       var proto = getProtocolo();
 
       // Transmite via postMessage diretamente para a Extensão Chrome
@@ -8757,7 +9072,7 @@
         return;
       }
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
       abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
     }
 
@@ -8765,7 +9080,7 @@
 
     function abrirModalImprimirZPLBruto() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
       $("zpl-print-ip").textContent = ip;
       if (bsModalPrintZpl) bsModalPrintZpl.show();
     }
@@ -8883,9 +9198,9 @@
       if (qtd && qtd > 1) zpl = injetarQuantidadeZPL(zpl, qtd);
 
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip) {
+      if (!ip && !(usbDevice && usbDevice.opened)) {
         abrirModalIp();
-        notify("Informe o IP da impressora Zebra.", "danger");
+        notify("Configure a impressora (IP ou USB).", "danger");
         return;
       }
 
@@ -9191,7 +9506,7 @@
     if ($("btn-prev-imprimir")) {
       $("btn-prev-imprimir").addEventListener("click", function () {
         var ipP = localStorage.getItem(CHAVE_IP);
-        if (!ipP) { abrirModalIp(); notify("Informe o IP da impressora Zebra.", "danger"); return; }
+        if (!ipP && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
         enviarImpressao(ipP, gerarZPLImagem());
       });
     }
