@@ -1292,7 +1292,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.28</span>
+      <span class="brand-ver">v2.29</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1559,7 +1559,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.28</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.29</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -4044,6 +4044,31 @@
       return { rot: rot, w0: w0, h0: h0 };
     }
 
+    /* Pedido 1.84: auto-ajuste ao digitar (estilo Canva) — a caixa do texto
+       (fbWidth, a largura de quebra do ^FB) cresce junto com o que foi
+       digitado; ao passar do limite lateral da etiqueta trava no limite e
+       quebra para a próxima linha; a altura do elemento acompanha as linhas,
+       até ~4. Chamado no input do inspetor e no confirmar da edição inline. */
+    function autoAjustarElementoTexto(el) {
+      if (!el || (el.tipo !== "texto" && el.tipo !== "sub" && el.tipo !== "nome" && el.tipo !== "serie")) return;
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var dispW = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
+      var dispH = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
+      var f = el.fonte || 30;
+      /* Limite lateral: da posição do elemento até a margem direita — calculado
+         SEM o fbWidth antigo, senão a caixa nunca cresceria a cada tecla */
+      var disponivel = Math.max(1, Math.round(dispW - (el.x || 0) - mmToDots(margens.right)));
+      var natural = Math.max(1, Math.ceil(larguraTexto(el.texto || "M", f)));
+      el.fbWidth = Math.min(natural, disponivel);
+      var linhas = contarLinhasEnroladas(el.texto || "", f, el.fbWidth);
+      el.w = el.fbWidth; /* espelho da caixa no elemento (inspetor/limites) */
+      el.h = Math.round(f * 1.1 * Math.min(linhas, 4)); /* cresce até ~4 linhas */
+      /* Sem restringirLimitesElemento aqui: digitar não move o elemento (x/y
+         ficam), e o footprint de texto de 1 linha do clamp faria o elemento
+         "deslizar" para a margem com textos longos. O clamp lateral da largura
+         já aconteceu no min(natural, disponivel) acima. */
+    }
+
     /* ---------------- Renderização do Studio ---------------- */
     function renderPreview() {
       var selectTam = $("tamanho");
@@ -4645,6 +4670,7 @@
         finalizar();
         if (novoTexto !== (el.texto || "")) {
           el.texto = novoTexto;
+          autoAjustarElementoTexto(el); /* Pedido 1.84: caixa cresce com o texto digitado */
           renderStudio();
           renderZPL();
           if (typeof saveFieldsToSession === "function") saveFieldsToSession();
@@ -5407,7 +5433,7 @@
     // Atualização em Tempo Real do Inspetor
     $("insp-texto").addEventListener("input", function () {
       var el = elements.find(function (e) { return e.id === selectedElId; });
-      if (el) { el.texto = this.value; renderStudio(); }
+      if (el) { el.texto = this.value; autoAjustarElementoTexto(el); renderStudio(); }
     });
     $("insp-x-mm").addEventListener("input", function () {
       var el = elements.find(function (e) { return e.id === selectedElId; });
