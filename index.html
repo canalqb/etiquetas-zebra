@@ -1292,7 +1292,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.30</span>
+      <span class="brand-ver">v2.31</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1559,7 +1559,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.30</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.31</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2789,7 +2789,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.30</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.31</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -4309,7 +4309,7 @@
           var _qSide = el.w || 200;
           var _cachedQr = qrObter(el.texto);
           var _qMods = _cachedQr ? _cachedQr.count : 33;
-          var _qMag = Math.max(1, Math.min(10, Math.round(_qSide / _qMods)));
+          var _qMag = Math.max(1, Math.floor(_qSide / _qMods));
           var szMm = dotsToMm(Math.round(_qMag * _qMods));
           div.style.width = szMm + "mm";
           div.style.height = szMm + "mm";
@@ -6028,6 +6028,37 @@
       el.gfaZplB = gerarGFARotacao(canvas, canvas.width, canvas.height, 270);
     }
 
+    /* Pedido 1.125: QR maior que a magnificação máxima do ^BQ (10) parava de
+       crescer (~31mm no 203dpi) mesmo com o mm do editor aumentando. Acima do
+       limite rasteriza no tamanho real da caixa e imprime via ^GFA gráfico —
+       mesmo pipeline WYSIWYG da curva/imagens. O bitmap embute vrot; as
+       variantes cobrem o giro da etiqueta. Cache por texto|lado|rotação: o hex
+       de um QR grande é caro de regerar a cada renderZPL. */
+    function gerarGFAQrCode(el) {
+      var cachedQrGfa = qrObter(el.texto);
+      var modsQrGfa = cachedQrGfa ? cachedQrGfa.count : 33;
+      var sideBaseQr = Math.max(8, Math.round(Math.min(el.w || 200, el.h || 200)));
+      var magQrGfa = Math.max(1, Math.floor(sideBaseQr / modsQrGfa));
+      var sideQrGfa = magQrGfa * modsQrGfa;
+      var chaveQrGfa = (el.texto || "") + "|" + sideQrGfa + "|" + (el.rotacao || 0);
+      if (el._gfaQrKey === chaveQrGfa && el.gfaZpl) return;
+      var tmpQrGfa = {};
+      for (var kQrGfa in el) tmpQrGfa[kQrGfa] = el[kQrGfa];
+      tmpQrGfa.x = 0; tmpQrGfa.y = 0;
+      tmpQrGfa.w = sideQrGfa; tmpQrGfa.h = sideQrGfa;
+      var canvasQrGfa = document.createElement("canvas");
+      canvasQrGfa.width = sideQrGfa; canvasQrGfa.height = sideQrGfa;
+      var ctxQrGfa = canvasQrGfa.getContext("2d");
+      ctxQrGfa.fillStyle = "#ffffff";
+      ctxQrGfa.fillRect(0, 0, sideQrGfa, sideQrGfa);
+      desenharElementoCanvas(ctxQrGfa, tmpQrGfa, sideQrGfa, sideQrGfa);
+      el.gfaZpl = canvasParaGF(canvasQrGfa);
+      el.gfaZplR = gerarGFARotacao(canvasQrGfa, sideQrGfa, sideQrGfa, 90);
+      el.gfaZplI = gerarGFARotacao(canvasQrGfa, sideQrGfa, sideQrGfa, 180);
+      el.gfaZplB = gerarGFARotacao(canvasQrGfa, sideQrGfa, sideQrGfa, 270);
+      el._gfaQrKey = chaveQrGfa;
+    }
+
     function abrirImportadorImagem() {
       $("input-import-imagem").click();
     }
@@ -6344,8 +6375,22 @@
           var _qSide = Math.min(it.w || 200, it.h || 200);
           var _cachedQrZ = qrObter(it.texto);
           var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
-          var mag = Math.max(1, Math.min(10, Math.round(_qSide / _qMods)));
-          p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + ",Q^FDLA," + sanitizar(it.texto) + "^FS");
+          var mag = Math.max(1, Math.round(_qSide / _qMods));
+          if (mag <= 10) {
+            /* Faixa nativa: ^BQ aceita magnificação 1–10 */
+            p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + ",Q^FDLA," + sanitizar(it.texto) + "^FS");
+          } else {
+            /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
+               mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
+               da caixa — mesmo pipeline WYSIWYG da curva/imagens. */
+            gerarGFAQrCode(it);
+            var rotGfQr = (360 - rot) % 360;
+            var gfaQr = rotGfQr === 90 ? (it.gfaZplR || it.gfaZpl)
+              : rotGfQr === 180 ? (it.gfaZplI || it.gfaZpl)
+              : rotGfQr === 270 ? (it.gfaZplB || it.gfaZpl)
+              : it.gfaZpl;
+            if (gfaQr) p.push("^FO" + px + "," + py + gfaQr + "^FS");
+          }
         } else if (it.tipo === "barcode") {
           var bcH = Math.round(it.h || 80);
           var modW = Math.max(1, Math.min(10, Math.round((it.w || 300) / 120)));
@@ -6574,7 +6619,7 @@
         var cachedQr = qrObter(el.texto);
         if (cachedQr && cachedQr.qr) {
           var sideQ = Math.min(vw, vh);
-          var magQ = Math.max(1, Math.min(10, Math.round(sideQ / cachedQr.count)));
+          var magQ = Math.max(1, Math.floor(sideQ / cachedQr.count));
           var sizeQ = magQ * cachedQr.count;
           ctx.fillStyle = "#000";
           for (var rr = 0; rr < cachedQr.count; rr++) {
