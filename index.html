@@ -732,11 +732,9 @@
     .ribbon-group.ribbon-dragging { opacity: 0.55; outline: 2px dashed var(--rb-accent); outline-offset: 2px; }
     /* Padrão único (azul) — apenas a tonalidade varia sutilmente de ribbon para ribbon */
     .ribbon-elementos  { --rb-accent:#3b82f6; --rb-bg:rgba(59,130,246,.055); --rb-border:rgba(59,130,246,.18); }
-    .ribbon-formas     { --rb-accent:#4689f7; --rb-bg:rgba(70,137,247,.065);  --rb-border:rgba(70,137,247,.20); }
  .ribbon-modelos    { --rb-accent:#5f97f8; --rb-bg:rgba(95,151,248,.085); --rb-border:rgba(95,151,248,.24); }
     .ribbon-exibicao  { --rb-accent:#98b5fb; --rb-bg:rgba(152,181,251,.13);  --rb-border:rgba(152,181,251,.33); }
     [data-bs-theme="dark"] .ribbon-elementos  { --rb-bg:rgba(59,130,246,.10);  --rb-border:rgba(96,165,250,.30); }
-    [data-bs-theme="dark"] .ribbon-formas     { --rb-bg:rgba(70,137,247,.11);  --rb-border:rgba(101,168,250,.32); }
  [data-bs-theme="dark"] .ribbon-modelos    { --rb-bg:rgba(95,151,248,.14);  --rb-border:rgba(116,175,250,.36); }
 
     [data-bs-theme="dark"] .ribbon-exibicao  { --rb-bg:rgba(152,181,251,.20);  --rb-border:rgba(160,190,252,.45); }
@@ -1294,7 +1292,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.27</span>
+      <span class="brand-ver">v2.28</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1492,10 +1490,26 @@
 
     <!-- Ações rápidas à direita -->
     <div class="dnv-actions">
+      <!-- Pedido 1.119: alternância Estúdio/ZPL/Elementos migrou da barra de status para a navbar -->
+      <div class="d-flex align-items-center gap-1" role="group" aria-label="Alternar painéis do Estúdio">
+        <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estudio (canvas)">
+          <i class="bi bi-eye" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Estudio</span>
+        </button>
+        <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (codigo)">
+          <i class="bi bi-code-square" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">ZPL</span>
+        </button>
+        <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;">
+          <i class="bi bi-list-ul" aria-hidden="true"></i>
+          <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Elementos</span>
+          <span class="badge-cont" id="sb-el-badge">0</span>
+        </button>
+      </div>
       <!-- Status da impressora: ponto colorido + IP -->
       <span class="sb-chip cursor-pointer" id="dnv-status-impressora" title="Status da impressora">
         <span id="dnv-print-dot" style="width:8px;height:8px;border-radius:50%;background:#6c757d;display:inline-block;flex-shrink:0;"></span>
-        <span id="dnv-status-ip-text" class="sb-chip-val">pendente</span>
+        <span id="dnv-status-ip-text" class="sb-chip-val">sem IP</span>
       </span>
     </div>
 
@@ -1545,7 +1559,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.27</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.28</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1636,8 +1650,8 @@
                 <div class="ribbons-bar" id="canvas-elements-palette" role="toolbar" aria-label="Ribbons de ferramentas do Studio">
                   <!-- Ribbon: Elementos -->
                   <div class="ribbon-group ribbon-elementos">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Elementos Clássicos" aria-label="Arrastar para reordenar o ribbon Elementos Clássicos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Elementos Clássicos" title="Exibir / Ocultar ícones do Ribbon Elementos Clássicos" aria-label="Exibir ou ocultar ícones do Ribbon Elementos Clássicos" aria-expanded="true"><i class="fas fa-shapes"></i></button>
+                   <span class="ribbon-grip" title="Arraste para reordenar o ribbon Elementos" aria-label="Arrastar para reordenar o ribbon Elementos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                   <button type="button" class="icon-btn ribbon-toggle" data-label="Elementos" title="Exibir / Ocultar ícones do Ribbon Elementos" aria-label="Exibir ou ocultar ícones do Ribbon Elementos" aria-expanded="true"><i class="fas fa-shapes"></i></button>
                   <div class="ribbon-body">
                   <div class="icon-btn icon-btn-primary palette-item" draggable="true" data-type="texto" data-text="Novo Texto" title="Texto Livre / Rótulo (Clique ou arraste)">
                     <i class="fas fa-font"></i>
@@ -1681,38 +1695,32 @@
                   </div>
                   <div class="vr mx-1"></div>
                   <!-- Clonar elemento selecionado (Ctrl+D) -->
-                  <button type="button" class="icon-btn icon-btn-purple" id="btn-duplicar-elemento" title="Clonar elemento selecionado (Ctrl+D)" aria-label="Clonar elemento selecionado"><i class="fas fa-clone"></i></button>
-                  </div>
-                  </div>
-
-                  <!-- Ribbon: Elementos Formas (linha, borda, elipse, diagonal, raio, retas, curva) -->
-                  <div class="ribbon-group ribbon-formas">
-                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Elementos Geométricos" aria-label="Arrastar para reordenar o ribbon Elementos Geométricos"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
-                  <button type="button" class="icon-btn ribbon-toggle" data-label="Elementos Geométricos" title="Exibir / Ocultar ícones do Ribbon Elementos Geométricos" aria-label="Exibir ou ocultar ícones do Ribbon Elementos Geométricos" aria-expanded="true"><i class="fas fa-draw-polygon"></i></button>
-                  <div class="ribbon-body">
-                  <div class="icon-btn icon-btn-muted palette-item" draggable="true" data-type="linha" title="Linha Divisória (Clique ou arraste)" aria-label="Adicionar linha divisória">
-                    <i class="fas fa-minus"></i>
-                  </div>
-                  <div class="icon-btn icon-btn-warning palette-item" draggable="true" data-type="borda" title="Moldura Externa / Retângulo (Clique ou arraste)" aria-label="Adicionar moldura externa">
-                    <i class="far fa-square"></i>
-                  </div>
-                  <div class="icon-btn icon-btn-info palette-item" draggable="true" data-type="elipse" title="Círculo / Elipse (Clique ou arraste)" aria-label="Adicionar círculo ou elipse">
-                    <i class="fas fa-circle"></i>
-                  </div>
-                  <div class="icon-btn icon-btn-dark palette-item" draggable="true" data-type="diagonal" title="Diagonal / Linha Cruzada (Clique ou arraste)" aria-label="Adicionar diagonal ou linha cruzada">
-                    <i class="fas fa-slash"></i>
-                  </div>
-                  <div class="icon-btn icon-btn-success palette-item" draggable="true" data-type="raio" title="Retângulo com Cantos Arredondados (Clique ou arraste)" aria-label="Adicionar retângulo com cantos arredondados">
-                    <i class="fas fa-vector-square"></i>
-                  </div>
-                  <div class="icon-btn icon-btn-primary palette-item" draggable="true" data-type="retas" title="Linha Reta livre (Clique ou arraste; redimensione a caixa para mudar o ângulo; com o snap ligado as pontas grudam em outras linhas)" aria-label="Adicionar linha reta livre">
-                    <i class="bi bi-slash-lg"></i>
-                  </div>
-                  <div class="icon-btn icon-btn-purple palette-item" draggable="true" data-type="curva" title="Linha Curva (Clique ou arraste; arraste o ponto azul central para curvar)" aria-label="Adicionar linha curva">
-                    <i class="bi bi-bezier2"></i>
-                  </div>
-                  </div>
-                  </div>
+                   <button type="button" class="icon-btn icon-btn-purple" id="btn-duplicar-elemento" title="Clonar elemento selecionado (Ctrl+D)" aria-label="Clonar elemento selecionado"><i class="fas fa-clone"></i></button>
+                   <div class="vr mx-1"></div>
+                   <!-- Pedido 1.119: Formas unificadas ao ribbon Elementos (um só grupo) -->
+                   <div class="icon-btn icon-btn-muted palette-item" draggable="true" data-type="linha" title="Linha Divisória (Clique ou arraste)" aria-label="Adicionar linha divisória">
+                     <i class="fas fa-minus"></i>
+                   </div>
+                   <div class="icon-btn icon-btn-warning palette-item" draggable="true" data-type="borda" title="Moldura Externa / Retângulo (Clique ou arraste)" aria-label="Adicionar moldura externa">
+                     <i class="far fa-square"></i>
+                   </div>
+                   <div class="icon-btn icon-btn-info palette-item" draggable="true" data-type="elipse" title="Círculo / Elipse (Clique ou arraste)" aria-label="Adicionar círculo ou elipse">
+                     <i class="fas fa-circle"></i>
+                   </div>
+                   <div class="icon-btn icon-btn-dark palette-item" draggable="true" data-type="diagonal" title="Diagonal / Linha Cruzada (Clique ou arraste)" aria-label="Adicionar diagonal ou linha cruzada">
+                     <i class="fas fa-slash"></i>
+                   </div>
+                   <div class="icon-btn icon-btn-success palette-item" draggable="true" data-type="raio" title="Retângulo com Cantos Arredondados (Clique ou arraste)" aria-label="Adicionar retângulo com cantos arredondados">
+                     <i class="fas fa-vector-square"></i>
+                   </div>
+                   <div class="icon-btn icon-btn-primary palette-item" draggable="true" data-type="retas" title="Linha Reta livre (Clique ou arraste; redimensione a caixa para mudar o ângulo; com o snap ligado as pontas grudam em outras linhas)" aria-label="Adicionar linha reta livre">
+                     <i class="bi bi-slash-lg"></i>
+                   </div>
+                   <div class="icon-btn icon-btn-purple palette-item" draggable="true" data-type="curva" title="Linha Curva (Clique ou arraste; arraste o ponto azul central para curvar)" aria-label="Adicionar linha curva">
+                     <i class="bi bi-bezier2"></i>
+                   </div>
+                   </div>
+                   </div>
 
                   <!-- Ribbon: Impressora removido (Pedido 1.76) — configurações migradas
                        para o submenu Calibrar Impressora do menu Impressora da navbar -->
@@ -1781,9 +1789,10 @@
                     <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
                   </button>
 
-                  <!-- Alternancia de paineis Estudio/ZPL/Elementos + Imprimir -->
-                  <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Alternar paineis do Studio e imprimir">
-                    <!-- Paginacao do lote: navega entre as etiquetas geradas (uma por linha importada) -->
+                     <!-- Pedido 1.119: alternância de painéis migrou para a navbar (dnv-actions);
+                          aqui ficam a navegação do lote, Testar 1 e Imprimir -->
+                    <div class="ms-auto d-flex align-items-center gap-2" role="group" aria-label="Navegacao do lote, teste e impressao">
+                     <!-- Paginacao do lote: navega entre as etiquetas geradas (uma por linha importada) -->
                     <div class="d-flex align-items-center gap-1 d-none" id="lote-nav" role="group" aria-label="Navegar entre as etiquetas do lote" title="Etiqueta exibida no Estudio — navegue entre as etiquetas do lote">
                       <button type="button" class="sb-exib-btn" id="lote-nav-prev" aria-label="Etiqueta anterior" title="Etiqueta anterior"><i class="bi bi-chevron-left"></i></button>
                       <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm text-center fw-bold" id="lote-nav-num" style="width:52px;font-size:0.78rem;padding:0.1rem 0.25rem;" aria-label="Ir para a etiqueta número" title="Número da etiqueta — digite e pressione Enter">
@@ -1792,21 +1801,8 @@
                       <button type="button" class="sb-exib-btn" id="lote-nav-ir" aria-label="Ir para a etiqueta digitada" title="Ir para a etiqueta digitada">Ir</button>
                     </div>
                     <!-- Pedido 1.107: Testar 1 — migrou da barra de status do lote; só aparece para lote/importação com 2+ etiquetas -->
-                    <button type="button" class="sb-exib-btn d-none" id="btn-test-print-lote" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia" aria-label="Imprimir etiqueta de teste"><i class="fas fa-vial"></i><span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Testar 1</span></button>
-                    <button type="button" class="sb-tab aba-ativa" id="sb-btm-estudio" title="Painel Estudio (canvas)">
-                      <i class="bi bi-eye" aria-hidden="true"></i>
-                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Estudio</span>
-                    </button>
-                    <button type="button" class="sb-tab" id="sb-btm-zpl" title="Painel ZPL (codigo)">
-                      <i class="bi bi-code-square" aria-hidden="true"></i>
-                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">ZPL</span>
-                    </button>
-                    <button type="button" class="sb-tab" id="sb-btm-elem" title="Painel Elementos (lista)" style="position:relative;">
-                      <i class="bi bi-list-ul" aria-hidden="true"></i>
-                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Elementos</span>
-                      <span class="badge-cont" id="sb-el-badge">0</span>
-                    </button>
-                    <span class="sb-sep"></span>
+                     <button type="button" class="sb-exib-btn d-none" id="btn-test-print-lote" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia" aria-label="Imprimir etiqueta de teste"><i class="fas fa-vial"></i><span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Testar 1</span></button>
+                     <span class="sb-sep"></span>
                     <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta">
                       <i class="fas fa-print" aria-hidden="true"></i>
                       <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Imprimir</span>
@@ -3234,15 +3230,8 @@
           var g = ribbonsBar.querySelector(".ribbon-group." + cls);
           if (g) ribbonsBar.appendChild(g);
         });
-        /* Ribbon Formas é novo: ordens salvas antigas não o conhecem — posiciona
-           logo após Elementos (padrão 1º dados, 2º formas) até o usuário reordenar. */
-        if (ordem.indexOf("ribbon-formas") === -1) {
-          var gFormas = ribbonsBar.querySelector(".ribbon-group.ribbon-formas");
-          var gElementos = ribbonsBar.querySelector(".ribbon-group.ribbon-elementos");
-          if (gFormas && gElementos && gFormas.previousElementSibling !== gElementos) {
-            ribbonsBar.insertBefore(gFormas, gElementos.nextElementSibling);
-          }
-        }
+        /* Pedido 1.119: ribbon-formas não existe mais (unificado ao Elementos) —
+           entradas antigas na ordem salva são simplesmente ignoradas. */
       } catch (e) {}
     }
     if (ribbonsBar) {
@@ -10363,20 +10352,42 @@
     /* ---------------- Indicador da impressora (header): ponto VERDE = IP ativo e real ---------------- */
     var serverDotEl = $("print-server-dot");
     function atualizarIndicadorImpressora(estado, msg) {
-      if (!serverDotEl) return;
-      serverDotEl.style.background = (estado === "on") ? "#198754" : (estado === "off") ? "#dc3545" : "#6c757d";
-      serverDotEl.style.boxShadow = (estado === "on") ? "0 0 6px rgba(25,135,84,.8)" : "none";
+      var cor = (estado === "on") ? "#198754" : (estado === "off") ? "#dc3545" : "#6c757d";
+      if (serverDotEl) {
+        serverDotEl.style.background = cor;
+        serverDotEl.style.boxShadow = (estado === "on") ? "0 0 6px rgba(25,135,84,.8)" : "none";
+      }
       var chip = $("print-server-ind");
       if (chip) chip.title = msg;
+      /* Pedido 1.119: chip da navbar reflete a CONEXÃO REAL — ponto na cor do
+         estado e texto "sem IP" / IP (com reticências durante a verificação),
+         no lugar do "pendente" estático */
+      var dnvDot = $("dnv-print-dot");
+      if (dnvDot) dnvDot.style.background = cor;
+      var dnvTxt = $("dnv-status-ip-text");
+      if (dnvTxt) {
+        var ipNav = localStorage.getItem(CHAVE_IP);
+        dnvTxt.textContent = !ipNav ? "sem IP" : (estado === "wait" ? ipNav + "…" : ipNav);
+      }
+      var dnvChip = $("dnv-status-impressora");
+      if (dnvChip) dnvChip.title = msg;
       if (typeof syncMobileState === "function") syncMobileState();
     }
+    /* Pedido 1.119: heartbeat de 30s sem vazar memória — a flag de ocupado
+       impede empilhamento de checagens, aba oculta não gasta rede e, ao
+       voltar para a aba, a verificação é imediata. O abort de 2,5s já
+       limitava cada checagem; os guards fecham o ciclo. */
+    var _impCheckBusy = false;
     function verificarImpressoraIp() {
       if (!serverDotEl) return;
+      if (_impCheckBusy) return;
+      if (document.hidden) return;
       var ip = localStorage.getItem(CHAVE_IP);
       if (!ip) {
         atualizarIndicadorImpressora("wait", "Impressora: IP pendente — duplo clique no IP do header para definir.");
         return;
       }
+      _impCheckBusy = true;
       atualizarIndicadorImpressora("wait", "Impressora: verificando " + ip + "…");
       var alvo = /^https?:\/\//.test(ip) ? ip : "http://" + ip + "/";
       var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
@@ -10384,15 +10395,18 @@
       fetch(alvo, { mode: "no-cors", cache: "no-store", signal: ctrl ? ctrl.signal : undefined })
         .then(function () {
           clearTimeout(timer);
+          _impCheckBusy = false;
           atualizarIndicadorImpressora("on", "Impressora ATIVA em " + ip + " — respondeu na rede.");
         })
         .catch(function () {
           clearTimeout(timer);
+          _impCheckBusy = false;
           atualizarIndicadorImpressora("off", "Impressora não responde em " + ip + " — verifique IP, cabo ou rede.");
         });
     }
     verificarImpressoraIp();
     setInterval(verificarImpressoraIp, 30000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) verificarImpressoraIp(); });
     var bsModalPrev = modalPrevEl ? new bootstrap.Modal(modalPrevEl) : null;
     function abrirPreviewImpressao() {
       if (!bsModalPrev) return;
@@ -11073,7 +11087,7 @@
       var mobDot = $("mobile-print-server-dot");
       var dskDot = $("print-server-dot");
 
-      var ipVal = savedIp ? savedIp : "pendente";
+      var ipVal = savedIp ? savedIp : "sem IP";
       if (mobIpText) mobIpText.textContent = ipVal;
       if (navIp) navIp.textContent = ipVal;
 
@@ -11744,13 +11758,11 @@
 
       /* IP / DPI / Tema navbar */
       function sbSyncIpDpi() {
-        var ip = localStorage.getItem("etiquetasZebra.printerIp") || "pendente";
+        var ip = localStorage.getItem("etiquetasZebra.printerIp") || "sem IP";
         sbSet("sb-ip-val", ip);
-        var dnvDot = document.getElementById("dnv-print-dot");
-        var dnvIpTxt = document.getElementById("dnv-status-ip-text");
-        var dskDot = $("print-server-dot");
-        if (dnvDot && dskDot) dnvDot.style.backgroundColor = dskDot.style.backgroundColor || "#6c757d";
-        if (dnvIpTxt) dnvIpTxt.textContent = ip;
+        /* Chip da navbar (dnv-print-dot/dnv-status-ip-text) agora é escrito só por
+           atualizarIndicadorImpressora (conexão real — pedido 1.119); aqui fica
+           apenas o IP da barra de status + DPI + tema */
         var badgeDpi = $("badge-dpi");
         if (badgeDpi) sbSet("sb-dpi-val", badgeDpi.textContent || "203 DPI");
         var isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
@@ -12036,9 +12048,9 @@
           <div class="mb-4">
             <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-4"><i class="fas fa-shapes text-primary me-2"></i>4. Paleta de elementos (botões do Estúdio)</h5>
             <div class="row g-3 mb-3">
-              <div class="col-lg-4">
+              <div class="col-lg-6">
                 <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-shapes me-1"></i>Elementos Clássicos</h6>
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-shapes me-1"></i>Elementos (texto, códigos e formas)</h6>
                   <ul class="small text-muted mb-0 ps-3">
                     <li><i class="fas fa-font me-1"></i> <strong>Texto Livre</strong> — escreva qualquer coisa.</li>
                     <li><i class="fas fa-align-left me-1"></i> <strong>Subtítulo</strong> — texto menor para o topo.</li>
@@ -12048,13 +12060,6 @@
                     <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
                     <li><i class="fas fa-calendar-days me-1"></i> <strong>Data e Hora</strong> — escolha o formato (ex.: DD/MM/AAAA) e o texto se atualiza sozinho; funciona dentro de QR e código de barras também.</li>
                     <li><i class="fas fa-clone me-1"></i> <strong>Clonar</strong> — duplica o elemento selecionado (Ctrl+D).</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-lg-4">
-                <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-draw-polygon me-1"></i>Elementos Geométricos</h6>
-                  <ul class="small text-muted mb-0 ps-3">
                     <li><i class="fas fa-minus me-1"></i> <strong>Linha Divisória</strong> — separa áreas da etiqueta.</li>
                     <li><i class="far fa-square me-1"></i> <strong>Moldura Externa</strong> — retângulo de borda.</li>
                     <li><i class="fas fa-circle me-1"></i> <strong>Círculo / Elipse</strong>.</li>
@@ -12065,7 +12070,7 @@
                   </ul>
                 </div>
               </div>
-              <div class="col-lg-4">
+              <div class="col-lg-6">
                 <div class="card p-3 h-100 border-0 shadow-sm">
                   <h6 class="fw-bold text-primary mb-2"><i class="fas fa-tag me-1"></i>Ribbon Etiqueta (guias)</h6>
                   <ul class="small text-muted mb-0 ps-3">
@@ -12110,7 +12115,7 @@
                     <li><strong>Chips</strong> — mostram o <strong>tamanho</strong>, a <strong>orientação</strong> e o <strong>DPI</strong> atuais; clique em cada um para trocar.</li>
                     <li><strong>Setas ‹ › com número</strong> — navegam entre as etiquetas (do projeto ou geradas por lote/importação). Digite um número e toque em <strong>Ir</strong> para pular direto.</li>
                     <li><strong>Testar 1</strong> — aparece só em modo lote/importação: imprime apenas a primeira etiqueta, uma cópia, para você conferir antes de mandar tudo.</li>
-                    <li><strong>Abas Estúdio / ZPL / Elementos</strong> — trocam a visão: o desenho, o código técnico ou a lista de elementos.</li>
+                    <li><strong>Abas Estúdio / ZPL / Elementos</strong> — no topo, à direita da barra de menus: trocam a visão entre o desenho, o código técnico ou a lista de elementos.</li>
                     <li><strong>Imprimir</strong> — pergunta a quantidade e envia para a impressora configurada.</li>
                   </ul>
                 </div>
