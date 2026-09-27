@@ -32,6 +32,7 @@
   <!-- QR Code & Barcode Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bwip-js@4/dist/bwip-js-min.js"></script>
   <!-- SheetJS (XLSX) — leitura client-side de planilhas para o Importador de Dados -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- Google Identity Services — acesso a planilhas privadas com a conta logada no navegador -->
@@ -1292,7 +1293,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.33</span>
+      <span class="brand-ver">v2.34</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1559,7 +1560,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.33</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.34</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2789,7 +2790,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.33</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.34</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3086,6 +3087,13 @@
           <label class="form-label small fw-bold" for="modal-dado-input">Conteúdo</label>
           <input type="text" class="form-control form-control-sm" id="modal-dado-input" autocomplete="off" spellcheck="false" placeholder="Ex.: PROD-12345 ou https://exemplo.com">
           <p class="small text-muted mt-2 mb-0">O conteúdo é o dado codificado no elemento ao gerar e imprimir a etiqueta.</p>
+          <!-- Pedido 1.120 (fase inicial): seletor de "fonte" (simbologia) —
+               Fontes 1D para Código de Barras, Fontes 2D para QR Code -->
+          <div id="modal-dado-simbologia-bloco" class="mt-3 d-none">
+            <label class="form-label small fw-bold" for="modal-dado-simbologia" id="modal-dado-simbologia-label">Fontes 1D</label>
+            <select class="form-select form-select-sm" id="modal-dado-simbologia" aria-label="Fonte (simbologia) do código"></select>
+            <p class="small text-muted mt-1 mb-0">A “fonte” é o formato do código. Cada uma aceita um tipo de conteúdo (ex.: EAN-13 pede 12–13 dígitos) — conteúdo inválido mostra um exemplo no preview e a impressora pode recusar. Novas simbologias: valide na impressora real.</p>
+          </div>
         </div>
         <div class="modal-footer py-2 px-3">
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -4174,19 +4182,29 @@
           div.appendChild(textSpan);
         } else if (el.tipo === "qr") {
           if (!el.texto || el.texto.trim() === "") return;
-          var _qSide = el.w || 200;
-          var _cachedQr = qrObter(el.texto);
-          var _qMods = _cachedQr ? _cachedQr.count : 33;
-          var _qMag = Math.max(1, Math.floor(_qSide / _qMods));
-          var szMm = dotsToMm(Math.round(_qMag * _qMods));
-          div.style.width = szMm + "mm";
-          div.style.height = szMm + "mm";
-          if (_cachedQr) {
-            div.innerHTML = _cachedQr.svg;
-            var svg = div.querySelector("svg");
-            if (svg) { svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%"); }
+          var _qSimb = el.simbologia || "qr";
+          if (_qSimb !== "qr") {
+            /* Pedido 1.120 (fase inicial): 2D sem QR (Data Matrix, PDF-417 etc.) via bwip-js */
+            div.style.width = dotsToMm(el.w || 200) + "mm";
+            div.style.height = dotsToMm(el.h || 200) + "mm";
+            var _q2dHtml = bwipImgHtml(_qSimb, el.texto);
+            if (_q2dHtml) div.innerHTML = _q2dHtml;
+            else div.textContent = "[" + ((simbologiaInfo(_qSimb) || {}).rotulo || "2D") + "]";
           } else {
-            div.textContent = "[QR]";
+            var _qSide = el.w || 200;
+            var _cachedQr = qrObter(el.texto);
+            var _qMods = _cachedQr ? _cachedQr.count : 33;
+            var _qMag = Math.max(1, Math.floor(_qSide / _qMods));
+            var szMm = dotsToMm(Math.round(_qMag * _qMods));
+            div.style.width = szMm + "mm";
+            div.style.height = szMm + "mm";
+            if (_cachedQr) {
+              div.innerHTML = _cachedQr.svg;
+              var svg = div.querySelector("svg");
+              if (svg) { svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%"); }
+            } else {
+              div.textContent = "[QR]";
+            }
           }
         } else if (el.tipo === "barcode") {
           var modW = Math.max(1, Math.min(10, Math.round((el.w || 300) / 120)));
@@ -4195,7 +4213,7 @@
           var bcH = dotsToMm(el.h || 100);
           div.style.width = bcW + "mm";
           div.style.height = bcH + "mm";
-          var bcHtml = barcodeObter(el.texto);
+          var bcHtml = barcodeObter(el.texto, el.simbologia);
           if (bcHtml) {
             div.innerHTML = bcHtml;
             var svgBc = div.querySelector("svg");
@@ -4570,6 +4588,19 @@
         titulo.innerHTML = '<i class="fas ' + icone + ' me-1" aria-hidden="true"></i> ' + rotulo;
       }
       if (campo) campo.value = el.texto || "";
+      /* Pedido 1.120 (fase inicial): campo Fontes 1D/2D no duplo clique */
+      var blocoSimb = document.getElementById("modal-dado-simbologia-bloco");
+      var selSimb = document.getElementById("modal-dado-simbologia");
+      var lblSimb = document.getElementById("modal-dado-simbologia-label");
+      if (blocoSimb && selSimb) {
+        var familiaSimb = el.tipo === "qr" ? "2d" : "1d";
+        if (lblSimb) lblSimb.textContent = el.tipo === "qr" ? "Fontes 2D" : "Fontes 1D";
+        selSimb.innerHTML = CATALOGO_SIMBOLOGIAS[familiaSimb].map(function (s) {
+          return '<option value="' + s.chave + '">' + s.rotulo + '</option>';
+        }).join("");
+        selSimb.value = el.simbologia || simbologiaPadrao(el.tipo);
+        blocoSimb.classList.remove("d-none");
+      }
       var modalEl = document.getElementById("modal-editar-dado");
       if (!modalEl) return;
       var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -4583,11 +4614,25 @@
       var campo = document.getElementById("modal-dado-input");
       if (!campo || !editandoDadoId) return;
       var el = elements.find(function (e) { return e.id === editandoDadoId; });
-      if (el && campo.value !== (el.texto || "")) {
-        el.texto = campo.value;
-        salvarHistorico();
-        renderStudio();
-        notify("Conteúdo atualizado.", "success");
+      if (el) {
+        /* Pedido 1.120 (fase inicial): salva a "fonte" (simbologia) escolhida e o
+           conteúdo; renderZPL corrige também a aba ZPL, que ficava velha ao
+           editar só o conteúdo pelo modal */
+        var selSimb = document.getElementById("modal-dado-simbologia");
+        var novaSimb = (selSimb && selSimb.value) || "";
+        var simbAtual = el.simbologia || simbologiaPadrao(el.tipo);
+        var mudouSimb = !!novaSimb && novaSimb !== simbAtual;
+        var mudouTexto = campo.value !== (el.texto || "");
+        if (mudouSimb) el.simbologia = novaSimb;
+        if (mudouTexto) el.texto = campo.value;
+        if (mudouSimb || mudouTexto) {
+          salvarHistorico();
+          renderStudio();
+          renderZPL();
+          notify(mudouSimb
+            ? "Fonte (" + ((simbologiaInfo(novaSimb) || {}).rotulo || novaSimb) + ") e conteúdo atualizados."
+            : "Conteúdo atualizado.", "success");
+        }
       }
       editandoDadoId = null;
       var modalEl = document.getElementById("modal-editar-dado");
@@ -5769,7 +5814,8 @@
         diagDir: (tipo === "diagonal" || tipo === "retas") ? true : undefined,
         curvatura: tipo === "curva" ? 0 : undefined,
         espessura: (tipo === "retas" || tipo === "curva") ? 3 : undefined,
-        fonteAuto: isShape ? true : undefined
+        fonteAuto: isShape ? true : undefined,
+        simbologia: (tipo === "qr") ? "qr" : (tipo === "barcode" ? "code128" : undefined)
       };
       /* Auto-ajuste inicial da fonte dentro da forma (plano seção 7) */
       if (ehFormaComTexto(elTipo) && texto) {
@@ -6240,29 +6286,43 @@
           }
         } else if (it.tipo === "qr") {
           if (!it.texto || it.texto.trim() === "") return;
-          var _qSide = Math.min(it.w || 200, it.h || 200);
-          var _cachedQrZ = qrObter(it.texto);
-          var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
-          var mag = Math.max(1, Math.round(_qSide / _qMods));
-          if (mag <= 10) {
-            /* Faixa nativa: ^BQ aceita magnificação 1–10 */
-            p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + ",Q^FDLA," + sanitizar(it.texto) + "^FS");
+          var _qSimbZ = it.simbologia || "qr";
+          if (_qSimbZ !== "qr") {
+            /* Pedido 1.120 (fase inicial): 2D sem QR — comando nativo da simbologia
+               (orientação + defaults do firmware; validar na impressora real) */
+            var infoQ2dZ = simbologiaInfo(_qSimbZ);
+            if (infoQ2dZ) {
+              p.push("^FO" + px + "," + py + infoQ2dZ.zpl + rC + "^FD" + sanitizar(it.texto) + "^FS");
+            }
           } else {
-            /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
-               mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
-               da caixa — mesmo pipeline WYSIWYG da curva/imagens. */
-            gerarGFAQrCode(it);
-            var rotGfQr = (360 - rot) % 360;
-            var gfaQr = rotGfQr === 90 ? (it.gfaZplR || it.gfaZpl)
-              : rotGfQr === 180 ? (it.gfaZplI || it.gfaZpl)
-              : rotGfQr === 270 ? (it.gfaZplB || it.gfaZpl)
-              : it.gfaZpl;
-            if (gfaQr) p.push("^FO" + px + "," + py + gfaQr + "^FS");
+            var _qSide = Math.min(it.w || 200, it.h || 200);
+            var _cachedQrZ = qrObter(it.texto);
+            var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
+            var mag = Math.max(1, Math.round(_qSide / _qMods));
+            if (mag <= 10) {
+              /* Faixa nativa: ^BQ aceita magnificação 1–10 */
+              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + ",Q^FDLA," + sanitizar(it.texto) + "^FS");
+            } else {
+              /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
+                 mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
+                 da caixa — mesmo pipeline WYSIWYG da curva/imagens. */
+              gerarGFAQrCode(it);
+              var rotGfQr = (360 - rot) % 360;
+              var gfaQr = rotGfQr === 90 ? (it.gfaZplR || it.gfaZpl)
+                : rotGfQr === 180 ? (it.gfaZplI || it.gfaZpl)
+                : rotGfQr === 270 ? (it.gfaZplB || it.gfaZpl)
+                : it.gfaZpl;
+              if (gfaQr) p.push("^FO" + px + "," + py + gfaQr + "^FS");
+            }
           }
         } else if (it.tipo === "barcode") {
           var bcH = Math.round(it.h || 80);
           var modW = Math.max(1, Math.min(10, Math.round((it.w || 300) / 120)));
-          p.push("^FO" + px + "," + py + "^BY" + modW + "^BC" + rC + "," + bcH + ",Y,N,N^FD" + sanitizar(it.texto) + "^FS");
+          var info1dZ = simbologiaInfo(it.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
+          /* nº de parâmetros após a orientação: ^BC/^B3/^BA/^BU/^BM/^BK levam
+             altura,linha,acima,check; ^BE/^B8/^B2 levam altura,linha,acima */
+          var pars1dZ = "," + bcH + ",Y,N" + (info1dZ.n !== 4 ? ",N" : "");
+          p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + pars1dZ + "^FD" + sanitizar(it.texto) + "^FS");
         } else if (it.tipo === "linha") {
           var esp = Math.round(it.espessura || it.h || 3);
           var lW = Math.round((prot === 90 || prot === 270) ? esp : (it.w || dispW));
@@ -6351,6 +6411,76 @@
     }
 
     /* ---------------- RASTERIZADOR / CACHE QR-BARCODE / EXPORTAÇÃO ---------------- */
+    /* Pedido 1.120 (fase inicial): catálogo de "fontes" 1D/2D do Zebra Designer.
+       Cada entrada liga o rótulo que o usuário vê ao formato JsBarcode (1D), ao
+       encoder bwip-js (Code 93 e 2D sem QR), ao comando ZPL nativo (com nº de
+       parâmetros após a orientação), e a um conteúdo-exemplo usado quando o
+       texto é inválido para o formato. Simbologias marcadas VERIFICAR/SEM
+       SUPORTE no plano (GS1, add-ons, Micro QR, DataBar, Code-39 full ASCII,
+       Plessey etc.) ficam para as próximas fases — nada inventado aqui.
+       Elementos antigos sem el.simbologia = code128/qr (padrão, retrocompatível). */
+    var CATALOGO_SIMBOLOGIAS = {
+      "1d": [
+        { chave: "code128",  rotulo: "Code 128 (padrão)", jsbarcode: "CODE128",  zpl: "^BC", n: 5, demo: "12345678" },
+        { chave: "code128a", rotulo: "Code 128-A",        jsbarcode: "CODE128A", zpl: "^BC", n: 5, demo: "ABC123" },
+        { chave: "code128b", rotulo: "Code 128-B",        jsbarcode: "CODE128B", zpl: "^BC", n: 5, demo: "Abc123" },
+        { chave: "code128c", rotulo: "Code 128-C",        jsbarcode: "CODE128C", zpl: "^BC", n: 5, demo: "123456" },
+        { chave: "code39",   rotulo: "Code 39",           jsbarcode: "CODE39",   zpl: "^B3", n: 5, demo: "ABC-1234" },
+        { chave: "code93",   rotulo: "Code 93",           bwip: "code93",       zpl: "^BA", n: 5, demo: "ABC1234" },
+        { chave: "ean13",    rotulo: "EAN-13",            jsbarcode: "EAN13",    zpl: "^BE", n: 4, demo: "5901234123457" },
+        { chave: "ean8",     rotulo: "EAN-8",             jsbarcode: "EAN8",     zpl: "^B8", n: 4, demo: "96385074" },
+        { chave: "upca",     rotulo: "UPC-A",             jsbarcode: "UPC",      zpl: "^BU", n: 5, demo: "036000291452" },
+        { chave: "itf",      rotulo: "Entrelaçamento 2 de 5", jsbarcode: "ITF",  zpl: "^B2", n: 4, demo: "12345670" },
+        { chave: "itf14",    rotulo: "ITF-14",            jsbarcode: "ITF14",    zpl: "^B2", n: 4, demo: "1234567890123" },
+        { chave: "msi",      rotulo: "MSI",               jsbarcode: "MSI",      zpl: "^BM", n: 5, demo: "12345678" },
+        { chave: "codabar",  rotulo: "Codabar",           jsbarcode: "codabar",  zpl: "^BK", n: 5, demo: "A123456A" }
+      ],
+      "2d": [
+        { chave: "qr",         rotulo: "QR Code (padrão)", zpl: "^BQ" },
+        { chave: "datamatrix", rotulo: "Data Matrix",   bwip: "datamatrix",  zpl: "^BX" },
+        { chave: "pdf417",     rotulo: "PDF-417",       bwip: "pdf417",      zpl: "^B7" },
+        { chave: "micropdf",   rotulo: "MicroPDF",      bwip: "micropdf417", zpl: "^BF" },
+        { chave: "aztec",      rotulo: "Aztec",         bwip: "azteccode",   zpl: "^B0" },
+        { chave: "maxicode",   rotulo: "MaxiCode",      bwip: "maxicode",    zpl: "^BD" }
+      ]
+    };
+    function simbologiaInfo(chave) {
+      for (var famS in CATALOGO_SIMBOLOGIAS) {
+        var lstS = CATALOGO_SIMBOLOGIAS[famS];
+        for (var iS = 0; iS < lstS.length; iS++) if (lstS[iS].chave === chave) return lstS[iS];
+      }
+      return null;
+    }
+    function simbologiaPadrao(tipo) { return tipo === "qr" ? "qr" : "code128"; }
+    /* bwip-js → canvas (Code 93 + 2D sem QR). Conteúdo inválido cai no exemplo
+       da simbologia — o preview nunca fica em branco sem explicação. */
+    var _bwipCache = {}, _bwipCacheKeys = [];
+    function bwipCanvas(chave, texto) {
+      var infoBw = simbologiaInfo(chave);
+      if (!infoBw || !infoBw.bwip) return null;
+      var keyBw = chave + "|" + (texto || "");
+      if (_bwipCache[keyBw]) return _bwipCache[keyBw];
+      if (typeof bwipjs !== "object" || !bwipjs || typeof bwipjs.toCanvas !== "function") return null;
+      function tentarBwip(txt) {
+        var tmpBw = document.createElement("canvas");
+        bwipjs.toCanvas(tmpBw, { bcid: infoBw.bwip, text: txt, scale: 3, includetext: false, padding: 0 });
+        return tmpBw;
+      }
+      var cvBw = null;
+      try { cvBw = tentarBwip(String(texto || infoBw.demo)); }
+      catch (eBw1) { try { cvBw = tentarBwip(String(infoBw.demo)); } catch (eBw2) { cvBw = null; } }
+      if (cvBw) {
+        if (_bwipCacheKeys.length > 40) delete _bwipCache[_bwipCacheKeys.shift()];
+        _bwipCache[keyBw] = cvBw; _bwipCacheKeys.push(keyBw);
+      }
+      return cvBw;
+    }
+    function bwipImgHtml(chave, texto) {
+      var cvImg = bwipCanvas(chave, texto);
+      if (!cvImg) return "";
+      return '<img alt="" src="' + cvImg.toDataURL("image/png") + '" style="width:100%; height:100%; object-fit:contain;">';
+    }
+
     var _qrCache = {}, _qrCacheKeys = [];
     function qrObter(texto) {
       var key = "" + texto;
@@ -6372,19 +6502,29 @@
     }
 
     var _bcCache = {}, _bcCacheKeys = [];
-    function barcodeObter(texto) {
-      var key = "" + texto;
-      if (_bcCache[key]) return _bcCache[key];
+    function barcodeObter(texto, simbologia) {
+      var infoBc = simbologiaInfo(simbologia) || CATALOGO_SIMBOLOGIAS["1d"][0];
+      if (infoBc.bwip) return bwipImgHtml(infoBc.chave, texto); /* Code 93 e cia via bwip-js */
+      var fmtBc = infoBc.jsbarcode || "CODE128";
+      var keyBc = infoBc.chave + "|" + ("" + texto);
+      if (_bcCache[keyBc]) return _bcCache[keyBc];
       if (typeof JsBarcode !== "function") return null;
-      try {
+      function renderJsBc(txt) {
         var svgBc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        JsBarcode(svgBc, key || "12345678", { format: "CODE128", displayValue: true, margin: 0, height: 40 });
-        var html = svgBc.outerHTML;
-        if (html.indexOf("xmlns") === -1) html = html.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: true, margin: 0, height: 40 }); }
+        catch (eJs) { return ""; }
+        var htmlBc = svgBc.outerHTML;
+        /* svg vazio = conteúdo inválido para o formato (JsBarcode não desenha) */
+        if (htmlBc.indexOf("<rect") === -1 && htmlBc.indexOf("<path") === -1 && htmlBc.indexOf("<g") === -1) return "";
+        if (htmlBc.indexOf("xmlns") === -1) htmlBc = htmlBc.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+        return htmlBc;
+      }
+      var htmlBc2 = renderJsBc(("" + texto) || infoBc.demo) || renderJsBc(String(infoBc.demo)) || null;
+      if (htmlBc2) {
         if (_bcCacheKeys.length > 40) delete _bcCache[_bcCacheKeys.shift()];
-        _bcCache[key] = html; _bcCacheKeys.push(key);
-        return html;
-      } catch (e) { return null; }
+        _bcCache[keyBc] = htmlBc2; _bcCacheKeys.push(keyBc);
+      }
+      return htmlBc2;
     }
 
     var _imgCache = {};
@@ -6484,25 +6624,40 @@
           ctx.fillRect(0, f + Math.max(1, Math.round(f * 0.06)), twU, Math.max(2, Math.round(f * 0.08)));
         }
       } else if (el.tipo === "qr") {
-        var cachedQr = qrObter(el.texto);
-        if (cachedQr && cachedQr.qr) {
-          var sideQ = Math.min(vw, vh);
-          var magQ = Math.max(1, Math.floor(sideQ / cachedQr.count));
-          var sizeQ = magQ * cachedQr.count;
-          ctx.fillStyle = "#000";
-          for (var rr = 0; rr < cachedQr.count; rr++) {
-            for (var cc = 0; cc < cachedQr.count; cc++) {
-              if (cachedQr.qr.isDark(rr, cc)) ctx.fillRect(cc * magQ, rr * magQ, magQ, magQ);
+        var simbQ2 = (el.simbologia && el.simbologia !== "qr") ? el.simbologia : null;
+        if (simbQ2) {
+          /* Pedido 1.120 (fase inicial): 2D sem QR — desenha o canvas do bwip-js esticado na caixa */
+          var cvQ2 = bwipCanvas(simbQ2, el.texto);
+          if (cvQ2) ctx.drawImage(cvQ2, 0, 0, vw, vh);
+        } else {
+          var cachedQr = qrObter(el.texto);
+          if (cachedQr && cachedQr.qr) {
+            var sideQ = Math.min(vw, vh);
+            var magQ = Math.max(1, Math.floor(sideQ / cachedQr.count));
+            var sizeQ = magQ * cachedQr.count;
+            ctx.fillStyle = "#000";
+            for (var rr = 0; rr < cachedQr.count; rr++) {
+              for (var cc = 0; cc < cachedQr.count; cc++) {
+                if (cachedQr.qr.isDark(rr, cc)) ctx.fillRect(cc * magQ, rr * magQ, magQ, magQ);
+              }
             }
           }
         }
       } else if (el.tipo === "barcode") {
         var modWb = Math.max(1, Math.min(10, Math.round(vw / 120)));
-        try {
-          var tcv = document.createElement("canvas");
-          JsBarcode(tcv, el.texto || "12345678", { format: "CODE128", displayValue: true, margin: 0, height: 40, width: modWb });
-          ctx.drawImage(tcv, 0, 0, vw, vh);
-        } catch (e) {}
+        var infoBcPv = simbologiaInfo(el.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
+        if (infoBcPv.bwip) {
+          var cvBcBw = bwipCanvas(infoBcPv.chave, el.texto);
+          if (cvBcBw) ctx.drawImage(cvBcBw, 0, 0, vw, vh);
+        } else {
+          function desenharJsBc(txt) {
+            var tcvBc = document.createElement("canvas");
+            JsBarcode(tcvBc, txt, { format: infoBcPv.jsbarcode || "CODE128", displayValue: true, margin: 0, height: 40, width: modWb, valid: function (okV) { if (!okV) throw new Error("conteudo invalido"); } });
+            ctx.drawImage(tcvBc, 0, 0, vw, vh);
+          }
+          try { desenharJsBc(el.texto || infoBcPv.demo); }
+          catch (eBc1) { try { desenharJsBc(String(infoBcPv.demo)); } catch (eBc2) {} }
+        }
       } else if (el.tipo === "linha") {
         var espL = el.espessura || el.h || 3;
         var lsL = el.lineStyle || "solid";
@@ -6820,11 +6975,30 @@
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
+              simbologia: "qr",
               texto: qrMatch[1],
               x: x,
               y: y,
               w: mag * 33,
               h: mag * 33
+            });
+          }
+        } else if (block.indexOf("^BX") !== -1 || block.indexOf("^B7") !== -1 || block.indexOf("^BF") !== -1 || block.indexOf("^B0") !== -1 || block.indexOf("^BD") !== -1) {
+          /* Pedido 1.120 (fase inicial): 2D sem QR volta como elemento qr com simbologia */
+          var mapa2dImp = { "^BX": "datamatrix", "^B7": "pdf417", "^BF": "micropdf", "^B0": "aztec", "^BD": "maxicode" };
+          var simb2dImp = null;
+          for (var c2i in mapa2dImp) { if (block.indexOf(c2i) !== -1) { simb2dImp = mapa2dImp[c2i]; break; } }
+          var dado2dImp = /\^FD([^^]+)\^FS/.exec(block);
+          if (simb2dImp && dado2dImp) {
+            newElements.push({
+              id: "el_bin_" + idx,
+              tipo: "qr",
+              simbologia: simb2dImp,
+              texto: dado2dImp[1],
+              x: x,
+              y: y,
+              w: 200,
+              h: 200
             });
           }
         } else if (block.includes("^BC")) {
@@ -6834,11 +7008,31 @@
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "barcode",
+              simbologia: "code128",
               texto: bcMatch[1],
               x: x,
               y: y,
               w: 300,
               h: bcHMatch ? parseInt(bcHMatch[1], 10) : 80
+            });
+          }
+        } else if (block.indexOf("^B3") !== -1 || block.indexOf("^BA") !== -1 || block.indexOf("^BE") !== -1 || block.indexOf("^B8") !== -1 || block.indexOf("^BU") !== -1 || block.indexOf("^B2") !== -1 || block.indexOf("^BM") !== -1 || block.indexOf("^BK") !== -1) {
+          /* Pedido 1.120 (fase inicial): 1D além do Code 128 volta com simbologia */
+          var mapa1dImp = { "^B3": "code39", "^BA": "code93", "^BE": "ean13", "^B8": "ean8", "^BU": "upca", "^B2": "itf", "^BM": "msi", "^BK": "codabar" };
+          var simb1dImp = null;
+          for (var c1i in mapa1dImp) { if (block.indexOf(c1i) !== -1) { simb1dImp = mapa1dImp[c1i]; break; } }
+          var bcH1dImp = /\^B[3AUE82MK][NRIB],(\d+)/.exec(block);
+          var bcMatch1dImp = /\^FD([^^]+)\^FS/.exec(block);
+          if (simb1dImp && bcMatch1dImp) {
+            newElements.push({
+              id: "el_bin_" + idx,
+              tipo: "barcode",
+              simbologia: simb1dImp,
+              texto: bcMatch1dImp[1],
+              x: x,
+              y: y,
+              w: 300,
+              h: bcH1dImp ? parseInt(bcH1dImp[1], 10) : 80
             });
           }
         } else if (block.includes("^GE")) {
