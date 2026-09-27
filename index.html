@@ -1335,7 +1335,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.37</span>
+      <span class="brand-ver">v2.38</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1604,7 +1604,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.37</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.38</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2470,6 +2470,28 @@
     </div>
   </div>
 
+  <!-- Modal Progresso de Impressão em Streaming (Pedido 1.130: uma etiqueta
+       por vez, cada impressão validada pelo odômetro da impressora) -->
+  <div class="modal fade" id="modal-print-stream" tabindex="-1" role="dialog" aria-modal="true" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="modalPrintStreamLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-2 px-3">
+          <h5 class="modal-title fs-6 fw-bold" id="modalPrintStreamLabel"><i class="fas fa-print text-primary me-2" aria-hidden="true"></i>Impressão em andamento</h5>
+        </div>
+        <div class="modal-body py-3 text-center">
+          <div class="fw-bold fs-5 mb-2" id="print-stream-cont">— de —</div>
+          <div class="progress" style="height:10px;" role="progressbar" aria-label="Progresso da impressão">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" id="print-stream-bar" style="width:0%"></div>
+          </div>
+          <div class="small text-muted mt-2" id="print-stream-status">Enviando etiqueta…</div>
+        </div>
+        <div class="modal-footer py-2 px-3 justify-content-center">
+          <button type="button" class="btn btn-sm btn-outline-danger" id="print-stream-cancel"><i class="fas fa-stop me-1" aria-hidden="true"></i>Cancelar impressão</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Quantidade de Cópias (^PQ — perguntado ao clicar em Imprimir) -->
   <div class="modal fade" id="modal-print-qty" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalPrintQtyLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -2825,7 +2847,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.37</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.38</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -10167,6 +10189,103 @@
       });
     }
 
+    /* ---------------- Pedido 1.130: impressão em STREAMING (uma por vez, validada)
+       Em vez de empurrar o lote inteiro de uma vez (buffer da impressora vira um
+       saco mágico sem feedback), a fila de etiquetas é enviada UM BLOCO POR VEZ
+       pelo servidor local: cada bloco só sai depois que a impressora CONFIRMA a
+       etiqueta anterior pelo odômetro SGD (odometer.total_printed — contador
+       físico de etiquetas impressas) — sem parar a esteira. Erros de hardware
+       (cabeça aberta, papel acabou) interrompem na hora com mensagem clara.
+       Válido para os protocolos do servidor local (TCP 9100 validado; FTP envia
+       um por vez sem validar). HTTP/Cloud/USB/Bluetooth seguem o caminho único. */
+    function extrairFilaImpressao(zpl) {
+      return String(zpl || "").split(/(?=\^XA)/)
+        .filter(function (b) { return b.indexOf("^XA") !== -1; })
+        .map(function (b) {
+          var m = /\^PQ(\d+)/.exec(b);
+          return { zpl: b.trim(), esperado: m ? Math.max(1, parseInt(m[1], 10) || 1) : 1 };
+        })
+        .filter(function (f) { return f.zpl; });
+    }
+
+    var streamCancelado = false;
+    var streamAtivo = false;
+
+    function imprimirStreaming(ip, fila, proto) {
+      var total = fila.reduce(function (s, f) { return s + f.esperado; }, 0);
+      var modalEl = $("modal-print-stream");
+      var bsModalStream = modalEl ? new bootstrap.Modal(modalEl) : null;
+      var feitos = 0, idx = 0, falha = null, terminado = false;
+      streamCancelado = false;
+      streamAtivo = true;
+
+      function setUI(cont, pct, status) {
+        if ($("print-stream-cont")) $("print-stream-cont").textContent = cont;
+        if ($("print-stream-bar")) {
+          $("print-stream-bar").style.width = pct + "%";
+          $("print-stream-bar").classList.toggle("bg-danger", !!falha);
+        }
+        if ($("print-stream-status")) $("print-stream-status").textContent = status || "";
+      }
+      function encerrar(titulo, tipo) {
+        if (terminado) return;
+        terminado = true;
+        streamAtivo = false;
+        setUI(titulo, 100, "");
+        notify(titulo, tipo || "success");
+        setTimeout(function () { if (bsModalStream) bsModalStream.hide(); }, 1800);
+      }
+      function proximo() {
+        if (streamCancelado) { encerrar("⏹ Impressão interrompida — " + feitos + " de " + total + " etiquetas.", "warning"); return; }
+        if (idx >= fila.length) { encerrar("✅ " + total + " etiquetas impressas" + (proto === "tcp" ? " e validadas" : "") + "!", "success"); return; }
+        var item = fila[idx];
+        setUI((feitos + 1) + " de " + total, Math.round((feitos / total) * 100),
+              "Enviando etiqueta " + (feitos + 1) + (proto === "tcp" ? " e aguardando a impressora confirmar…" : "…"));
+        fetch("http://localhost:3001/print-one", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip: ip, zpl: item.zpl, protocol: proto, esperado: item.esperado })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (streamCancelado) return;
+          if (!j.ok) {
+            falha = j.error || "erro desconhecido";
+            encerrar("❌ Erro na etiqueta " + (feitos + 1) + " de " + total + ": " + falha + " — " + feitos + " etiqueta(s) já impressa(s).", "danger");
+            return;
+          }
+          feitos += item.esperado;
+          idx++;
+          proximo();
+        })
+        .catch(function (e) {
+          falha = String(e && e.message ? e.message : e);
+          encerrar("❌ Servidor local indisponível — rode: node print-server.js (" + falha + ")", "danger");
+        });
+      }
+
+      if ($("print-stream-cancel")) {
+        $("print-stream-cancel").onclick = function () { streamCancelado = true; proximo(); };
+      }
+      if (bsModalStream) bsModalStream.show();
+      proximo();
+    }
+
+    /* Decide se o ZPL sai em streaming (retorna true = já tratado). */
+    function tentarImpressaoStreaming(ip, zpl) {
+      if (!ip) return false;
+      var proto = getProtocolo();
+      if (proto !== "tcp" && proto !== "ftp") return false;
+      if (btChar && btDevice && btDevice.gatt && btDevice.gatt.connected) return false;
+      if (usbDevice && usbDevice.opened) return false;
+      var fila = extrairFilaImpressao(zpl);
+      var total = fila.reduce(function (s, f) { return s + f.esperado; }, 0);
+      if (fila.length < 2 && total < 2) return false;
+      imprimirStreaming(ip, fila, proto);
+      return true;
+    }
+
+
     /* ---------------- Quantidade de Cópias (^PQ) ao Imprimir ---------------- */
     var CHAVE_ULTIMA_QTD = "etiquetasZebra.ultimaQtdCopias";
     var modalPrintQtyEl = $("modal-print-qty");
@@ -10401,6 +10520,10 @@
         notify("Configure a impressora (IP, USB ou Bluetooth).", "danger");
         return;
       }
+
+      /* Pedido 1.130: lote/cópias vão em streaming (um por vez, validado) quando
+         o canal permite (TCP 9100/FTP via servidor local); senão caminho único. */
+      if (tentarImpressaoStreaming(ip, zpl)) return;
 
       enviarImpressao(ip, zpl);
     }

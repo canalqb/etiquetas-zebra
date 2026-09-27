@@ -18,6 +18,14 @@
  *   Módulos opcionais (instale só o que for usar): npm install odbc | mysql2 | pg | mssql
  *   Credenciais trafegam apenas nesta máquina e NUNCA são gravadas em disco.
  *
+ * Impressão em streaming (Pedido 1.130):
+ *   POST /print-one { ip, zpl, protocol: "tcp"|"ftp", esperado }
+ *   Envia UM bloco de etiqueta por vez; no TCP 9100 espera a impressora
+ *   confirmar a impressão física pelo odômetro SGD (odometer.total_printed)
+ *   antes de responder — o navegador só dispara a próxima ao receber ok.
+ *   Resposta: { ok: true, validado: true|false, odometro? } ou { ok: false, error }.
+ *   Env PRINT_ONE_TIMEOUT ajusta o tempo máximo por etiqueta (padrão 60s).
+ *
  * Uso: node print-server.js   (escuta na porta 3001)
  */
 "use strict";
@@ -179,6 +187,96 @@ function enviarTCP(ip, zpl, cb) {
   });
 }
 
+/* ---------------- Impressão uma-por-uma com validação (Pedido 1.130) ----------------
+   POST /print-one {ip, zpl, protocol, esperado}
+   TCP 9100: envia UM bloco de etiqueta e espera a impressora confirmar a
+   impressão física pelo odômetro SGD (odometer.total_printed — contador de
+   etiquetas impressas, só sobe quando a etiqueta sai de verdade). O ~HS serve
+   de detector de erros na hora (cabeça aberta / papel acabou). FTP: envia um
+   bloco por vez, sem validação (o canal FTP não devolve status). */
+var PRINT_ONE_TIMEOUT = parseInt(process.env.PRINT_ONE_TIMEOUT, 10) || 60000;
+
+/* Conexão de uma pergunta só: escreve o comando, lê a primeira linha
+   completa (CRLF) e fecha — sem estado, sem emoldurar respostas. */
+function consultarZebra(ip, porta, cmd, cb) {
+  var s = net.connect(porta, ip);
+  var buf = "";
+  var fechado = false;
+  var t = setTimeout(function () { terminar(null); }, 3000);
+  function terminar(txt) {
+    if (fechado) return;
+    fechado = true;
+    clearTimeout(t);
+    try { s.destroy(); } catch (e) {}
+    cb(txt);
+  }
+  s.on("connect", function () { s.write(cmd); });
+  s.on("data", function (d) {
+    buf += d.toString("utf8");
+    if (buf.indexOf("\r\n") >= 0) terminar(buf);
+  });
+  s.on("error", function () { terminar(null); });
+  s.on("close", function () { terminar(buf); });
+}
+
+function imprimirUmValidado(ip, zpl, esperado, proto, cb) {
+  if (proto !== "tcp") {
+    enviarFTP(ip, zpl, function (err) {
+      cb(err ? { ok: false, error: err.message } : { ok: true, validado: false, protocolo: "ftp" });
+    });
+    return;
+  }
+  var porta = parseInt(process.env.TCP_PORT, 10) || 9100;
+  var inicio = Date.now();
+  var terminado = false;
+
+  function fim(resp) {
+    if (terminado) return;
+    terminado = true;
+    cb(resp);
+  }
+  function lerOdo(cb2) {
+    consultarZebra(ip, porta, '!U1 getvar "odometer.total_printed"\r\n', function (txt) {
+      var m = /\"(\d+)\"/.exec(txt || "");
+      cb2(m ? parseInt(m[1], 10) : null);
+    });
+  }
+  function errosHS(cb2) {
+    consultarZebra(ip, porta, "~HS\r\n", function (txt) {
+      if (!txt) { cb2(null); return; }
+      var l1 = (String(txt).split(/\r?\n/)[0] || "").split(",");
+      if (String(l1[1] || "").trim() === "1") { cb2("cabeça de impressão aberta"); return; }
+      if (String(l1[2] || "").trim() === "1") { cb2("papel acabou (sem mídia)"); return; }
+      cb2(null);
+    });
+  }
+  function aguardar(base) {
+    errosHS(function (erro) {
+      if (erro) return fim({ ok: false, error: erro, validado: false });
+      if (Date.now() - inicio > PRINT_ONE_TIMEOUT) {
+        return fim({ ok: false, error: "tempo esgotado esperando a impressora confirmar a etiqueta (checou papel/cabeça e o medidor?)", validado: false });
+      }
+      lerOdo(function (atual) {
+        if (base != null && atual != null && atual >= base + esperado) {
+          return fim({ ok: true, validado: true, odometro: atual, protocolo: "tcp" });
+        }
+        if (base == null && atual == null && Date.now() - inicio > 2500) {
+          return fim({ ok: true, validado: false, protocolo: "tcp" }); /* impressora sem odômetro legível: enviada sem validação física */
+        }
+        setTimeout(function () { aguardar(base); }, 500);
+      });
+    });
+  }
+
+  lerOdo(function (base) {
+    enviarTCP(ip, zpl, function (err) {
+      if (err) return fim({ ok: false, error: err.message });
+      aguardar(base);
+    });
+  });
+}
+
+
 /* ---------------- Consulta a bancos/ODBC (ponte local — Opção B) ----------------
    O navegador não fala socket de banco nem ODBC; estas rotas usam módulos
    Node (opcionais, instalados via npm) para executar a consulta e devolver
@@ -331,8 +429,33 @@ var servidor = http.createServer(function (req, res) {
     return;
   }
 
+  /* Pedido 1.130: uma etiqueta por vez com validação do odômetro. */
+  if (req.method === "POST" && req.url === "/print-one") {
+    var corpoP1 = "";
+    req.on("data", function (d) {
+      corpoP1 += d;
+      if (corpoP1.length > 1e6) req.destroy();
+    });
+    req.on("end", function () {
+      var dadosP1;
+      try { dadosP1 = JSON.parse(corpoP1 || "{}"); }
+      catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
+      var ipP1 = String(dadosP1.ip || "").trim();
+      var zplP1 = String(dadosP1.zpl || "").trim();
+      var protoP1 = String(dadosP1.protocol || "tcp").toLowerCase();
+      var esperadoP1 = Math.max(1, parseInt(dadosP1.esperado, 10) || 1);
+      var ipValidoP1 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ipP1) || /^[\w.-]+$/.test(ipP1);
+      if (!ipP1 || !ipValidoP1) { responder(res, 400, { ok: false, error: "IP da impressora inválido ou ausente" }); return; }
+      if (!zplP1) { responder(res, 400, { ok: false, error: "ZPL vazio" }); return; }
+      imprimirUmValidado(ipP1, zplP1, esperadoP1, protoP1, function (j) {
+        responder(res, 200, j);
+      });
+    });
+    return;
+  }
+
   if (req.method !== "POST" || req.url !== "/print") {
-    responder(res, 404, { ok: false, error: "Use POST /print com {ip, zpl, protocol} ou POST /query-odbc|/query-db com {sql}" });
+    responder(res, 404, { ok: false, error: "Use POST /print ou /print-one com {ip, zpl, protocol} ou POST /query-odbc|/query-db com {sql}" });
     return;
   }
 
@@ -371,4 +494,5 @@ var servidor = http.createServer(function (req, res) {
 servidor.listen(PORTA, "127.0.0.1", function () {
   console.log("print-server Zebra escutando em http://localhost:" + PORTA);
   console.log("Suporta impressão via HTTP Direct (POST /pstprnt), FTP (Porta 21) e TCP (Porta 9100).");
+  console.log("Pedido 1.130: POST /print-one envia UMA etiqueta por vez e valida pelo odômetro (TCP).");
 });
