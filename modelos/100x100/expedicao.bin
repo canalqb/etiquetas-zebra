@@ -1,0 +1,48 @@
+{
+    "etiquetasZebra":  "modelo",
+    "versao":  1,
+    "salvoEm":  "2026-09-27T00:00:00.000Z",
+    "modelo":  {
+                   "name":  "Expediâ”œÂºâ”œÃºo",
+                   "tamanho":  "100x100",
+                   "rotacao":  0,
+                   "elements":  [
+                                    {
+                                        "id":  "el_sub",
+                                        "tipo":  "texto",
+                                        "texto":  "SHIPPING",
+                                        "x":  28,
+                                        "y":  28,
+                                        "fonte":  72,
+                                        "classe":  "sub"
+                                    },
+                                    {
+                                        "id":  "el_nome",
+                                        "tipo":  "texto",
+                                        "texto":  "Impressora",
+                                        "x":  28,
+                                        "y":  150,
+                                        "fonte":  100,
+                                        "classe":  "nome"
+                                    },
+                                    {
+                                        "id":  "el_serie",
+                                        "tipo":  "texto",
+                                        "texto":  "SN-000123",
+                                        "x":  28,
+                                        "y":  570,
+                                        "fonte":  64,
+                                        "classe":  "serie"
+                                    },
+                                    {
+                                        "id":  "el_bc",
+                                        "tipo":  "barcode",
+                                        "texto":  "SN-000123",
+                                        "x":  190,
+                                        "y":  644,
+                                        "w":  480,
+                                        "h":  128
+                                    }
+                                ]
+               }
+}

@@ -1335,7 +1335,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.38</span>
+      <span class="brand-ver">v2.39</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1604,7 +1604,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.38</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.39</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2530,6 +2530,7 @@
           <div class="d-flex flex-wrap gap-2 mb-3" id="modelos-tamanhos"></div>
           <span class="small fw-bold text-secondary d-block mb-2">Modelo:</span>
           <div class="d-grid gap-2" id="modelos-lista"></div>
+          <div class="small text-muted mt-2 mb-0" id="modelos-fonte"></div>
         </div>
       </div>
     </div>
@@ -2847,7 +2848,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.38</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.39</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -11043,25 +11044,78 @@
           b.type = "button";
           b.className = "btn btn-sm " + (key === tamSelecionado ? "btn-primary" : "btn-outline-primary");
           b.textContent = sz.mmW + " × " + sz.mmH + " mm";
-          b.addEventListener("click", function () { tamSelecionado = key; renderTamanhos(); });
+          b.addEventListener("click", function () { tamSelecionado = key; renderTamanhos(); renderModelos(); });
           wrap.appendChild(b);
         });
       }
 
+      /* Pedido 1.98: Modelos Prontos saem da pasta modelos/ do projeto —
+         subpastas por tamanho, cada modelo um arquivo .bin (mesmo formato de
+         Exportar Modelo). Se a pasta não estiver acessível (ex.: aberto via
+         file:// bloqueado), cai nos presets internos de sempre. */
+      var manifestModelos = null;
+      function carregarManifestModelos() {
+        if (manifestModelos) return Promise.resolve(manifestModelos);
+        return fetch("modelos/manifest.json")
+          .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+          .then(function (man) { manifestModelos = man; return man; })
+          .catch(function () { return null; });
+      }
+
+      function aplicarModeloArquivo(item) {
+        var tamAlvo = SIZES[tamSelecionado] ? tamSelecionado : tamAtualKey;
+        fetch("modelos/" + tamAlvo + "/" + item.arquivo)
+          .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+          .then(function (payload) {
+            var m = payload && payload.modelo;
+            if (!m || !Array.isArray(m.elements)) { notify("Arquivo .bin inválido.", "danger"); return; }
+            bsModal.hide();
+            tamAtualKey = SIZES[m.tamanho] ? m.tamanho : tamAlvo;
+            if ($("tamanho")) $("tamanho").value = tamAtualKey;
+            autoFitCanvas();
+            elements = JSON.parse(JSON.stringify(m.elements));
+            selectedElId = null;
+            renderStudio();
+            updateTamanhoLabel();
+            if (typeof syncMobileState === "function") syncMobileState();
+            var sz = SIZES[tamAtualKey];
+            notify("Modelo \"" + item.nome + "\" aplicado (" + sz.mmW + " × " + sz.mmH + " mm).", "success");
+            ativarAbaStudio("tab-canvas");
+          })
+          .catch(function () { notify("Não foi possível carregar o arquivo do modelo.", "danger"); });
+      }
+
       function renderModelos() {
         var wrap = $("modelos-lista");
+        var fonte = $("modelos-fonte");
         wrap.innerHTML = "";
-        MODELOS_PRESET.forEach(function (modelo) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "btn btn-outline-secondary btn-sm text-start";
-          b.innerHTML = '<i class="fas fa-wand-magic-sparkles text-primary me-2"></i><strong>' + modelo.nome + '</strong><span class="d-block small text-muted ms-4">' + modelo.desc + '</span>';
-          b.addEventListener("click", function () {
-            bsModal.hide();
-            aplicarModeloPreset(tamSelecionado || tamAtualKey, modelo.id);
-            ativarAbaStudio("tab-canvas");
+        carregarManifestModelos().then(function (man) {
+          var listaArquivos = man && man.tamanhos && man.tamanhos[tamSelecionado];
+          if (listaArquivos && listaArquivos.length) {
+            if (fonte) fonte.textContent = "Fonte: pasta modelos/ do projeto (" + listaArquivos.length + " arquivos .bin)";
+            listaArquivos.forEach(function (item) {
+              var b = document.createElement("button");
+              b.type = "button";
+              b.className = "btn btn-outline-secondary btn-sm text-start";
+              b.innerHTML = '<i class="fas fa-wand-magic-sparkles text-primary me-2"></i><strong>' + item.nome + '</strong><span class="d-block small text-muted ms-4">' + item.desc + '</span>';
+              b.addEventListener("click", function () { aplicarModeloArquivo(item); });
+              wrap.appendChild(b);
+            });
+            return;
+          }
+          if (fonte) fonte.textContent = "Pasta de modelos inacessível — usando presets internos";
+          MODELOS_PRESET.forEach(function (modelo) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn btn-outline-secondary btn-sm text-start";
+            b.innerHTML = '<i class="fas fa-wand-magic-sparkles text-primary me-2"></i><strong>' + modelo.nome + '</strong><span class="d-block small text-muted ms-4">' + modelo.desc + '</span>';
+            b.addEventListener("click", function () {
+              bsModal.hide();
+              aplicarModeloPreset(tamSelecionado || tamAtualKey, modelo.id);
+              ativarAbaStudio("tab-canvas");
+            });
+            wrap.appendChild(b);
           });
-          wrap.appendChild(b);
         });
       }
 

@@ -1,0 +1,48 @@
+{
+    "etiquetasZebra":  "modelo",
+    "versao":  1,
+    "salvoEm":  "2026-09-27T00:00:00.000Z",
+    "modelo":  {
+                   "name":  "QR Central",
+                   "tamanho":  "40x25",
+                   "rotacao":  0,
+                   "elements":  [
+                                    {
+                                        "id":  "el_sub",
+                                        "tipo":  "texto",
+                                        "texto":  "SHIPPING",
+                                        "x":  11,
+                                        "y":  11,
+                                        "fonte":  16,
+                                        "classe":  "sub"
+                                    },
+                                    {
+                                        "id":  "el_qr",
+                                        "tipo":  "qr",
+                                        "texto":  "https://canalqb.com.br",
+                                        "x":  99,
+                                        "y":  32,
+                                        "w":  123,
+                                        "h":  123
+                                    },
+                                    {
+                                        "id":  "el_nome",
+                                        "tipo":  "texto",
+                                        "texto":  "Impressora",
+                                        "x":  11,
+                                        "y":  160,
+                                        "fonte":  24,
+                                        "classe":  "nome"
+                                    },
+                                    {
+                                        "id":  "el_serie",
+                                        "tipo":  "texto",
+                                        "texto":  "SN-000123",
+                                        "x":  11,
+                                        "y":  173,
+                                        "fonte":  16,
+                                        "classe":  "serie"
+                                    }
+                                ]
+               }
+}

@@ -1,0 +1,48 @@
+{
+    "etiquetasZebra":  "modelo",
+    "versao":  1,
+    "salvoEm":  "2026-09-27T00:00:00.000Z",
+    "modelo":  {
+                   "name":  "Expediâ”œÂºâ”œÃºo",
+                   "tamanho":  "40x25",
+                   "rotacao":  0,
+                   "elements":  [
+                                    {
+                                        "id":  "el_sub",
+                                        "tipo":  "texto",
+                                        "texto":  "SHIPPING",
+                                        "x":  11,
+                                        "y":  11,
+                                        "fonte":  18,
+                                        "classe":  "sub"
+                                    },
+                                    {
+                                        "id":  "el_nome",
+                                        "tipo":  "texto",
+                                        "texto":  "Impressora",
+                                        "x":  11,
+                                        "y":  42,
+                                        "fonte":  48,
+                                        "classe":  "nome"
+                                    },
+                                    {
+                                        "id":  "el_serie",
+                                        "tipo":  "texto",
+                                        "texto":  "SN-000123",
+                                        "x":  11,
+                                        "y":  138,
+                                        "fonte":  16,
+                                        "classe":  "serie"
+                                    },
+                                    {
+                                        "id":  "el_bc",
+                                        "tipo":  "barcode",
+                                        "texto":  "SN-000123",
+                                        "x":  41,
+                                        "y":  157,
+                                        "w":  240,
+                                        "h":  32
+                                    }
+                                ]
+               }
+}

@@ -1,0 +1,39 @@
+{
+    "etiquetasZebra":  "modelo",
+    "versao":  1,
+    "salvoEm":  "2026-09-27T00:00:00.000Z",
+    "modelo":  {
+                   "name":  "Serial Grande",
+                   "tamanho":  "100x50",
+                   "rotacao":  0,
+                   "elements":  [
+                                    {
+                                        "id":  "el_sub",
+                                        "tipo":  "texto",
+                                        "texto":  "SHIPPING",
+                                        "x":  28,
+                                        "y":  28,
+                                        "fonte":  36,
+                                        "classe":  "sub"
+                                    },
+                                    {
+                                        "id":  "el_serie",
+                                        "tipo":  "texto",
+                                        "texto":  "SN-000123",
+                                        "x":  28,
+                                        "y":  132,
+                                        "fonte":  136,
+                                        "classe":  "serie"
+                                    },
+                                    {
+                                        "id":  "el_qr",
+                                        "tipo":  "qr",
+                                        "texto":  "https://canalqb.com.br",
+                                        "x":  652,
+                                        "y":  252,
+                                        "w":  120,
+                                        "h":  120
+                                    }
+                                ]
+               }
+}
