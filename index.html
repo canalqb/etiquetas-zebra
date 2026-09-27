@@ -1294,7 +1294,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.26</span>
+      <span class="brand-ver">v2.27</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1545,7 +1545,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.26</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.27</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -5712,7 +5712,7 @@
 
       var isBorder = (tipo === "borda");
       var isShape = (tipo === "elipse" || tipo === "diagonal" || tipo === "raio" || tipo === "retas" || tipo === "curva");
-      if (isShape) texto = "";
+      if (isShape || isBorder) texto = ""; /* Pedido 1.117: forma nasce SEM texto — com texto só quando o usuário digitar (dblclick); antes a borda nascia com "Texto" e virava alvo do import sem querer */
 
       var initFonte = (tipo === "nome" ? 50 : 28);
       if (elTipo === "texto") {
@@ -6256,15 +6256,27 @@
           }
         }
 
-        /* Texto dentro da forma (borda/elipse/raio) — plano seções 8/9/14 */
+        /* Texto dentro da forma (borda/elipse/raio) — plano seções 8/9/14.
+           Correção (pedido 1.117): pcx/pcy nunca foram definidos — qualquer
+           forma com texto derrubava gerarZPLBloco (ZPL da aba, lote, impressão).
+           Centro = caixa desenhada pelo ^GB/^GE a partir de (px,py), com
+           largura↔altura trocadas quando o conteúdo gira (prot 90/270). */
         if (it.texto && (it.tipo === "borda" || it.tipo === "elipse" || it.tipo === "raio")) {
           var fForma = it.fonte || 30;
           if (it.fonteAuto !== false) {
             fForma = Math.max(10, ajustarFonteParaCaber(it.texto, fForma, (it.w || 100) - 12));
           }
           var fbFormaW = Math.max(1, Math.round(((prot === 90 || prot === 270) ? vh : vw) - 6));
+          var swapF = (prot === 90 || prot === 270);
+          var boxF = it.tipo === "borda" ? { w: (it.w || dispW), h: (it.h || dispH) }
+                   : it.tipo === "raio" ? { w: (it.w || 300), h: (it.h || 150) }
+                   : { w: (it.w || 100), h: (it.h || 100) };
+          var foW = swapF ? boxF.h : boxF.w;
+          var foH = swapF ? boxF.w : boxF.h;
+          var pcx = px + foW / 2;
+          var pcy = py + foH / 2;
           var stx, sty;
-          if (prot === 90 || prot === 270) { stx = pcx - fForma / 2; sty = pcy - fbFormaW / 2; }
+          if (swapF) { stx = pcx - fForma / 2; sty = pcy - fbFormaW / 2; }
           else { stx = pcx - fbFormaW / 2; sty = pcy - fForma / 2; }
           p.push("^FO" + Math.round(stx) + "," + Math.round(sty)
             + (it.cheio ? "^FR" : "")
@@ -7985,12 +7997,12 @@
     /* Pedido 1.92: elementos inseridos via lote são SEMPRE texto — QR/Código
        de Barras saíram das opções (o valor da coluna vira texto na etiqueta). */
     var IMPORT_CAMPOS_SISTEMA = [
-      { value: "texto",   label: "Texto" },
-      { value: "sub",     label: "Subtítulo" },
-      { value: "nome",    label: "Nome do Produto" },
-      { value: "serie",   label: "Série" },
-      { value: "qr",      label: "QR Code" },
-      { value: "barcode", label: "Código de Barras" }
+      { value: "texto",   label: "Texto",           icon: "fa-font" },       /* mesmos ícones da paleta */
+      { value: "sub",     label: "Subtítulo",       icon: "fa-align-left" },
+      { value: "nome",    label: "Nome do Produto", icon: "fa-heading" },
+      { value: "serie",   label: "Série",           icon: "fa-hashtag" },
+      { value: "qr",      label: "QR Code",         icon: "fa-qrcode" },
+      { value: "barcode", label: "Código de Barras", icon: "fa-barcode" }
     ];
     var importDados = { colunas: [], linhas: [] };
 
@@ -8271,7 +8283,8 @@
           var lb = document.createElement("label");
           lb.className = "form-check-label";
           lb.setAttribute("for", cb.id);
-          lb.textContent = campo.label;
+          lb.title = campo.label; /* legenda no hover (pedido 1.117) */
+          lb.innerHTML = "<i class=\"fas " + campo.icon + "\" aria-hidden=\"true\"></i>";
           wrap.appendChild(cb);
           wrap.appendChild(lb);
           campos.appendChild(wrap);
@@ -8691,7 +8704,8 @@
 
     /* ---------- Gerar Todas as Linhas: uma etiqueta por linha importada ---------- */
     /* Regras do lote (pedido 1.92): os valores mapeados entram SEMPRE nos
-       elementos de texto (texto/sub/nome/serie), na ordem de inserção —
+       elementos de texto (texto/sub/nome/serie) e nas formas geométricas com
+       texto (borda/elipse/raio — pedido 1.117), na ordem de inserção —
        sempre do primeiro inserido. Mais elementos que valores: os excedentes
        mantêm o conteúdo atual. Menos elementos que valores: novos elementos
        de TEXTO são criados empilhados, sem sobreposição. A 1ª etiqueta fica
@@ -8701,7 +8715,10 @@
 
     function obterAlvosTextoLote() {
       return elements.filter(function (e) {
-        return e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie";
+        if (e.tipo === "texto" || e.tipo === "sub" || e.tipo === "nome" || e.tipo === "serie") return true;
+        /* Pedido 1.117: formas geométricas COM texto (borda, elipse, raio)
+           também são alvos — recebem os valores na ordem de inserção */
+        return ehFormaComTexto(e.tipo) && (e.texto || "").trim() !== "";
       });
     }
     /* Pedido 1.96: campos de uma coluna — "texto,qr" → ["texto","qr"];
@@ -8729,9 +8746,10 @@
       return idxCols;
     }
     /* Garante um alvo para cada par do lote (pedido 1.96): os textos entram
-       nos elementos de texto (sempre do primeiro inserido) e qr/código de
-       barras nos seus elementos; os faltantes são criados empilhados abaixo
-       de tudo — sem sobreposição (mesmo autoajuste do "Aplicar"). */
+       nos elementos de texto e nas formas com texto (pedido 1.117; sempre do
+       primeiro inserido) e qr/código de barras nos seus elementos; os
+       faltantes são criados empilhados abaixo de tudo — sem sobreposição
+       (mesmo autoajuste do "Aplicar"). */
     function garantirAlvosLote(pares) {
       var alvos = new Array(pares.length);
       var textos = obterAlvosTextoLote();
