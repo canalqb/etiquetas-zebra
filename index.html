@@ -1294,7 +1294,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.22</span>
+      <span class="brand-ver">v2.23</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1545,7 +1545,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.22</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.23</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2172,7 +2172,7 @@
               <!-- Log USB -->
               <pre id="usb-log-area" class="p-2 mb-0 rounded" style="max-height:120px;overflow:auto;background:#0f172a;color:#e2e8f0;font-size:0.72rem;"><span id="usb-log-lines"></span></pre>
               <div class="form-text small mt-1">
-                <i class="fas fa-info-circle me-1"></i>Requer Chrome/Edge (WebUSB). Funciona em <code>localhost</code> ou <code>https://</code>.
+                <i class="fas fa-info-circle me-1"></i>Requer Chrome/Edge (WebUSB) em <code>localhost</code> ou <code>https://</code>. No celular Android: use um cabo/adaptador <strong>OTG</strong> com o Chrome. iPhone/iPad não suportam impressora por USB — use a aba Rede (IP).
               </div>
             </div>
 
@@ -2195,10 +2195,15 @@
                   <i class="fas fa-xmark me-1"></i>Desconectar
                 </button>
               </div>
+              <!-- Filtro Bluetooth -->
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="bt-todos-dispositivos">
+                <label class="form-check-label small" for="bt-todos-dispositivos">Mostrar todos os dispositivos Bluetooth (quando a impressora não aparecer na lista)</label>
+              </div>
               <!-- Log Bluetooth -->
               <pre id="bt-log-area" class="p-2 mb-2 rounded" style="max-height:120px;overflow:auto;background:#0f172a;color:#e2e8f0;font-size:0.72rem;"><span id="bt-log-lines"></span></pre>
               <div class="form-text small mt-1">
-                <i class="fas fa-info-circle me-1"></i>Requer Chrome/Edge com Bluetooth. Impressoras Zebra com Bluetooth Low Energy (série ZQ / Link-OS). Funciona em <code>localhost</code> ou <code>https://</code>.
+                <i class="fas fa-info-circle me-1"></i>O navegador só enxerga Bluetooth <strong>Low Energy</strong> (impressoras Zebra série ZQ / Link-OS). Modelos com Bluetooth clássico (SPP) não aparecem — para eles use a aba Rede (IP). No celular Android funciona com o Chrome; iPhone/iPad não suportam impressora por Bluetooth.
               </div>
             </div>
           </div>
@@ -2779,7 +2784,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.22</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.23</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3198,8 +3203,10 @@
     var CHAVE_PROTO = "etiquetasZebra.printerProtocol";
     var modalIpEl = $("modal-ip");
     var bsModalIp = new bootstrap.Modal(modalIpEl);
-    modalIpEl.addEventListener("hidden.bs.modal", function () {
-      if (modalIpEl.contains(document.activeElement)) document.activeElement.blur();
+    document.querySelectorAll(".modal").forEach(function (m) {
+      m.addEventListener("hidden.bs.modal", function () {
+        if (m.contains(document.activeElement)) document.activeElement.blur();
+      });
     });
 
     function getProtocolo() {
@@ -9469,10 +9476,10 @@
         return;
       }
       try {
-        btDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ services: [ZEBRA_BLE_SVC] }, { namePrefix: "Z" }, { namePrefix: "Zebra" }],
-          optionalServices: [ZEBRA_BLE_SVC]
-        });
+        var mostrarTodos = $("bt-todos-dispositivos") && $("bt-todos-dispositivos").checked;
+        btDevice = await navigator.bluetooth.requestDevice(mostrarTodos
+          ? { acceptAllDevices: true, optionalServices: [ZEBRA_BLE_SVC] }
+          : { filters: [{ services: [ZEBRA_BLE_SVC] }, { namePrefix: "Z" }, { namePrefix: "Zebra" }], optionalServices: [ZEBRA_BLE_SVC] });
         logBt("Selecionada: " + (btDevice.name || "dispositivo sem nome"), "ok");
         btDevice.addEventListener("gattserverdisconnected", function () {
           btServer = null; btChar = null;
@@ -9529,6 +9536,14 @@
 
     if ($("btn-bt-connect-modal")) $("btn-bt-connect-modal").addEventListener("click", conectarWebBluetooth);
     if ($("btn-bt-disconnect")) $("btn-bt-disconnect").addEventListener("click", desconectarWebBluetooth);
+    var _tabBtBtn = $("tab-bt-btn");
+    if (_tabBtBtn) _tabBtBtn.addEventListener("click", function () {
+      logBt("Diagnóstico: " + (window.isSecureContext ? "contexto seguro OK (localhost ou https)" : "contexto inseguro — o Bluetooth exige localhost ou https"), window.isSecureContext ? "ok" : "err");
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isIOS) { logBt("iPhone/iPad não têm suporte a Bluetooth de impressora no navegador — use a aba Rede (IP).", "err"); return; }
+      if (!("bluetooth" in navigator)) { logBt("Web Bluetooth indisponível neste navegador — use Google Chrome ou Microsoft Edge (no celular, o Chrome do Android).", "err"); return; }
+      logBt("Web Bluetooth disponível. Ligue a impressora, marque \"Mostrar todos\" se ela não aparecer e toque em Conectar.", "ok");
+    });
     if ($("btn-bt-print-test")) {
       $("btn-bt-print-test").addEventListener("click", function () {
         if (!btChar) { notify("Conecte a impressora Bluetooth primeiro.", "warning"); return; }
@@ -9723,9 +9738,13 @@
       var zpl = $("zpl").value;
       if (!zpl || !zpl.trim()) { notify("Digite ou cole um comando ZPL primeiro.", "danger"); return; }
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip) { abrirModalIp(); return; }
+      var conectadoDiretoZPL = (usbDevice && usbDevice.opened) || btChar;
+      if (!ip && !conectadoDiretoZPL) { abrirModalIp(); return; }
       if (bsModalPrintZpl) bsModalPrintZpl.hide();
-      if (usarRange) { imprimirZPLRange(zpl); return; }
+      if (usarRange) {
+        if (!ip) { notify("O scan de faixa só funciona com impressora por IP (rede).", "warning"); return; }
+        imprimirZPLRange(zpl); return;
+      }
       enviarImpressao(ip, zpl);
     }
 
@@ -9854,9 +9873,9 @@
       if (qtd && qtd > 1) zpl = injetarQuantidadeZPL(zpl, qtd);
 
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened)) {
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) {
         abrirModalIp();
-        notify("Configure a impressora (IP ou USB).", "danger");
+        notify("Configure a impressora (IP, USB ou Bluetooth).", "danger");
         return;
       }
 
@@ -9886,9 +9905,9 @@
 
     function calibrarImpressora() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip) {
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) {
         abrirModalIp();
-        notify("Informe o IP da impressora antes de calibrar.", "danger");
+        notify("Conecte a impressora (IP, USB ou Bluetooth) antes de calibrar.", "danger");
         return;
       }
       var sz = SIZES[tamAtualKey] || SIZES["100x50"];
@@ -10163,7 +10182,7 @@
     if ($("btn-prev-imprimir")) {
       $("btn-prev-imprimir").addEventListener("click", function () {
         var ipP = localStorage.getItem(CHAVE_IP);
-        if (!ipP && !(usbDevice && usbDevice.opened)) { abrirModalIp(); notify("Configure a impressora (IP ou USB).", "danger"); return; }
+        if (!ipP && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
         enviarImpressao(ipP, gerarZPLImagem());
       });
     }
