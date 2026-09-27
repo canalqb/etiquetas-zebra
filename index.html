@@ -1294,7 +1294,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.25</span>
+      <span class="brand-ver">v2.26</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1545,7 +1545,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.25</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.26</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2686,7 +2686,7 @@
                   <input type="text" class="form-control form-control-sm" id="import-gs-clientid" placeholder="xxxxx.apps.googleusercontent.com" aria-label="Google OAuth Client ID para planilhas privadas" autocomplete="off" spellcheck="false">
                   <button type="button" class="btn btn-outline-secondary" id="btn-import-gs-clientid-salvar" title="Salvar Client ID neste navegador"><i class="fas fa-save" aria-hidden="true"></i>Salvar</button>
                 </div>
-                <p class="small text-muted mt-1 mb-0">Só é necessário para planilha privada: no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre todos os endereços onde o app roda — <code>http://localhost</code> (XAMPP) e o endereço público onde o site está hospedado (ex.: <code>https://www.seudominio.com.br</code>). Sem Client ID, apenas planilhas públicas são lidas. O login exige abrir o app via http(s) — não funciona em <code>file://</code>.</p>
+                <p class="small text-muted mt-1 mb-0">Só é necessário para planilha privada: no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre o endereço público onde o site está hospedado (ex.: <code>https://www.seudominio.com.br</code>) — o passo a passo completo está na <b>Ajuda, seção 7</b> ("Planilhas privadas do Google"). Sem Client ID, apenas planilhas públicas são lidas. O login exige abrir o app via http(s) — não funciona em <code>file://</code>.</p>
               </div>
               <div class="mb-2" id="import-webhook-fields" style="display:none;">
                 <label class="form-label small fw-bold" for="webhook-url">URL do Webhook</label>
@@ -12167,6 +12167,18 @@
                   </ul>
                 </div>
               </div>
+            </div>
+            <div class="card p-3 border-0 shadow-sm">
+              <h6 class="fw-bold text-primary mb-2"><i class="bi bi-shield-lock me-1"></i>Planilhas privadas do Google — seu Client ID (passo a passo)</h6>
+              <ol class="small text-muted mb-0 ps-3">
+                <li>Entre em <code>console.cloud.google.com</code> com sua conta Google e crie um projeto (botão "Novo projeto" — pode chamar "Etiquetas"). É de graça.</li>
+                <li>Abra <strong>APIs e serviços → Biblioteca</strong>, pesquise <strong>Google Sheets API</strong> e clique em <strong>Ativar</strong>.</li>
+                <li>Em <strong>APIs e serviços → Tela de permissão OAuth</strong>, escolha <strong>Externos</strong>, informe o nome do app e seu e-mail e clique em <strong>Salvar</strong> até o fim (pode deixar "Em teste" — funciona para a sua própria conta).</li>
+                <li>Em <strong>APIs e serviços → Credenciais</strong>, clique em <strong>Criar credenciais → ID do cliente OAuth</strong> e escolha o tipo <strong>Aplicativo da Web</strong>.</li>
+                <li>Em <strong>Origens JavaScript autorizadas</strong>, adicione o endereço exato onde o site roda (ex.: <code>https://www.seudominio.com.br</code>). Cadastre um endereço por linha — só é permitido ler planilhas privadas a partir dos endereços cadastrados.</li>
+                <li>Copie o <strong>ID do cliente</strong> exibido (termina em <code>.apps.googleusercontent.com</code>), cole no campo <strong>Google Client ID</strong> do app (dentro de Importar Dados, em "Link do Google Sheets") e clique em <strong>Salvar</strong>.</li>
+                <li>Pronto: ao importar, o Google pede para você escolher a conta e autorizar uma vez. O login é feito pelo próprio Google — o app nunca vê sua senha, só um token de leitura das planilhas.</li>
+              </ol>
             </div>
           </div>
 
