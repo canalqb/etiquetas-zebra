@@ -1335,7 +1335,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.36</span>
+      <span class="brand-ver">v2.37</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1604,7 +1604,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.36</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.37</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1946,6 +1946,12 @@
                         <div class="col-md-2 col-4" id="insp-col-w">
                           <label class="form-label fw-semibold small mb-1" title="A largura da caixa do elemento em milímetros — usada em QR, códigos de barras e formas.">Largura (mm)</label>
                           <input type="number" step="0.5" class="form-control form-control-sm" id="insp-w-mm">
+                        </div>
+
+                        <!-- Pedido 1.128: altura da caixa (código de barras, imagens, 2D e formas) -->
+                        <div class="col-md-2 col-4" id="insp-col-h">
+                          <label class="form-label fw-semibold small mb-1" title="A altura da caixa do elemento em milímetros — barras do código, imagens e formas. QR padrão é quadrado (mude a Largura); texto cresce sozinho pelas linhas.">Altura (mm)</label>
+                          <input type="number" step="0.5" class="form-control form-control-sm" id="insp-h-mm">
                         </div>
 
                         <div class="col-md-2 col-4" id="insp-col-rotacao">
@@ -2819,7 +2825,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.36</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.37</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -5375,6 +5381,7 @@
       $("insp-y-mm").value = dotsToMm(el.y);
       $("insp-fonte").value = el.fonte || 30;
       $("insp-w-mm").value = dotsToMm(el.w || 100);
+      $("insp-h-mm").value = dotsToMm(el.h || (el.tipo === "barcode" ? 100 : (el.tipo === "imagem" || el.tipo === "qr" ? 200 : 50)));
       if ($("insp-rotacao")) {
         $("insp-rotacao").value = el.rotacao || 0;
       }
@@ -5417,6 +5424,16 @@
       if (colW) {
         if (isText) colW.classList.add("d-none");
         else colW.classList.remove("d-none");
+      }
+
+      /* Pedido 1.128: Altura (mm) — mesmo critério da Largura, exceto linha
+         (altura = espessura, já tem controle próprio) e QR padrão (quadrado
+         pela Largura); 2D de outra simbologia usa a caixa w×h como a imagem */
+      var colH = $("insp-col-h");
+      if (colH) {
+        var hVisivel = !isText && el.tipo !== "linha" && !(el.tipo === "qr" && (el.simbologia || "qr") === "qr");
+        if (hVisivel) colH.classList.remove("d-none");
+        else colH.classList.add("d-none");
       }
 
       /* Show frame picker only for borda */
@@ -5534,6 +5551,15 @@
       var el = elements.find(function (e) { return e.id === selectedElId; });
       if (el) { el.w = mmToDots(parseFloat(this.value) || 10); renderStudio(); }
     });
+    if ($("insp-h-mm")) {
+      $("insp-h-mm").addEventListener("input", function () {
+        var el = elements.find(function (e) { return e.id === selectedElId; });
+        if (el && el.tipo !== "linha" && !(el.tipo === "qr" && (el.simbologia || "qr") === "qr")) {
+          el.h = mmToDots(parseFloat(this.value) || 10);
+          renderStudio();
+        }
+      });
+    }
 
     /* Espessura (dots) — botões ±1 e campo: linha/borda/elipse/diagonal/raio/retas/curva */
     function definirEspessuraSel(v) {
