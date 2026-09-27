@@ -1292,7 +1292,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.29</span>
+      <span class="brand-ver">v2.30</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1559,7 +1559,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.29</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.30</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2789,7 +2789,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.24</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.30</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -2856,6 +2856,138 @@
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
     </div>
     <div class="offcanvas-body p-3">
+      <!-- Pedido 1.124: paleta de elementos, máscara de data/hora, duplicar e guias
+           do Estúdio no mobile (paridade com os ribbons do desktop). Os tiles usam as
+           MESMAS classes do ribbon (.palette-item / .btn-mascara-datahora), então os
+           handlers existentes bindam sozinhos; o menu fica aberto para adicionar vários. -->
+      <div class="mb-4">
+        <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Adicionar Elementos</span>
+        <div class="row row-cols-3 g-2 mb-2">
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="texto" title="Texto Livre — escreva qualquer coisa (toque duas vezes no elemento para editar)">
+              <i class="fas fa-font"></i><span style="font-size:0.65rem;">Texto</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="sub" title="Subtítulo / Topo">
+              <i class="fas fa-align-left"></i><span style="font-size:0.65rem;">Subtítulo</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="nome" title="Nome do Produto / Destaque">
+              <i class="fas fa-heading"></i><span style="font-size:0.65rem;">Nome</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="qr" title="QR Code — toque duas vezes para digitar o conteúdo">
+              <i class="fas fa-qrcode"></i><span style="font-size:0.65rem;">QR Code</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="barcode" title="Código de Barras 128">
+              <i class="fas fa-barcode"></i><span style="font-size:0.65rem;">Cód. Barras</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="imagem" title="Importar Imagem / Logo">
+              <i class="fas fa-image"></i><span style="font-size:0.65rem;">Imagem</span>
+            </button>
+          </div>
+        </div>
+        <div class="row row-cols-3 g-2 mb-2">
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="linha" title="Linha Divisória">
+              <i class="fas fa-minus"></i><span style="font-size:0.65rem;">Linha</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="borda" title="Moldura Externa / Retângulo — toque duas vezes para escrever dentro">
+              <i class="far fa-square"></i><span style="font-size:0.65rem;">Moldura</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="elipse" title="Círculo / Elipse — toque duas vezes para escrever dentro">
+              <i class="fas fa-circle"></i><span style="font-size:0.65rem;">Círculo</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="diagonal" title="Diagonal / Linha Cruzada">
+              <i class="fas fa-slash"></i><span style="font-size:0.65rem;">Diagonal</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="raio" title="Retângulo com Cantos Arredondados — toque duas vezes para escrever dentro">
+              <i class="fas fa-vector-square"></i><span style="font-size:0.65rem;">C. Arred.</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="retas" title="Linha Reta livre — redimensione a caixa para mudar o ângulo">
+              <i class="bi bi-slash-lg"></i><span style="font-size:0.65rem;">Reta</span>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 palette-item" data-type="curva" title="Linha Curva — arraste o ponto azul do meio para curvar">
+              <i class="bi bi-bezier2"></i><span style="font-size:0.65rem;">Curva</span>
+            </button>
+          </div>
+        </div>
+        <div class="d-grid gap-2">
+          <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-datahora" data-bs-toggle="dropdown" data-bs-display="dynamic" aria-expanded="false">
+              <span><i class="fas fa-calendar-days me-2 text-warning"></i> Data e Hora (atualiza sozinha)</span>
+              <i class="fas fa-chevron-down" style="font-size:0.6rem;"></i>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="nav-btn-datahora" style="min-width:14rem;">
+              <li><h6 class="dropdown-header">Data</h6></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA">DD/MM/AAAA</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AA">DD/MM/AA</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="AAAA-MM-DD">AAAA-MM-DD</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD-MM-AAAA">DD-MM-AAAA</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD.MM.AAAA">DD.MM.AAAA</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="MM/DD/AAAA">MM/DD/AAAA</button></li>
+              <li><h6 class="dropdown-header">Data + Hora</h6></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA HH:mm">DD/MM/AAAA HH:mm</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="DD/MM/AAAA HH:mm:ss">DD/MM/AAAA HH:mm:ss</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="AAAA-MM-DD HH:mm:ss">AAAA-MM-DD HH:mm:ss</button></li>
+              <li><h6 class="dropdown-header">Hora</h6></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="HH:mm">HH:mm</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="HH:mm:ss">HH:mm:ss</button></li>
+              <li><button type="button" class="dropdown-item btn-mascara-datahora" data-mascara="hh:mm AM/PM">hh:mm AM/PM</button></li>
+            </ul>
+          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-duplicar">
+            <span><i class="fas fa-clone me-2"></i> Duplicar Elemento Selecionado</span>
+          </button>
+        </div>
+        <span class="text-uppercase text-muted fw-bold small d-block mt-3 mb-2" style="font-size:0.7rem; letter-spacing:1px;">Guias do Estúdio</span>
+        <div class="row row-cols-4 g-2">
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 position-relative" id="nav-toggle-regua" aria-pressed="true" title="Mostrar/Ocultar Régua">
+              <i class="fas fa-ruler-horizontal"></i><span style="font-size:0.62rem;">Régua</span>
+              <i class="fas fa-check text-success dnv-check position-absolute top-0 end-0 m-1" style="font-size:0.6rem;"></i>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 position-relative" id="nav-toggle-grid" aria-pressed="true" title="Grade do Palco (ao redor da etiqueta)">
+              <i class="fas fa-table-cells"></i><span style="font-size:0.62rem;">Grade</span>
+              <i class="fas fa-check text-success dnv-check position-absolute top-0 end-0 m-1" style="font-size:0.6rem;"></i>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 position-relative" id="nav-toggle-label-grid" aria-pressed="true" title="Grade dentro da etiqueta">
+              <i class="fas fa-border-all"></i><span style="font-size:0.62rem;">Grade Etq.</span>
+              <i class="fas fa-check text-success dnv-check position-absolute top-0 end-0 m-1" style="font-size:0.6rem;"></i>
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-1 py-2 position-relative" id="nav-toggle-snap" aria-pressed="false" title="Ajuste Magnético (Snap) — gruda em outras linhas">
+              <i class="fas fa-magnet"></i><span style="font-size:0.62rem;">Snap</span>
+              <i class="fas fa-check text-success dnv-check d-none position-absolute top-0 end-0 m-1" style="font-size:0.6rem;"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Gestão de Etiquetas e Dados -->
       <div class="mb-4">
         <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Etiquetas &amp; Lotes</span>
@@ -11350,6 +11482,45 @@
         if (typeof baixarZPLArquivo === "function") baixarZPLArquivo();
       });
     }
+
+    /* Pedido 1.124: paridade mobile — duplicar e guias do Estúdio. Os tiles de
+       elementos e as máscaras de data/hora bindam sozinhos pelas classes
+       .palette-item / .btn-mascara-datahora compartilhadas com o ribbon. */
+    var navDuplicar = $("nav-btn-duplicar");
+    if (navDuplicar) {
+      navDuplicar.addEventListener("click", function() {
+        if (typeof duplicarSelecionados === "function") duplicarSelecionados();
+      });
+    }
+    (function () {
+      var pares = [
+        ["nav-toggle-regua", "toggle-regua"],
+        ["nav-toggle-grid", "toggle-grid"],
+        ["nav-toggle-label-grid", "toggle-label-grid"],
+        ["nav-toggle-snap", "toggle-snap"]
+      ];
+      pares.forEach(function (par) {
+        var navBtn = $(par[0]);
+        var cb = $(par[1]);
+        if (!navBtn || !cb) return;
+        function sincronizarGuiaMobile() {
+          var ck = navBtn.querySelector(".dnv-check");
+          if (ck) ck.classList.toggle("d-none", !cb.checked);
+          navBtn.setAttribute("aria-pressed", cb.checked ? "true" : "false");
+        }
+        navBtn.addEventListener("click", function () {
+          var lb = document.querySelector('label[for="' + par[1] + '"]');
+          if (lb) lb.click();
+          else {
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          sincronizarGuiaMobile();
+        });
+        cb.addEventListener("change", sincronizarGuiaMobile);
+        sincronizarGuiaMobile();
+      });
+    })();
 
     var navAjuda = $("nav-btn-ajuda");
     if (navAjuda) {
