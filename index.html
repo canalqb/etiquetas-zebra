@@ -1335,7 +1335,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.39</span>
+      <span class="brand-ver">v1.003</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1596,22 +1596,18 @@
     </div>
   </nav>
 
-  <!-- Hero Section Mobile (Apenas Mobile) -->
-  <section class="container d-lg-none mt-2 px-2" id="sec-hero-mobile" aria-label="Apresentação e Status da Etiqueta">
+  <!-- Hero Section (todos os tamanhos — Pedido 1.131: mesmo texto no mobile e no desktop) -->
+  <section class="container mt-2 px-2" id="sec-hero-mobile" aria-label="Apresentação e Status da Etiqueta">
     <div class="card border-0 mobile-hero-card text-white overflow-hidden p-3 shadow-sm">
       <div class="d-flex justify-content-between align-items-start mb-2">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.39</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.003</span>
         </div>
-        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
-          <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
-        </span>
       </div>
 
-      <h1 class="h6 fw-bold text-white mb-1">CanalQb Impressão em Zebras</h1>
       <p class="text-white-50 mb-2 small" style="font-size:0.75rem; line-height: 1.35;">
         Crie, personalize e envie etiquetas térmicas com QR Code, Barcode e gráficos direto do seu dispositivo móvel.
       </p>
@@ -1832,11 +1828,6 @@
                     </div>
                     <!-- Pedido 1.107: Testar 1 — migrou da barra de status do lote; só aparece para lote/importação com 2+ etiquetas -->
                      <button type="button" class="sb-exib-btn d-none" id="btn-test-print-lote" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia" aria-label="Imprimir etiqueta de teste"><i class="fas fa-vial"></i><span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Testar 1</span></button>
-                     <span class="sb-sep"></span>
-                    <button type="button" class="sb-tab sb-tab-print" id="sb-btn-imprimir" title="Imprimir etiqueta">
-                      <i class="fas fa-print" aria-hidden="true"></i>
-                      <span style="font-size:0.74rem;font-weight:600;margin-left:0.2rem;">Imprimir</span>
-                    </button>
                   </div>
                 </footer>
 
@@ -2848,7 +2839,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.39</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.003</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -2911,7 +2902,7 @@
         <span class="rounded-3 bg-primary text-white p-2 d-inline-flex align-items-center justify-content-center" style="width:34px; height:34px;">
           <i class="bi bi-printer-fill fs-6"></i>
         </span>
-        <h2 class="offcanvas-title h6 fw-bold mb-0" id="mobileNavOffcanvasLabel">Menu &amp; Ferramentas</h2>
+        <h2 class="offcanvas-title h6 fw-bold mb-0" id="mobileNavOffcanvasLabel">Processos de Impressão</h2>
       </div>
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
     </div>
@@ -2955,14 +2946,6 @@
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="small fw-semibold">Resolução:</span>
             <span class="badge bg-primary-subtle text-primary" id="nav-printer-dpi">203 DPI</span>
-          </div>
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-config-ip" data-bs-dismiss="offcanvas">
-              <i class="fas fa-print me-1"></i> Configurar Impressora
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
-              <i class="fas fa-sliders-h me-1"></i> Calibrar Agora
-            </button>
           </div>
           <hr class="my-2">
           <span class="small fw-bold text-secondary d-block mb-2">Calibração — os ajustes abaixo aplicam ao Calibrar Agora:</span>
@@ -3011,6 +2994,9 @@
             <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-qual">
               <i class="fas fa-adjust me-1"></i> <span id="nav-cal-qual-text">Qualidade: Escala de Cinza</span>
             </button>
+            <button type="button" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center gap-2" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
+              <i class="fas fa-sliders-h"></i> Calibrar Agora
+            </button>
           </div>
         </div>
       </div>
@@ -3018,22 +3004,22 @@
       <!-- Espelho & Reverso (itens de estado — alternam sem fechar o menu) -->
       <div class="mb-4">
         <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Espelho & Reverso</span>
-        <div class="d-grid gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-espelho-v" aria-pressed="false" title="Espelho VERTICAL na impressão (topo↔base) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
-            <i class="bi bi-symmetry-vertical me-2"></i> Espelho Vertical
-            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+        <div class="d-flex flex-wrap gap-1">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1" id="nav-toggle-espelho-v" aria-pressed="false" title="Espelho VERTICAL na impressão (topo↔base) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+            <i class="bi bi-symmetry-vertical"></i><span class="small fw-semibold">Espelho Vertical</span>
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-1"></i>
           </button>
-          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-espelho-h" aria-pressed="false" title="Espelho HORIZONTAL na impressão (esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
-            <i class="bi bi-symmetry-horizontal me-2"></i> Espelho Horizontal
-            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1" id="nav-toggle-espelho-h" aria-pressed="false" title="Espelho HORIZONTAL na impressão (esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+            <i class="bi bi-symmetry-horizontal"></i><span class="small fw-semibold">Espelho Horizontal</span>
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-1"></i>
           </button>
-          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-espelho-vh" aria-pressed="false" title="Inversão VERTICAL + HORIZONTAL (gira a etiqueta 180° na impressão)">
-            <i class="bi bi-arrow-repeat me-2"></i> Inverter Vertical + Horizontal
-            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1" id="nav-toggle-espelho-vh" aria-pressed="false" title="Inversão VERTICAL + HORIZONTAL (gira a etiqueta 180° na impressão)">
+            <i class="bi bi-arrow-repeat"></i><span class="small fw-semibold">Inverter Vertical + Horizontal</span>
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-1"></i>
           </button>
-          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-reverso" aria-pressed="false" title="Reverso branco-sobre-preto — inverte cores de toda a etiqueta">
-            <i class="bi bi-circle-half me-2"></i> Reverso (Branco sobre Preto)
-            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 px-2 py-1" id="nav-toggle-reverso" aria-pressed="false" title="Reverso branco-sobre-preto — inverte cores de toda a etiqueta">
+            <i class="bi bi-circle-half"></i><span class="small fw-semibold">Reverso (Branco sobre Preto)</span>
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-1"></i>
           </button>
         </div>
       </div>
@@ -3042,8 +3028,8 @@
       <div class="mb-4">
         <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Ações de Impressão</span>
         <div class="d-grid gap-2">
-          <button type="button" class="btn btn-success py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="nav-btn-imprimir" data-bs-dismiss="offcanvas">
-            <i class="fas fa-print"></i> Imprimir Etiqueta
+          <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-config-ip" data-bs-dismiss="offcanvas">
+            <i class="fas fa-print"></i> Configurar Impressora
           </button>
           <button type="button" class="btn btn-outline-primary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-preview" data-bs-dismiss="offcanvas">
             <i class="bi bi-eye"></i> Pré-visualizar Impressão
@@ -3053,6 +3039,9 @@
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-copias" data-bs-dismiss="offcanvas">
             <i class="fas fa-copy"></i> Imprimir com Cópias
+          </button>
+          <button type="button" class="btn btn-success py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="nav-btn-imprimir" data-bs-dismiss="offcanvas">
+            <i class="fas fa-print"></i> Imprimir Etiqueta
           </button>
         </div>
       </div>
@@ -3241,14 +3230,43 @@
     var sanitizar = function (s) { return String(s || "").replace(/[\^~]/g, "").replace(/[\r\n]+/g, " ").trim(); };
     var sanitizarFilename = function (s) { return (s || "modelo").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-"); };
 
-    /* Toast Helper */
-    var toastEl = $("status-toast");
-    var bsToast = new bootstrap.Toast(toastEl, { delay: 3500 });
-    function notify(msg, type) {
-      $("toast-message").textContent = msg;
-      toastEl.className = "toast align-items-center border-0 shadow " + (type === "danger" ? "text-bg-danger" : (type === "success" ? "text-bg-success" : "text-bg-dark"));
-      bsToast.show();
-    }
+     /* Toast Helper */
+     var toastEl = $("status-toast");
+     var bsToast = new bootstrap.Toast(toastEl, { delay: 3500 });
+     function notify(msg, type) {
+       $("toast-message").textContent = msg;
+       toastEl.className = "toast align-items-center border-0 shadow " + (type === "danger" ? "text-bg-danger" : (type === "success" ? "text-bg-success" : "text-bg-dark"));
+       bsToast.show();
+     }
+
+     /* Correção backdrop órfão: instância duplicada de Modal ou transição de
+        fechamento interrompida deixavam um .modal-backdrop "fade show" na página,
+        bloqueando tudo após fechar o modal. Duas varreduras: ao terminar de
+        esconder QUALQUER modal e ao surgir qualquer mudança de backdrop no body —
+        se nenhum modal estiver aberto, remove os backdrops restantes e o estado
+        modal-open do body. */
+    var _sweepModalBackdrops = function () {
+      var abertos = 0;
+      document.querySelectorAll(".modal.show").forEach(function (m) {
+        if (m.style.display === "none" || window.getComputedStyle(m).display === "none") {
+          m.classList.remove("show");
+          m.style.display = "none";
+        } else {
+          abertos++;
+        }
+      });
+      if (abertos === 0) {
+        document.querySelectorAll(".modal-backdrop").forEach(function (b) { if (b.parentNode) b.parentNode.removeChild(b); });
+        document.body.classList.remove("modal-open");
+        document.body.style.removeProperty("overflow");
+        document.body.style.removeProperty("padding-right");
+      }
+    };
+    document.addEventListener("hidden.bs.modal", function () { _sweepModalBackdrops(); }, true);
+    var _bdJanitorObs = new MutationObserver(function () { _sweepModalBackdrops(); });
+    _bdJanitorObs.observe(document.body, { childList: true });
+    setInterval(_sweepModalBackdrops, 1000);
+
 
     /* Confirm Helper (Master Rules v9.0 — substitui confirm() nativo) */
     var bsModalConfirm = new bootstrap.Modal($("modal-confirm"), { backdrop: "static" });
@@ -11546,15 +11564,13 @@
        Integração e Sincronização do Layout Mobile (Bootstrap 5)
        ========================================================================== */
     function syncMobileState() {
-      // 1. Sync DPI
-      var dpiEl = $("badge-dpi");
-      var mobDpiText = $("mobile-badge-dpi-text");
-      var navDpi = $("nav-printer-dpi");
-      if (dpiEl) {
-        var dpiVal = dpiEl.textContent || "203 DPI";
-        if (mobDpiText) mobDpiText.textContent = dpiVal;
-        if (navDpi) navDpi.textContent = dpiVal;
-      }
+       // 1. Sync DPI
+       var dpiEl = $("badge-dpi");
+       var navDpi = $("nav-printer-dpi");
+       if (dpiEl) {
+         var dpiVal = dpiEl.textContent || "203 DPI";
+         if (navDpi) navDpi.textContent = dpiVal;
+       }
 
       // 2. Sync IP & Connection Status
       var savedIp = localStorage.getItem("etiquetasZebra.printerIp");
@@ -11614,17 +11630,7 @@
       });
     }
 
-    // Mobile DPI click -> Toggle DPI
-    var mobDpiBtn = $("mobile-badge-dpi");
-    if (mobDpiBtn) {
-      mobDpiBtn.addEventListener("click", function() {
-        var dskDpi = $("badge-dpi");
-        if (dskDpi) dskDpi.click();
-        syncMobileState();
-      });
-    }
-
-    function atualizarRotuloOrientacao() {
+     function atualizarRotuloOrientacao() {
       var txt = (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal";
       var d = $("rot-label");
       if (d) d.textContent = txt;
@@ -12277,9 +12283,6 @@
       clic("sb-btm-estudio", function () { ativarAbaStudio("tab-canvas"); });
       clic("sb-btm-zpl", function () { mostrarAbaZPL(); });
       clic("sb-btm-elem", function () { ativarAbaStudio("tab-list"); });
-      clic("sb-btn-imprimir", function () {
-        if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias();
-      });
       var _contAnterior = atualizarContagemElementos;
       atualizarContagemElementos = function (n) {
         _contAnterior(n);
