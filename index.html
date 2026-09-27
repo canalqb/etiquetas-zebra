@@ -1294,7 +1294,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.23</span>
+      <span class="brand-ver">v2.24</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1545,7 +1545,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.23</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.24</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -2784,7 +2784,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.23</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.24</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -7396,7 +7396,7 @@
       {
         id: "lvl_1",
         name: "Nível 1",
-        targetElementId: "serie",
+        targetElementId: "serie", targetElementIds: ["serie"],
         start: 1,
         end: 10,
         digits: 2,
@@ -7421,7 +7421,17 @@
       return null;
     }
 
-    function getElementOptionsHTML(currentTargetId) {
+    /* Pedido 1.116: um nível pode ter VÁRIOS elementos compartilhando a mesma
+       sequência (ex.: subtítulo e QR com "SN-001"). Retrocompat: modelos antigos
+       só têm targetElementId (string única) — targetsDoNivel normaliza. */
+    function targetsDoNivel(node) {
+      if (node && Array.isArray(node.targetElementIds) && node.targetElementIds.length) {
+        return node.targetElementIds.slice();
+      }
+      return [node.targetElementId || "serie"];
+    }
+
+    function getElementOptions() {
       var opts = [
         { value: "serie", label: "Série (...)" },
         { value: "qr", label: "QR Code / Barcode" },
@@ -7436,7 +7446,11 @@
         }
       });
 
-      return opts.map(function (o) {
+      return opts;
+    }
+
+    function getElementOptionsHTML(currentTargetId) {
+      return getElementOptions().map(function (o) {
         var sel = (o.value === currentTargetId) ? ' selected' : '';
         return '<option value="' + o.value + '"' + sel + '>' + o.label + '</option>';
       }).join('');
@@ -7445,9 +7459,20 @@
     function buildNodeHTML(node, depth) {
       var indent = Math.min(depth * 14, 48);
       var isNormal = (node.order !== "inverso");
-      var currentTarget = node.targetElementId || "serie";
+      var targets = targetsDoNivel(node);
+      if (!Array.isArray(node.targetElementIds)) node.targetElementIds = targets;
       var isRoot = (depth === 0);
       var titleText = isRoot ? "Nível 1" : "Subnível " + depth;
+
+      var targetsHtml = "";
+      targets.forEach(function (t, idx) {
+        targetsHtml += '<div class="d-flex gap-1 align-items-center">' +
+          '<select class="form-select form-select-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="targetElementId" data-idx="' + idx + '">' +
+            getElementOptionsHTML(t) +
+          '</select>' +
+          (idx > 0 ? '<button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-del-target" data-id="' + node.id + '" data-idx="' + idx + '" title="Remover este campo"><i class="bi bi-x-lg"></i></button>' : '') +
+        '</div>';
+      });
 
       var html = '<div class="card card-custom p-2 mb-2 shadow-sm" style="margin-left:' + indent + 'px; border-left: 4px solid ' + (isRoot ? '#0d6efd' : '#0dcaf0') + '!important;">' +
         '<div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1 pb-1 border-bottom">' +
@@ -7461,9 +7486,8 @@
         '<div class="row g-1 align-items-end mb-1">' +
           '<div class="col-6">' +
             '<label class="form-label micro-label mb-0 fw-semibold">Campo Incremental</label>' +
-            '<select class="form-select form-select-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="targetElementId">' +
-              getElementOptionsHTML(currentTarget) +
-            '</select>' +
+            '<div class="d-flex flex-column gap-1">' + targetsHtml + '</div>' +
+            '<button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 mt-1 btn-add-target" data-id="' + node.id + '" title="Adicionar outro elemento com a mesma sequência (ex.: subtítulo e QR juntos)"><i class="bi bi-plus-lg me-1"></i>elemento</button>' +
           '</div>' +
           '<div class="col-6">' +
             '<label class="form-label micro-label mb-0 fw-semibold">Prefixo</label>' +
@@ -7511,7 +7535,7 @@
           {
             id: "lvl_1",
             name: "Nível 1",
-            targetElementId: "serie",
+            targetElementId: "serie", targetElementIds: ["serie"],
             start: 1,
             end: 10,
             digits: 2,
@@ -7546,10 +7570,19 @@
           var found = findNodeInTree(batchSpecialTree, id);
           if (found && found.node) {
             var val = this.value;
-            if (field === "start" || field === "end" || field === "digits") {
-              val = parseInt(val, 10) || 0;
+            if (field === "targetElementId") {
+              var idxT = parseInt(this.getAttribute("data-idx") || "0", 10);
+              var ts = targetsDoNivel(found.node);
+              while (ts.length <= idxT) ts.push("serie");
+              ts[idxT] = val;
+              found.node.targetElementIds = ts;
+              found.node.targetElementId = ts[0];
+            } else {
+              if (field === "start" || field === "end" || field === "digits") {
+                val = parseInt(val, 10) || 0;
+              }
+              found.node[field] = val;
             }
-            found.node[field] = val;
             atualizarPreviewLoteSection5();
             atualizarBarraStatusLote(); /* atualiza o total só se o lote já estiver ativo */
           }
@@ -7570,6 +7603,45 @@
         });
       });
 
+      // Event listeners para "+ elemento" e "×" do campo multi-alvo (Pedido 1.116)
+      container.querySelectorAll(".btn-add-target").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = this.getAttribute("data-id");
+          var found = findNodeInTree(batchSpecialTree, id);
+          if (found && found.node) {
+            var ts = targetsDoNivel(found.node);
+            var usados = {};
+            ts.forEach(function (t) { usados[t] = 1; });
+            var novo = null;
+            getElementOptions().some(function (o) {
+              if (!usados[o.value]) { novo = o.value; return true; }
+              return false;
+            });
+            if (!novo) novo = "serie";
+            ts.push(novo);
+            found.node.targetElementIds = ts;
+            found.node.targetElementId = ts[0];
+            renderBatchSpecialTreeUI();
+          }
+        });
+      });
+      container.querySelectorAll(".btn-del-target").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = this.getAttribute("data-id");
+          var idx = parseInt(this.getAttribute("data-idx") || "0", 10);
+          var found = findNodeInTree(batchSpecialTree, id);
+          if (found && found.node) {
+            var ts = targetsDoNivel(found.node);
+            if (ts.length > 1) {
+              ts.splice(idx, 1);
+              found.node.targetElementIds = ts;
+              found.node.targetElementId = ts[0];
+              renderBatchSpecialTreeUI();
+            }
+          }
+        });
+      });
+
       // Event listeners para "+ Subnível"
       container.querySelectorAll(".btn-add-sublevel").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -7586,7 +7658,7 @@
             target.children.push({
               id: "lvl_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
               name: "Subnível",
-              targetElementId: "qr",
+              targetElementId: "qr", targetElementIds: ["qr"],
               start: 1,
               end: 5,
               digits: 2,
@@ -7737,7 +7809,7 @@
       var allStepBindings = [];
       nodes.forEach(function (node) {
         var curVals = gerarValoresNivel(node);
-        var targetId = node.targetElementId || "serie";
+        var targetsNivel = targetsDoNivel(node);
 
         var childrenBindings = [];
         if (node.children && node.children.length > 0) {
@@ -7748,12 +7820,12 @@
           if (childrenBindings.length > 0) {
             childrenBindings.forEach(function (childMap) {
               var stepMap = Object.assign({}, childMap);
-              stepMap[targetId] = val;
+              targetsNivel.forEach(function (t) { stepMap[t] = val; });
               allStepBindings.push(stepMap);
             });
           } else {
             var stepMap = {};
-            stepMap[targetId] = val;
+            targetsNivel.forEach(function (t) { stepMap[t] = val; });
             allStepBindings.push(stepMap);
           }
         });
@@ -8931,6 +9003,7 @@
         if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
         cursorY = el.y + el.fonte * 1.4 + GAP;
         it.node.targetElementId = el.id;
+        it.node.targetElementIds = [el.id];
       });
       renderStudio();
       renderBatchSpecialTreeUI();
@@ -8955,7 +9028,7 @@
             (!batchSpecialTree[0].children || batchSpecialTree[0].children.length === 0) &&
             batchSpecialTree[0].order !== "inverso") {
           var snNode = batchSpecialTree[0];
-          var snTarget = snNode.targetElementId || "serie";
+          var snTargets = targetsDoNivel(snNode);
           var snStart = parseInt(snNode.start, 10) || 1;
           var snEnd = parseInt(snNode.end, 10) || 1;
           var snDigits = parseInt(snNode.digits, 10) || 1;
@@ -8964,9 +9037,11 @@
           var snClone = elements.map(function (el) { return Object.assign({}, el); });
           var snApplied = false;
           snClone.forEach(function (copy) {
-            var matches = (snTarget === "serie" && (copy.classe === "serie" || copy.id === "el_serie")) ||
-                          (snTarget === "nome" && (copy.classe === "nome" || copy.id === "el_nome")) ||
-                          (copy.id === snTarget);
+            var matches = snTargets.some(function (snTarget) {
+              return (snTarget === "serie" && (copy.classe === "serie" || copy.id === "el_serie")) ||
+                     (snTarget === "nome" && (copy.classe === "nome" || copy.id === "el_nome")) ||
+                     (copy.id === snTarget);
+            });
             if (matches && (copy.tipo === "texto" || copy.tipo === "sub" || copy.tipo === "serie" || copy.tipo === "nome")) {
               copy.snData = snData;
               snApplied = true;
@@ -8978,13 +9053,17 @@
               snZpl = snZpl.replace(/\^XZ\s*$/, "^PQ" + snCount + "\n^XZ");
               /* Pedido 1.101: as combinações do ^SN também alimentam a paginação unificada */
               loteEspecialBindings = gerarValoresNivel(snNode).map(function (v) {
-                var m = {}; m[snTarget] = v; return m;
+                var m = {};
+                snTargets.forEach(function (t) { m[t] = v; });
+                return m;
               });
               /* Pedido 1.100: a 1ª etiqueta fica visível no Estúdio como padrão — sem pular para a aba ZPL */
               elements.forEach(function (el) {
-                var alvoSn = (snTarget === "serie" && (el.classe === "serie" || el.id === "el_serie")) ||
-                             (snTarget === "nome" && (el.classe === "nome" || el.id === "el_nome")) ||
-                             (el.id === snTarget);
+                var alvoSn = snTargets.some(function (snTarget) {
+                  return (snTarget === "serie" && (el.classe === "serie" || el.id === "el_serie")) ||
+                         (snTarget === "nome" && (el.classe === "nome" || el.id === "el_nome")) ||
+                         (el.id === snTarget);
+                });
                 if (alvoSn && (el.tipo === "texto" || el.tipo === "sub" || el.tipo === "serie" || el.tipo === "nome")) {
                   el.texto = snData;
                 }
