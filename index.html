@@ -822,6 +822,11 @@
       body { overscroll-behavior-y: none; padding-bottom: 74px; }
       .preview-stage-wrap { min-height: 300px; resize: none; }
       .preview-stage { min-height: 260px; }
+      /* Pedido 1.129: sb-desktop-bar quebra em várias linhas no mobile para
+         exibir TODOS os controles (antes: fila única com scroll escondido).
+         Seletores com # porque o .sb-bar base vem DEPOIS na folha e empataria. */
+      #sb-desktop-bar.sb-bar { flex-wrap: wrap; overflow-x: hidden; row-gap: 0.4rem; padding-top: 0.45rem; padding-bottom: 0.45rem; }
+      #sb-desktop-bar .sb-exib-group { border-right: 0; margin-right: 0; padding-right: 0; }
       .ribbons-bar {
         position: fixed; top: 0; left: 0; bottom: 0; z-index: 1085;
         width: min(320px, 88vw);
@@ -1330,7 +1335,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.35</span>
+      <span class="brand-ver">v2.36</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1596,10 +1601,10 @@
     <div class="card border-0 mobile-hero-card text-white overflow-hidden p-3 shadow-sm">
       <div class="d-flex justify-content-between align-items-start mb-2">
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
-            <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
+          <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
+            <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.35</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.36</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1611,31 +1616,9 @@
         Crie, personalize e envie etiquetas térmicas com QR Code, Barcode e gráficos direto do seu dispositivo móvel.
       </p>
 
-      <!-- Grid de Ações Rápidas & Dimensões no Hero Mobile -->
-      <div class="mobile-hero-status-row d-flex flex-wrap gap-2 pt-2 border-top border-white border-opacity-10 align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-          <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center gap-1" id="mobile-hero-tamanho-btn" title="Alterar tamanho da etiqueta">
-            <i class="fas fa-ruler-combined text-info" style="font-size:0.75rem;"></i>
-            <span id="mobile-hero-tamanho-label" class="fw-semibold" style="font-size:0.72rem;">100 × 50 mm</span>
-          </button>
-          <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center gap-1" id="mobile-hero-rotacao-btn" title="Alternar orientação">
-            <i class="fas fa-arrows-alt-h text-warning" style="font-size:0.75rem;"></i>
-            <span id="mobile-hero-rot-label" class="fw-semibold" style="font-size:0.72rem; white-space:pre-line; line-height:1.1;">Horizontal</span>
-          </button>
-          <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center" id="mobile-hero-modelos-btn" title="Modelos Prontos (5 layouts para cada tamanho de etiqueta)" aria-label="Abrir Modelos Prontos">
-            <i class="fas fa-table-cells text-primary" style="font-size:0.75rem;"></i>
-          </button>
-          <div class="d-flex align-items-center gap-1 d-none" id="nav-lote-row" role="group" aria-label="Navegar entre as etiquetas do lote" title="Etiqueta exibida no Estúdio — navegue entre as etiquetas do lote">
-            <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1" id="nav-lote-prev" aria-label="Etiqueta anterior"><i class="bi bi-chevron-left"></i></button>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm text-center fw-bold" id="nav-lote-num" style="width:46px; padding:0.1rem 0.25rem;" aria-label="Ir para a etiqueta número">
-            <span class="fw-semibold" style="font-size:0.72rem;" id="nav-lote-total">/ 1</span>
-            <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1" id="nav-lote-next" aria-label="Próxima etiqueta"><i class="bi bi-chevron-right"></i></button>
-            <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-none d-inline-flex align-items-center" id="nav-btn-testar-1" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia">
-              <i class="fas fa-vial" style="font-size:0.75rem;"></i> Testar 1
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Pedido 1.129: botões de ação migraram para a sb-desktop-bar (com quebra
+           de linha no mobile) — tamanho, rotação e lote já existiam lá como chips;
+           Modelos Prontos foi adicionado como botão próprio na barra -->
     </div>
   </section>
 
@@ -1823,11 +1806,18 @@
                     <span class="sb-chip-val" id="sb-rot-label-val">Horizontal</span>
                   </button>
                   <span class="sb-sep"></span>
-                  <!-- DPI (clique = alterar densidade) -->
-                  <button type="button" class="sb-chip" id="sb-dpi" title="Resolucao da impressora - clique para alterar (203 / 300 / 600 DPI)">
-                    <i class="fas fa-crosshairs text-success"></i>
-                    <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
-                  </button>
+                      <!-- DPI (clique = alterar densidade) -->
+                      <button type="button" class="sb-chip" id="sb-dpi" title="Resolucao da impressora - clique para alterar (203 / 300 / 600 DPI)">
+                        <i class="fas fa-crosshairs text-success"></i>
+                        <span class="sb-chip-val" id="sb-dpi-val">203 DPI</span>
+                      </button>
+                      <span class="sb-sep"></span>
+                      <!-- Pedido 1.129: Modelos Prontos migrou do hero mobile (botão
+                           exclusivo do mobile — no desktop o acesso segue no menu Etiqueta) -->
+                      <button type="button" class="sb-exib-btn d-lg-none" id="mobile-hero-modelos-btn" title="Modelos Prontos (5 layouts para cada tamanho de etiqueta)" aria-label="Abrir Modelos Prontos">
+                        <i class="fas fa-table-cells"></i><span style="font-size:0.72rem;font-weight:600;margin-left:0.2rem;">Modelos</span>
+                      </button>
+                      <span class="sb-sep d-lg-none"></span>
 
                      <!-- Pedido 1.119: alternância de painéis migrou para a navbar (dnv-actions);
                           aqui ficam a navegação do lote, Testar 1 e Imprimir -->
@@ -2829,7 +2819,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.35</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v2.36</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -8155,8 +8145,6 @@
          lote/importação com 2+ etiquetas; com 1 única, imprimir já testa. */
       var btnTeste = $("btn-test-print-lote");
       if (btnTeste) btnTeste.classList.toggle("d-none", !(temLoteImport && total > 1));
-      var btnTesteMob = $("nav-btn-testar-1");
-      if (btnTesteMob) btnTesteMob.classList.toggle("d-none", !(temLoteImport && total > 1));
       var qtdCopias = parseInt(localStorage.getItem(CHAVE_ULTIMA_QTD), 10) || 1;
       detalhe.textContent = (qtdCopias > 1)
         ? "(" + total + " × " + qtdCopias + " = " + (total * qtdCopias) + " impressões) — " + origem
@@ -8194,9 +8182,6 @@
     }
     if ($("btn-test-print-lote")) {
       $("btn-test-print-lote").addEventListener("click", imprimirEtiquetaTesteLote);
-    }
-    if ($("nav-btn-testar-1")) {
-      $("nav-btn-testar-1").addEventListener("click", imprimirEtiquetaTesteLote);
     }
 
 
@@ -9217,8 +9202,7 @@
        há mais de 1 etiqueta (importação mapeada ou Lote Especial gerado). */
     function atualizarNavLote() {
       var nav = $("lote-nav");
-      var navM = $("nav-lote-row");
-      if (!nav && !navM) return;
+      if (!nav) return;
       var total = 0;
       var ativo = false;
       if (ehLoteEspecialNavegavel()) {
@@ -9231,19 +9215,15 @@
           ativo = Object.keys(mapa).some(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
         }
       }
-      if (nav) nav.classList.toggle("d-none", !ativo);
-      if (navM) navM.classList.toggle("d-none", !ativo);
+      nav.classList.toggle("d-none", !ativo);
       if (!ativo) return;
       if (lotePaginaAtual > total - 1) lotePaginaAtual = total - 1;
       if (lotePaginaAtual < 0) lotePaginaAtual = 0;
-      [["lote-nav-num", "lote-nav-total", "lote-nav-prev", "lote-nav-next"],
-       ["nav-lote-num", "nav-lote-total", "nav-lote-prev", "nav-lote-next"]].forEach(function (grupo) {
-        var num = $(grupo[0]);
-        if (num && document.activeElement !== num) num.value = String(lotePaginaAtual + 1);
-        var tot = $(grupo[1]); if (tot) tot.textContent = "/ " + total;
-        var prev = $(grupo[2]); if (prev) prev.disabled = lotePaginaAtual <= 0;
-        var next = $(grupo[3]); if (next) next.disabled = lotePaginaAtual >= total - 1;
-      });
+      var num = $("lote-nav-num");
+      if (num && document.activeElement !== num) num.value = String(lotePaginaAtual + 1);
+      var tot = $("lote-nav-total"); if (tot) tot.textContent = "/ " + total;
+      var prev = $("lote-nav-prev"); if (prev) prev.disabled = lotePaginaAtual <= 0;
+      var next = $("lote-nav-next"); if (next) next.disabled = lotePaginaAtual >= total - 1;
     }
     function irParaLote(idx) {
       var total = importDados.linhas.length || 0;
@@ -9276,23 +9256,6 @@
         if (e.key === "Enter") { e.preventDefault(); this.blur(); }
       });
       $("lote-nav-num").addEventListener("change", function () {
-        var n = parseInt(this.value, 10);
-        if (!n || n < 1) n = 1;
-        this.blur();
-        loteNavegarPara(n - 1);
-      });
-    }
-    /* Mobile (hero, pedido 1.123): mesma navegação do lote — ‹ [n]/total › */
-    if ($("nav-lote-prev")) $("nav-lote-prev").addEventListener("click", function () { loteNavegarPara(lotePaginaAtual - 1); });
-    if ($("nav-lote-next")) $("nav-lote-next").addEventListener("click", function () { loteNavegarPara(lotePaginaAtual + 1); });
-    if ($("nav-lote-num")) {
-      $("nav-lote-num").addEventListener("input", function () {
-        this.value = this.value.replace(/\D+/g, "").slice(0, 5); /* apenas números */
-      });
-      $("nav-lote-num").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") { e.preventDefault(); this.blur(); }
-      });
-      $("nav-lote-num").addEventListener("change", function () {
         var n = parseInt(this.value, 10);
         if (!n || n < 1) n = 1;
         this.blur();
@@ -11075,7 +11038,7 @@
       var txt = (sz && sz.mmW)
         ? mmParaUnidadeAtual(sz.mmW, unidadeAtual) + " × " + mmParaUnidadeAtual(sz.mmH, unidadeAtual) + " " + unidadeAtual
         : "Selecionar tamanho";
-      [$("tamanho-label"), $("mobile-hero-tamanho-label")].forEach(function (lbl) {
+      [$("tamanho-label")].forEach(function (lbl) {
         if (lbl) lbl.textContent = txt;
       });
     }
@@ -11405,10 +11368,6 @@
         mobDot.style.backgroundColor = dskDot.style.background || (savedIp ? "#198754" : "#6c757d");
       }
 
-      // 3. Sync Tamanho & Orientação
-      var mobRotLbl = $("mobile-hero-rot-label");
-      if (mobRotLbl) mobRotLbl.textContent = (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal";
-
       // 4. Sync Contagem de Elementos
       atualizarContagemElementos(typeof elements !== "undefined" ? elements.length : 0);
 
@@ -11462,30 +11421,10 @@
       });
     }
 
-    // Mobile Hero Tamanho / Orientação
-    var mobHeroTam = $("mobile-hero-tamanho-btn");
-    if (mobHeroTam) {
-      mobHeroTam.addEventListener("click", function() {
-        var dskTam = $("btn-tamanho") || $("sb-tamanho");
-        if (dskTam) dskTam.click();
-      });
-    }
-
     function atualizarRotuloOrientacao() {
       var txt = (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal";
       var d = $("rot-label");
       if (d) d.textContent = txt;
-      var h = $("mobile-hero-rot-label");
-      if (h) h.textContent = txt;
-    }
-
-    var mobHeroRot = $("mobile-hero-rotacao-btn");
-    if (mobHeroRot) {
-      mobHeroRot.addEventListener("click", function() {
-        var dskRot = $("btn-rotacao") || $("sb-rot");
-        if (dskRot) dskRot.click();
-        atualizarRotuloOrientacao();
-      });
     }
 
     var btmImp = $("bottom-btn-imprimir");
