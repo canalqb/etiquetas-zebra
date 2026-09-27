@@ -1294,7 +1294,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v2.24</span>
+      <span class="brand-ver">v2.25</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1545,7 +1545,7 @@
           <span class="badge bg-white bg-opacity-20 text-white border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.24</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v2.25</span>
         </div>
         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 cursor-pointer" id="mobile-badge-dpi" role="button" title="Toque para alternar DPI (203 / 300 / 600)">
           <i class="fas fa-crosshairs me-1"></i><span id="mobile-badge-dpi-text">203 DPI</span>
@@ -1571,6 +1571,15 @@
           <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-inline-flex align-items-center" id="mobile-hero-modelos-btn" title="Modelos Prontos (5 layouts para cada tamanho de etiqueta)" aria-label="Abrir Modelos Prontos">
             <i class="fas fa-table-cells text-primary" style="font-size:0.75rem;"></i>
           </button>
+          <div class="d-flex align-items-center gap-1 d-none" id="nav-lote-row" role="group" aria-label="Navegar entre as etiquetas do lote" title="Etiqueta exibida no Estúdio — navegue entre as etiquetas do lote">
+            <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1" id="nav-lote-prev" aria-label="Etiqueta anterior"><i class="bi bi-chevron-left"></i></button>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm text-center fw-bold" id="nav-lote-num" style="width:46px; padding:0.1rem 0.25rem;" aria-label="Ir para a etiqueta número">
+            <span class="fw-semibold" style="font-size:0.72rem;" id="nav-lote-total">/ 1</span>
+            <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1" id="nav-lote-next" aria-label="Próxima etiqueta"><i class="bi bi-chevron-right"></i></button>
+            <button type="button" class="btn btn-sm btn-dark bg-white bg-opacity-10 border border-white border-opacity-20 text-white px-2 py-1 d-none d-inline-flex align-items-center" id="nav-btn-testar-1" title="Imprimir etiqueta de TESTE: apenas a 1ª etiqueta do lote/importação, 1 cópia">
+              <i class="fas fa-vial" style="font-size:0.75rem;"></i> Testar 1
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -2870,6 +2879,12 @@
           <button type="button" class="btn btn-outline-info btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-importar" data-bs-dismiss="offcanvas">
             <span><i class="fas fa-file-import me-2 text-info"></i> Importar Dados (Excel, CSV)</span>
           </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-carregar-zpl" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-file-code me-2 text-secondary"></i> Carregar Arquivo .ZPL</span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-download-zpl" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-file-download me-2 text-secondary"></i> Download ZPL</span>
+          </button>
         </div>
       </div>
 
@@ -2890,9 +2905,80 @@
               <i class="fas fa-print me-1"></i> Configurar Impressora
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
-              <i class="fas fa-sliders-h me-1"></i> Calibrar
+              <i class="fas fa-sliders-h me-1"></i> Calibrar Agora
             </button>
           </div>
+          <hr class="my-2">
+          <span class="small fw-bold text-secondary d-block mb-2">Calibração — os ajustes abaixo aplicam ao Calibrar Agora:</span>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-modo">
+              <i class="fas fa-tape me-1"></i> <span id="nav-cal-modo-text">Modo Ribbon: Sem (Térmica Direta)</span>
+            </button>
+            <div>
+              <label class="form-label small fw-semibold mb-1" for="nav-sel-midia">Tipo de Mídia</label>
+              <select class="form-select form-select-sm" id="nav-sel-midia" aria-label="Tipo de mídia">
+                <option value="C">Etiquetas contínuas</option>
+                <option value="N" selected>Etiquetas com intervalos</option>
+                <option value="M">Etiquetas com marcações pretas</option>
+                <option value="F">Etiquetas com ranhuras laterais</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label small fw-semibold mb-1" for="nav-sel-modoop">Modo Operacional</label>
+              <select class="form-select form-select-sm" id="nav-sel-modoop" aria-label="Modo operacional">
+                <option value="" selected>Usar padrão da impressora</option>
+                <option value="T">Arrancar</option>
+                <option value="P">Descolar</option>
+                <option value="C">Cortador</option>
+                <option value="R">Rebobinar</option>
+                <option value="L">Parte sem revestimento</option>
+                <option value="V">Corte sem revestimento</option>
+                <option value="W">Retroceder sem linha</option>
+                <option value="D">Aplicador</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted" style="min-width:74px;">Tonalidade</span>
+              <input type="range" class="form-range mb-0 flex-grow-1" id="nav-tonalidade" min="10" max="30" value="25" step="1" aria-label="Tonalidade (Darkness ^MD)">
+              <span class="badge bg-secondary text-white" id="nav-ton-val" style="font-size:0.7rem; min-width:20px; text-align:center;">25</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted" style="min-width:74px;">Velocidade</span>
+              <input type="range" class="form-range mb-0 flex-grow-1" id="nav-velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)">
+              <span class="badge bg-secondary text-white" id="nav-veloc-val" style="font-size:0.7rem; min-width:20px; text-align:center;">6</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small text-muted">Tamanho do Papel</span>
+              <span class="small fw-semibold" id="nav-cal-papel-text">100 × 50 mm</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1" id="nav-cal-papel-opcoes"></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-qual">
+              <i class="fas fa-adjust me-1"></i> <span id="nav-cal-qual-text">Qualidade: Escala de Cinza</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Espelho & Reverso (itens de estado — alternam sem fechar o menu) -->
+      <div class="mb-4">
+        <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Espelho & Reverso</span>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-espelho-v" aria-pressed="false" title="Espelho VERTICAL na impressão (topo↔base) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+            <i class="bi bi-symmetry-vertical me-2"></i> Espelho Vertical
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-espelho-h" aria-pressed="false" title="Espelho HORIZONTAL na impressão (esquerda↔direita) — útil para transferência térmica. A Pré-visualização de Impressão mostra o efeito.">
+            <i class="bi bi-symmetry-horizontal me-2"></i> Espelho Horizontal
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-espelho-vh" aria-pressed="false" title="Inversão VERTICAL + HORIZONTAL (gira a etiqueta 180° na impressão)">
+            <i class="bi bi-arrow-repeat me-2"></i> Inverter Vertical + Horizontal
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center" id="nav-toggle-reverso" aria-pressed="false" title="Reverso branco-sobre-preto — inverte cores de toda a etiqueta">
+            <i class="bi bi-circle-half me-2"></i> Reverso (Branco sobre Preto)
+            <i class="bi bi-check-lg dnv-check d-none text-success ms-auto"></i>
+          </button>
         </div>
       </div>
 
@@ -2911,6 +2997,35 @@
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-copias" data-bs-dismiss="offcanvas">
             <i class="fas fa-copy"></i> Imprimir com Cópias
+          </button>
+        </div>
+      </div>
+
+      <!-- Exibição, Zoom & Ajustes (paridade da sb-desktop-bar) -->
+      <div class="mb-4">
+        <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Exibição & Zoom</span>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="nav-zoom-out" title="Diminuir Zoom" aria-label="Diminuir zoom"><i class="fas fa-search-minus"></i></button>
+          <span class="badge bg-secondary-subtle text-secondary border" id="nav-zoom-val" style="min-width:52px; text-align:center;">100%</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="nav-zoom-in" title="Aumentar Zoom" aria-label="Aumentar zoom"><i class="fas fa-search-plus"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="nav-zoom-fit" title="Auto Fit — caber na tela"><i class="fas fa-expand-arrows-alt me-1"></i>Ajustar</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="nav-zoom-reset" title="Reset Zoom (100%)"><i class="fas fa-compress-alt me-1"></i>100%</button>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="fas fa-ruler-combined text-secondary" aria-hidden="true"></i>
+          <select class="form-select form-select-sm flex-grow-1" id="nav-select-unidade" aria-label="Unidade de medida">
+            <option value="mm" selected>mm</option>
+            <option value="cm">cm</option>
+            <option value="in">pol</option>
+            <option value="dots">dots</option>
+          </select>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-margens" data-bs-dismiss="offcanvas">
+            <i class="fas fa-border-style me-1"></i> Limites de Margem
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" id="nav-btn-limpar-canvas" data-bs-dismiss="offcanvas">
+            <i class="fas fa-trash-alt me-1"></i> Limpar Canvas
           </button>
         </div>
       </div>
@@ -7734,6 +7849,8 @@
          lote/importação com 2+ etiquetas; com 1 única, imprimir já testa. */
       var btnTeste = $("btn-test-print-lote");
       if (btnTeste) btnTeste.classList.toggle("d-none", !(temLoteImport && total > 1));
+      var btnTesteMob = $("nav-btn-testar-1");
+      if (btnTesteMob) btnTesteMob.classList.toggle("d-none", !(temLoteImport && total > 1));
       var qtdCopias = parseInt(localStorage.getItem(CHAVE_ULTIMA_QTD), 10) || 1;
       detalhe.textContent = (qtdCopias > 1)
         ? "(" + total + " × " + qtdCopias + " = " + (total * qtdCopias) + " impressões) — " + origem
@@ -7771,6 +7888,9 @@
     }
     if ($("btn-test-print-lote")) {
       $("btn-test-print-lote").addEventListener("click", imprimirEtiquetaTesteLote);
+    }
+    if ($("nav-btn-testar-1")) {
+      $("nav-btn-testar-1").addEventListener("click", imprimirEtiquetaTesteLote);
     }
 
 
@@ -8784,7 +8904,9 @@
     /* Paginação do lote na sb-desktop-bar: ‹ [nº] /total › Ir — ativa quando
        há mais de 1 etiqueta (importação mapeada ou Lote Especial gerado). */
     function atualizarNavLote() {
-      var nav = $("lote-nav"); if (!nav) return;
+      var nav = $("lote-nav");
+      var navM = $("nav-lote-row");
+      if (!nav && !navM) return;
       var total = 0;
       var ativo = false;
       if (ehLoteEspecialNavegavel()) {
@@ -8797,15 +8919,19 @@
           ativo = Object.keys(mapa).some(function (c) { return mapa[c] && mapa[c] !== "ignorar"; });
         }
       }
-      nav.classList.toggle("d-none", !ativo);
+      if (nav) nav.classList.toggle("d-none", !ativo);
+      if (navM) navM.classList.toggle("d-none", !ativo);
       if (!ativo) return;
       if (lotePaginaAtual > total - 1) lotePaginaAtual = total - 1;
       if (lotePaginaAtual < 0) lotePaginaAtual = 0;
-      var num = $("lote-nav-num");
-      if (num && document.activeElement !== num) num.value = String(lotePaginaAtual + 1);
-      var tot = $("lote-nav-total"); if (tot) tot.textContent = "/ " + total;
-      var prev = $("lote-nav-prev"); if (prev) prev.disabled = lotePaginaAtual <= 0;
-      var next = $("lote-nav-next"); if (next) next.disabled = lotePaginaAtual >= total - 1;
+      [["lote-nav-num", "lote-nav-total", "lote-nav-prev", "lote-nav-next"],
+       ["nav-lote-num", "nav-lote-total", "nav-lote-prev", "nav-lote-next"]].forEach(function (grupo) {
+        var num = $(grupo[0]);
+        if (num && document.activeElement !== num) num.value = String(lotePaginaAtual + 1);
+        var tot = $(grupo[1]); if (tot) tot.textContent = "/ " + total;
+        var prev = $(grupo[2]); if (prev) prev.disabled = lotePaginaAtual <= 0;
+        var next = $(grupo[3]); if (next) next.disabled = lotePaginaAtual >= total - 1;
+      });
     }
     function irParaLote(idx) {
       var total = importDados.linhas.length || 0;
@@ -8838,6 +8964,23 @@
         if (e.key === "Enter") { e.preventDefault(); this.blur(); }
       });
       $("lote-nav-num").addEventListener("change", function () {
+        var n = parseInt(this.value, 10);
+        if (!n || n < 1) n = 1;
+        this.blur();
+        loteNavegarPara(n - 1);
+      });
+    }
+    /* Mobile (hero, pedido 1.123): mesma navegação do lote — ‹ [n]/total › */
+    if ($("nav-lote-prev")) $("nav-lote-prev").addEventListener("click", function () { loteNavegarPara(lotePaginaAtual - 1); });
+    if ($("nav-lote-next")) $("nav-lote-next").addEventListener("click", function () { loteNavegarPara(lotePaginaAtual + 1); });
+    if ($("nav-lote-num")) {
+      $("nav-lote-num").addEventListener("input", function () {
+        this.value = this.value.replace(/\D+/g, "").slice(0, 5); /* apenas números */
+      });
+      $("nav-lote-num").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); this.blur(); }
+      });
+      $("nav-lote-num").addEventListener("change", function () {
         var n = parseInt(this.value, 10);
         if (!n || n < 1) n = 1;
         this.blur();
@@ -10163,7 +10306,10 @@
       var modos = [
         ["btn-toggle-espelho-v", "v", "Espelho VERTICAL ativado (topo↔base)."],
         ["btn-toggle-espelho-h", "h", "Espelho HORIZONTAL ^PM ativado (esquerda↔direita)."],
-        ["btn-toggle-espelho-vh", "vh", "Inversão VERTICAL + HORIZONTAL ativada (180°)."]
+        ["btn-toggle-espelho-vh", "vh", "Inversão VERTICAL + HORIZONTAL ativada (180°)."],
+        ["nav-toggle-espelho-v", "v", "Espelho VERTICAL ativado (topo↔base)."],
+        ["nav-toggle-espelho-h", "h", "Espelho HORIZONTAL ^PM ativado (esquerda↔direita)."],
+        ["nav-toggle-espelho-vh", "vh", "Inversão VERTICAL + HORIZONTAL ativada (180°)."]
       ];
       function atualizar() {
         var atual = getEspelhoModo();
@@ -10187,6 +10333,9 @@
       atualizar();
     })();
     ligarToggleFlag("btn-toggle-reverso", "etiquetasZebra.reverso",
+      "Reverso ^LR ativado — branco-sobre-preto em toda a etiqueta.",
+      "Reverso ^LR desativado.");
+    ligarToggleFlag("nav-toggle-reverso", "etiquetasZebra.reverso",
       "Reverso ^LR ativado — branco-sobre-preto em toda a etiqueta.",
       "Reverso ^LR desativado.");
 
@@ -10393,7 +10542,7 @@
     }
 
     // Download ZPL File
-    $("btn-download-zpl").addEventListener("click", function () {
+    function baixarZPLArquivo() {
       var code = $("zpl").value;
       if (!code) return;
       var name = getModelName() || "etiqueta-zebra";
@@ -10404,7 +10553,8 @@
       link.download = fileBase + ".zpl";
       link.click();
       notify("Arquivo ZPL baixado.", "success");
-    });
+    }
+    $("btn-download-zpl").addEventListener("click", baixarZPLArquivo);
 
     // Carregar ZPL File
     if ($("btn-carregar-zpl") && $("input-carregar-zpl")) {
@@ -10559,6 +10709,7 @@
 
     $("select-unidade").addEventListener("change", function () {
       unidadeAtual = this.value;
+      var navSelU = $("nav-select-unidade"); if (navSelU) navSelU.value = unidadeAtual;
       updateTamanhoLabel(); /* mm↔cm↔in↔dots: o tamanho acompanha a unidade */
       atualizarExibicaoMargens();
       renderStudio();
@@ -11127,6 +11278,21 @@
       });
     }
 
+    var navCarregarZpl = $("nav-btn-carregar-zpl");
+    if (navCarregarZpl) {
+      navCarregarZpl.addEventListener("click", function() {
+        var inp = $("input-carregar-zpl");
+        if (inp) inp.click();
+      });
+    }
+
+    var navDownloadZpl = $("nav-btn-download-zpl");
+    if (navDownloadZpl) {
+      navDownloadZpl.addEventListener("click", function() {
+        if (typeof baixarZPLArquivo === "function") baixarZPLArquivo();
+      });
+    }
+
     var navAjuda = $("nav-btn-ajuda");
     if (navAjuda) {
       navAjuda.addEventListener("click", function() {
@@ -11316,27 +11482,29 @@
 
       /* Tamanho do papel: listagem encenada (aplica no design, sem enviar e sem fechar) */
       function renderPapelOpcoes() {
-        var cont = document.getElementById("dnv-papel-opcoes");
-        if (!cont) return;
-        cont.innerHTML = "";
-        Object.keys(SIZES).forEach(function (key) {
-          var sz = SIZES[key];
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "btn btn-sm py-0 px-2 " + (key === tamAtualKey ? "btn-primary" : "btn-outline-secondary");
-          b.style.fontSize = "0.72rem";
-          b.textContent = sz.mmW + " × " + sz.mmH + " mm";
-          b.addEventListener("click", function (e) {
-            e.stopPropagation();
-            if (tamAtualKey === key) return;
-            tamAtualKey = key;
-            var sel = $("tamanho"); if (sel) sel.value = key;
-            autoFitCanvas();
-            gerarPresetLayout();
-            updateTamanhoLabel();
-            atualizarTextosCalibrarSub();
+        ["dnv-papel-opcoes", "nav-cal-papel-opcoes"].forEach(function (cid) {
+          var cont = document.getElementById(cid);
+          if (!cont) return;
+          cont.innerHTML = "";
+          Object.keys(SIZES).forEach(function (key) {
+            var sz = SIZES[key];
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn btn-sm py-0 px-2 " + (key === tamAtualKey ? "btn-primary" : "btn-outline-secondary");
+            b.style.fontSize = "0.72rem";
+            b.textContent = sz.mmW + " × " + sz.mmH + " mm";
+            b.addEventListener("click", function (e) {
+              e.stopPropagation();
+              if (tamAtualKey === key) return;
+              tamAtualKey = key;
+              var sel = $("tamanho"); if (sel) sel.value = key;
+              autoFitCanvas();
+              gerarPresetLayout();
+              updateTamanhoLabel();
+              atualizarTextosCalibrarSub();
+            });
+            cont.appendChild(b);
           });
-          cont.appendChild(b);
         });
       }
 
@@ -11356,6 +11524,25 @@
         if (selM) selM.value = getTipoMidia();
         var selO = document.getElementById("sel-modo-operacional");
         if (selO) selO.value = getModoOperacional();
+        /* Mobile (offcanvas, pedido 1.123): espelha os mesmos valores encenados */
+        var mM = document.getElementById("nav-cal-modo-text");
+        if (mM) mM.textContent = "Modo Ribbon: " + (getRibbonMode() === "Y" ? "Com (Transferência)" : "Sem (Térmica Direta)");
+        var qM = document.getElementById("nav-cal-qual-text");
+        if (qM) qM.textContent = "Qualidade: " + (getQualityMode() === "bitonal" ? "Preto e Branco (Bitonal)" : "Escala de Cinza");
+        var pM = document.getElementById("nav-cal-papel-text");
+        if (pM) pM.textContent = sz.mmW + " × " + sz.mmH + " mm";
+        var slVM = document.getElementById("nav-velocidade");
+        if (slVM) slVM.value = String(velocAtualValida());
+        var bvM = document.getElementById("nav-veloc-val");
+        if (bvM) bvM.textContent = velocAtualValida();
+        var selMM = document.getElementById("nav-sel-midia");
+        if (selMM) selMM.value = getTipoMidia();
+        var selOM = document.getElementById("nav-sel-modoop");
+        if (selOM) selOM.value = getModoOperacional();
+        var tonM = document.getElementById("nav-tonalidade");
+        if (tonM) tonM.value = String(getTonalidade());
+        var tonVM = document.getElementById("nav-ton-val");
+        if (tonVM) tonVM.textContent = getTonalidade();
         renderPapelOpcoes();
       }
 
@@ -11397,6 +11584,44 @@
       var selModoOp = document.getElementById("sel-modo-operacional");
       if (selModoOp) selModoOp.addEventListener("change", function (e) {
         e.stopPropagation();
+        localStorage.setItem(MODOOP_KEY, this.value);
+      });
+
+      /* Mobile (offcanvas, pedido 1.123): mesmas encenações do submenu —
+         nada é enviado fora do "Calibrar Agora" (calibrarImpressora lê as
+         mesmas chaves/slider de tonalidade) */
+      toggleEncenado("nav-btn-cal-modo", function () {
+        setRibbonMode(getRibbonMode() === "Y" ? "N" : "Y");
+        saveFieldsToSession();
+        renderZPL();
+      });
+      toggleEncenado("nav-btn-cal-qual", function () {
+        var novo = getQualityMode() === "bitonal" ? "grayscale" : "bitonal";
+        var el = document.querySelector('input[name="quality"][value="' + novo + '"]');
+        if (el) el.checked = true;
+        saveFieldsToSession();
+        renderZPL();
+      });
+      var navSlTon = document.getElementById("nav-tonalidade");
+      if (navSlTon) navSlTon.addEventListener("input", function () {
+        var tv = document.getElementById("nav-ton-val");
+        if (tv) tv.textContent = this.value;
+        setTonalidade(this.value);
+        saveFieldsToSession();
+        renderZPL();
+      });
+      var navSlVel = document.getElementById("nav-velocidade");
+      if (navSlVel) navSlVel.addEventListener("input", function () {
+        var bv = document.getElementById("nav-veloc-val");
+        if (bv) bv.textContent = this.value;
+        localStorage.setItem(VEL_KEY, this.value);
+      });
+      var navSelMidia = document.getElementById("nav-sel-midia");
+      if (navSelMidia) navSelMidia.addEventListener("change", function () {
+        localStorage.setItem(MIDIA_KEY, this.value);
+      });
+      var navSelModoOp = document.getElementById("nav-sel-modoop");
+      if (navSelModoOp) navSelModoOp.addEventListener("change", function () {
         localStorage.setItem(MODOOP_KEY, this.value);
       });
       atualizarTextosCalibrarSub();
@@ -11444,13 +11669,60 @@
       atualizarContagemElementos = function (n) { _origContElem(n); sbSet("sb-elem-val", n); };
       sbSet("sb-elem-val", typeof elements !== "undefined" ? elements.length : 0);
 
-      /* Zoom */
-      function sbSyncZoom() { sbSet("sb-zoom-val", Math.round(scaleZoom * 100) + "%"); }
+      /* Zoom — sb-zoom-val (legado) + zoom-val + nav-zoom-val (offcanvas mobile, 1.123) */
+      function sbSyncZoom() {
+        var t = Math.round(scaleZoom * 100) + "%";
+        sbSet("sb-zoom-val", t);
+        sbSet("zoom-val", t);
+        sbSet("nav-zoom-val", t);
+      }
       ["zoom-in", "zoom-out", "zoom-fit", "zoom-reset"].forEach(function (zid) {
         var zb = document.getElementById(zid);
         if (zb) zb.addEventListener("click", sbSyncZoom);
       });
+      /* autoFitCanvas muda o zoom sem passar por botão (resize/orientação):
+         o wrapper mantém os 3 displays em sincronia */
+      var _origAFC = autoFitCanvas;
+      autoFitCanvas = function () { _origAFC(); sbSyncZoom(); };
       sbSyncZoom();
+
+      /* Mobile (offcanvas 1.123): zoom, unidade, margens e limpar —
+         mesmas regras da sb-desktop-bar, sempre por função direta */
+      (function () {
+        function navZoomAcao(fn) {
+          fn();
+          renderStudio();
+          requestAnimationFrame(renderRulerTracks);
+          sbSyncZoom();
+        }
+        var nzIn = document.getElementById("nav-zoom-in");
+        if (nzIn) nzIn.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = Math.min(2.5, scaleZoom + 0.15); }); });
+        var nzOut = document.getElementById("nav-zoom-out");
+        if (nzOut) nzOut.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = Math.max(0.4, scaleZoom - 0.15); }); });
+        var nzFit = document.getElementById("nav-zoom-fit");
+        if (nzFit) nzFit.addEventListener("click", function () { navZoomAcao(function () { autoFitCanvas(); }); });
+        var nzReset = document.getElementById("nav-zoom-reset");
+        if (nzReset) nzReset.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = 1.0; }); });
+        var navSelUn = document.getElementById("nav-select-unidade");
+        if (navSelUn) {
+          navSelUn.value = unidadeAtual;
+          navSelUn.addEventListener("change", function () {
+            unidadeAtual = this.value;
+            var desk = $("select-unidade"); if (desk) desk.value = this.value;
+            updateTamanhoLabel();
+            atualizarExibicaoMargens();
+            renderStudio();
+            saveFieldsToSession();
+          });
+        }
+        var navMarg = document.getElementById("nav-btn-margens");
+        if (navMarg) navMarg.addEventListener("click", function () { if (typeof abrirModalMargens === "function") abrirModalMargens(); });
+        var navLimp = document.getElementById("nav-btn-limpar-canvas");
+        if (navLimp) navLimp.addEventListener("click", function () {
+          var m = $("modal-limpar");
+          if (m) bootstrap.Modal.getOrCreateInstance(m).show();
+        });
+      })();
 
       /* IP / DPI / Tema navbar */
       function sbSyncIpDpi() {
