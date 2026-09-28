@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -566,6 +566,34 @@
     }
     .canvas-el.selected .resize-handle {
       display: block;
+    }
+    /* Touch (mobile): alça de redimensionamento maior para caber sob o dedo */
+    @media (pointer: coarse) {
+      .canvas-el .resize-handle {
+        width: 26px;
+        height: 26px;
+        bottom: -10px;
+        right: -10px;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+    }
+    /* Pinça (mobile): indicador flutuante do tamanho durante o ajuste */
+    .pinch-size-badge {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 14px;
+      z-index: 2100;
+      background: #1e293b;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     /* Borda frame style picker */
     .frame-picker {
@@ -1337,7 +1365,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.004</span>
+      <span class="brand-ver">v1.005</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1606,7 +1634,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.004</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.005</span>
         </div>
       </div>
 
@@ -2875,7 +2903,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.004</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.005</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3213,6 +3241,9 @@
       return "Horizontal";
     }
     var scaleZoom = 1.0;
+    var ZOOM_MAX = 5, ZOOM_MIN = 0.4; /* Pedido 1.139: zoom até 500% */
+    function zoomPassoParaCima() { return scaleZoom >= 2 ? 0.5 : 0.15; }
+    function zoomPassoParaBaixo() { return scaleZoom > 2.05 ? 0.5 : 0.15; }
 
     // Estado dos Elementos na Etiqueta
     var elements = [];
@@ -3836,6 +3867,7 @@
       var esp = Math.max(2, Math.round(H * 0.008));
 
       elements = [];
+      loteZplBlocos = null; /* Pedido 1.140: preset substitui qualquer lote ZPL */
       var disponivelW = W - 2 * m;
 
       if (modeloId === "expedicao") {
@@ -4570,6 +4602,10 @@
         // toque duplo edita. O Editor de Elemento é o card fixo que aparece ao
         // selecionar — nenhum modal interrompe o arraste.
         div.addEventListener("touchstart", function (e) {
+          for (var ti = 0; ti < e.changedTouches.length; ti++) {
+            _idsToqueEmElemento.push(e.changedTouches[ti].identifier);
+          }
+          if (_idsToqueEmElemento.length > 6) _idsToqueEmElemento.splice(0, _idsToqueEmElemento.length - 6);
           if (e.touches.length > 1) return; /* 2º dedo entra no gesto já ativo (pinça) */
           /* Placeholder de imagem precisa do clique normal para abrir o seletor de arquivo */
           if (el.tipo === "imagem" && !el.dataUrl) return;
@@ -4929,6 +4965,16 @@
     /* ---------------- Movimentação E Redimensionamento (Ctrl + Drag / Touch) ---------------- */
     /* Toque (mobile): normaliza mouse↔touch para um único sistema de arraste */
     var _ultimoToqueEl = null, _ultimoToqueT = 0; /* detector de toque duplo */
+    var _idsToqueEmElemento = []; /* ids dos toques que nasceram no editor (pinça de 2 dedos) */
+    (function () {
+      var swPinch = document.getElementById("stage-wrap");
+      if (swPinch) swPinch.addEventListener("touchstart", function (e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          _idsToqueEmElemento.push(e.changedTouches[i].identifier);
+        }
+        if (_idsToqueEmElemento.length > 6) _idsToqueEmElemento.splice(0, _idsToqueEmElemento.length - 6);
+      }, { passive: true });
+    })();
     function pontoDeEvento(ev) {
       var t = (ev.touches && ev.touches.length) ? ev.touches[0]
         : (ev.changedTouches && ev.changedTouches.length ? ev.changedTouches[0] : null);
@@ -5005,25 +5051,74 @@
       var isResizeHandle = e.target.classList.contains("resize-handle");
 
       /* ----- Pinça (mobile): 2 dedos expandem/contrai o elemento ----- */
-      var pinchBase = null; /* { dist, w, h, fonte } capturados no início da pinça */
+      var pinchBase = null; /* { dist, itens: [{ x, y, w, h, fonte }] } capturados no início da pinça */
+      var pinchBadge = null; /* indicador flutuante do tamanho durante a pinça */
       function distanciaPinch(te) {
         var dxP = te.touches[0].clientX - te.touches[1].clientX;
         var dyP = te.touches[0].clientY - te.touches[1].clientY;
         return Math.sqrt(dxP * dxP + dyP * dyP);
       }
+      function toqueInicioNoEditor(te) {
+        /* Só vira pinça se os 2 toques nasceram no editor (elemento ou stage):
+           um toque acidental fora dele (borda da mão) não arremessa o elemento. */
+        var n = 0;
+        for (var i = 0; i < te.touches.length; i++) {
+          if (_idsToqueEmElemento.indexOf(te.touches[i].identifier) !== -1) n++;
+        }
+        return n >= 2;
+      }
       function aplicarPinch(item, base, fator) {
         var elP = item.el;
         if (elP.tipo === "texto" || elP.tipo === "sub" || elP.tipo === "nome" || elP.tipo === "serie") {
           elP.fonte = Math.max(10, Math.min(300, Math.round((base.fonte || 30) * fator)));
-        } else if (elP.tipo === "qr") {
-          var sQ = Math.max(40, Math.min(Math.round((base.w || 200) * fator), maxX - elP.x, maxY - elP.y));
-          elP.w = sQ;
-          elP.h = sQ;
+          return;
+        }
+        /* Tamanho em passos de 1mm (estável sob os dedos, sem tremor sub-mm)
+           e âncora no CENTRO: cresce/encolhe sob os dedos em vez de "fugir"
+           para a direita/baixo, e o clamp usa o espaço dos dois lados. */
+        var passo = mmToDots(1);
+        var q = function (v) { return Math.round(v / passo) * passo; };
+        var cx = base.x + (base.w || 100) / 2;
+        var cy = base.y + (base.h || 50) / 2;
+        var novoW, novoH;
+        if (elP.tipo === "qr") {
+          novoW = novoH = Math.max(40, q((base.w || 200) * fator));
         } else if (elP.tipo === "linha") {
-          elP.w = Math.max(20, Math.min(Math.round((base.w || 100) * fator), maxX - elP.x));
+          novoW = Math.max(20, q((base.w || 100) * fator));
+          novoH = base.h || 3; /* espessura da linha não escala na pinça */
         } else {
-          elP.w = Math.max(20, Math.min(Math.round((base.w || 100) * fator), maxX - elP.x));
-          elP.h = Math.max(4, Math.min(Math.round((base.h || 50) * fator), maxY - elP.y));
+          novoW = Math.max(20, q((base.w || 100) * fator));
+          novoH = Math.max(4, q((base.h || 50) * fator));
+        }
+        var swapP = (elP.rotacao === 90 || elP.rotacao === 270);
+        novoW = Math.min(novoW, swapP ? (maxY - minY) : (maxX - minX));
+        novoH = Math.min(novoH, swapP ? (maxX - minX) : (maxY - minY));
+        var visW = swapP ? novoH : novoW;
+        var visH = swapP ? novoW : novoH;
+        elP.w = novoW;
+        elP.h = novoH;
+        elP.x = Math.max(minX, Math.min(Math.round(cx - visW / 2), maxX - visW));
+        elP.y = Math.max(minY, Math.min(Math.round(cy - visH / 2), maxY - visH));
+      }
+      function mostrarBadgePinch() {
+        if (!pinchBadge) {
+          pinchBadge = document.createElement("div");
+          pinchBadge.className = "pinch-size-badge";
+          document.body.appendChild(pinchBadge);
+        }
+        if (targetElements.length > 1) {
+          pinchBadge.textContent = targetElements.length + " elementos";
+          return;
+        }
+        var elB = targetElements[0].el;
+        if (elB.tipo === "texto" || elB.tipo === "sub" || elB.tipo === "nome" || elB.tipo === "serie") {
+          pinchBadge.textContent = "Fonte: " + (elB.fonte || 30) + " pts";
+        } else if (elB.tipo === "linha") {
+          pinchBadge.textContent = "Comprimento: " + dotsToMm(elB.w || 100) + " mm";
+        } else if (elB.tipo === "qr") {
+          pinchBadge.textContent = dotsToMm(elB.w || 200) + " × " + dotsToMm(elB.h || 200) + " mm";
+        } else {
+          pinchBadge.textContent = "L " + dotsToMm(elB.w || 100) + " mm · A " + dotsToMm(elB.h || 50) + " mm";
         }
       }
 
@@ -5167,37 +5262,38 @@
          escalam w/h, sempre limitados pela etiqueta). */
       function onTouchMove(te) {
         te.preventDefault();
-        if (te.touches.length === 2 && targetElements.length) {
-          var itemP = targetElements[0];
-          var dist = distanciaPinch(te);
-          if (!pinchBase) {
-            pinchBase = { dist: dist, w: itemP.el.w || 100, h: itemP.el.h || 50, fonte: itemP.el.fonte || 30 };
+        if (pinchBase) {
+          if (te.touches.length === 1) {
+            /* Um dedo saiu da pinça: conclui o ajuste NA HORA. O dedo que
+               sobrou NÃO arrasta o elemento — era assim que a posição era
+               perdida no meio do ajuste. */
+            finalizarGesto();
+            return;
           }
+          if (te.touches.length !== 2) return; /* 3+ toques (borda da mão): ignora */
+          var dist = distanciaPinch(te);
+          if (dist < 12) return; /* dedos quase colados: ruído de sensor */
           houveAlteracao = true;
           var fator = Math.max(0.2, Math.min(4, dist / pinchBase.dist));
-          targetElements.forEach(function (itP) {
-            aplicarPinch(itP, pinchBase, fator);
+          targetElements.forEach(function (itP, idxP) {
+            aplicarPinch(itP, pinchBase.itens[idxP], fator);
           });
+          mostrarBadgePinch();
           scheduleRenderPreview();
           return;
         }
-        if (pinchBase && te.touches.length === 1) {
-          /* Saiu da pinça com um dedo ainda pousado: reancora o arraste
-             na posição atual para o elemento não "pular". */
-          pinchBase = null;
-          var pR = pontoDeEvento(te);
-          startX = pR.x;
-          startY = pR.y;
-          targetElements.forEach(function (itR) {
-            itR.origX = itR.el.x;
-            itR.origY = itR.el.y;
-            itR.origW = itR.el.w || 100;
-            itR.origH = itR.el.h || 50;
-            itR.origFonte = itR.el.fonte || 30;
-            itR.origRot = itR.el.rotacao || 0;
-          });
+        if (te.touches.length === 2 && targetElements.length && toqueInicioNoEditor(te)) {
+          var dist2 = distanciaPinch(te);
+          if (dist2 < 30) return; /* dedos muito juntos: espera abrir para não amplificar tremor */
+          pinchBase = {
+            dist: dist2,
+            itens: targetElements.map(function (itP) {
+              return { x: itP.el.x, y: itP.el.y, w: itP.el.w || 100, h: itP.el.h || 50, fonte: itP.el.fonte || 30 };
+            })
+          };
           return;
         }
+        if (te.touches.length > 2) return; /* sem pinça ativa e 3+ toques: ignora (evita salto) */
         aplicarMovimento(pontoDeEvento(te), te);
       }
 
@@ -5209,6 +5305,8 @@
         window.removeEventListener("touchend", onTouchEnd);
         window.removeEventListener("touchcancel", onTouchEnd);
         pinchBase = null;
+        _idsToqueEmElemento.length = 0;
+        if (pinchBadge) { pinchBadge.remove(); pinchBadge = null; }
         /* Clique simples/duplo clique (sem alteração): não reconstrói o DOM e
             não gravam passos fantasmas no histórico — reconstruir aqui quebrava
             o dblclick da edição in-loco. */
@@ -7196,7 +7294,14 @@
     function renderZPL() {
       var code = gerarZPLBloco(elements, tamAtualKey, rotAtual);
       if (!isEditingZpl && $("zpl")) {
-        $("zpl").value = code;
+        if (loteZplBlocos && loteZplBlocos.length >= 2) {
+          /* Pedido 1.140: com lote ZPL ativo, o campo mostra TODAS as
+             etiquetas (a página atual reflete os edits do usuário). */
+          var loteZ = loteZplGerarZpl();
+          if (loteZ) $("zpl").value = loteZ;
+        } else {
+          $("zpl").value = code;
+        }
       }
       return code;
     }
@@ -7377,6 +7482,68 @@
       });
 
       return { tamanho: detectedTam, elements: newElements };
+    }
+
+    /* ---------------- Pedido 1.140: LOTE A PARTIR DE ARQUIVO ZPL MULTI-BLOCO ----------------
+       O "Download ZPL" de um lote salva um arquivo com N blocos ^XA..^XZ (um por
+       etiqueta). O importador antigo juntava TODOS os blocos numa única etiqueta.
+       Agora cada bloco vira uma página do lote: a 1ª abre no Estúdio, a barra de
+       status navega entre elas e Imprimir/Download enviam todas de volta. */
+    function extrairBlocosZPL(zpl) {
+      var m = String(zpl || "").match(/\^XA[\s\S]*?\^XZ/g) || [];
+      return m.map(function (s) { return s.trim(); });
+    }
+    function loteZplSincronizarPaginaAtual() {
+      /* Edits feitos na página atual (mover, redimensionar, trocar texto)
+         voltam para o bloco correspondente antes de trocar de página/gerar. */
+      if (loteZplBlocos && loteZplBlocos[lotePaginaAtual]) {
+        loteZplBlocos[lotePaginaAtual] = JSON.parse(JSON.stringify(elements));
+      }
+    }
+    function loteZplGerarZpl() {
+      if (!loteZplBlocos || !loteZplBlocos.length) return null;
+      loteZplSincronizarPaginaAtual();
+      var blocos = [];
+      loteZplBlocos.forEach(function (els) {
+        var b = els.length ? gerarZPLBloco(els, tamAtualKey, rotAtual) : null;
+        if (b) blocos.push(b);
+      });
+      return blocos.length ? blocos.join("\n\n") : null;
+    }
+    function limparLoteZpl() {
+      if (loteZplBlocos) {
+        loteZplBlocos = null;
+        atualizarBarraStatusLote();
+        atualizarNavLote();
+      }
+    }
+    /* Importa ZPL com 2+ blocos ^XA..^XZ como lote navegável.
+       Retorna true quando assumiu o controle; false segue o fluxo antigo. */
+    function importarZplMultiBlocos(zpl) {
+      var blocos = extrairBlocosZPL(zpl);
+      if (blocos.length < 2) return false;
+      var parsed0 = parseZPLToElements(blocos[0]);
+      if (!parsed0 || !parsed0.elements.length) return false;
+      if (parsed0.tamanho && SIZES[parsed0.tamanho]) {
+        tamAtualKey = parsed0.tamanho;
+        if ($("tamanho")) $("tamanho").value = tamAtualKey;
+      }
+      loteZplBlocos = blocos.map(function (b) {
+        var p = parseZPLToElements(b);
+        return (p && p.elements.length) ? p.elements : [];
+      });
+      elements = JSON.parse(JSON.stringify(loteZplBlocos[0]));
+      selectedElId = null;
+      selectedElIds = [];
+      lotePaginaAtual = 0;
+      loteEspecialAtivo = false;
+      loteEspecialBindings = null;
+      renderStudio();
+      salvarHistorico();
+      atualizarBarraStatusLote();
+      atualizarNavLote();
+      notify(loteZplBlocos.length + " etiquetas importadas do ZPL (uma por bloco ^XA). A 1ª está no Estúdio — use ‹ › na barra de status para navegar. Imprimir e Download ZPL usam todas.", "success");
+      return true;
     }
 
     /* ---------------- ELEMENTOS, POSIÇÕES E CAMPOS COM CACHE DE 24H (COM EXPIRAÇÃO E RENOVAÇÃO) ---------------- */
@@ -7632,6 +7799,7 @@
       selectedElIds = [];
       loteEspecialAtivo = false;
       loteEspecialBindings = null;
+      loteZplBlocos = null; /* Pedido 1.140 */
       etiquetasMulti = []; /* Pedido 1.102: "Novo" zera as views do projeto também */
       renderSeletorEtiquetasMulti();
       importDados = { colunas: [], linhas: [] };
@@ -7848,9 +8016,13 @@
        do lote/importação — exatamente o que a impressora recebe. */
     function salvarLoteBin() {
       var zplLote = null;
-      var multi = gerarZPLTodasLinhas();
-      if (multi && multi.zpl) zplLote = multi.zpl;
-      else if (loteEspecialAtivo && $("zpl") && $("zpl").value.indexOf("^XA") !== -1) zplLote = $("zpl").value;
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        zplLote = loteZplGerarZpl(); /* Pedido 1.140: lote vindo de ZPL */
+      } else {
+        var multi = gerarZPLTodasLinhas();
+        if (multi && multi.zpl) zplLote = multi.zpl;
+        else if (loteEspecialAtivo && $("zpl") && $("zpl").value.indexOf("^XA") !== -1) zplLote = $("zpl").value;
+      }
       if (!zplLote) { notify("Nada para salvar — gere o lote ou importe os dados primeiro.", "warning"); return; }
       var fileBase = sanitizarFilename(getModelName() || "lote-etiquetas");
       var blob = new Blob([zplLote], { type: "application/octet-stream" });
@@ -7887,6 +8059,7 @@
       exportarModeloBin(t);
     });
     function aplicarModeloBin(m, nome) {
+      loteZplBlocos = null; /* Pedido 1.140: modelo .bin substitui qualquer lote ZPL */
       var tmpls = getSavedTemplates();
       tmpls[nome] = {
         name: nome,
@@ -7958,6 +8131,7 @@
         selectedElId = null;
         selectedElIds = [];
         loteEspecialAtivo = false;
+        loteZplBlocos = null; /* Pedido 1.140 */
         loteEspecialBindings = null;
         renderStudio();
         renderSeletorEtiquetasMulti();
@@ -8015,6 +8189,7 @@
         /* ZPL clássico (comandos .bin) */
         $("tmpl-name-input").value = file.name.replace(/\.[^/.]+$/, "");
         $("zpl").value = conteudo;
+        if (importarZplMultiBlocos(conteudo)) return; /* Pedido 1.140: lote .bin/ZPL multi-bloco */
         var parsed = parseZPLToElements(conteudo);
         if (parsed && parsed.elements.length > 0) {
           tamAtualKey = parsed.tamanho;
@@ -8355,6 +8530,7 @@
 
     /* ---------------- Barra de Status: total de etiquetas a gerar ---------------- */
     var loteEspecialAtivo = false; /* só acende quando o usuário realmente usa o lote/import */
+    var loteZplBlocos = null; /* Pedido 1.140: lote vindo de arquivo ZPL multi-bloco — um array de elementos por bloco ^XA..^XZ */
     var loteEspecialBindings = null; /* Pedido 1.101: combinações do Lote Especial gerado — alimentam a paginação unificada */
     function atualizarBarraStatusLote() {
       var barra = $("status-bar-lote");
@@ -8366,7 +8542,11 @@
       var origem = "etiqueta atual";
       var temLoteImport = false;
 
-      if (loteEspecialAtivo && batchSpecialTree && batchSpecialTree.length) {
+      if (loteZplBlocos && loteZplBlocos.length) {
+        total = loteZplBlocos.length;
+        origem = "lote ZPL importado";
+        temLoteImport = true;
+      } else if (loteEspecialAtivo && batchSpecialTree && batchSpecialTree.length) {
         var combos = gerarCombinacoesComBinding(batchSpecialTree);
         total = combos ? combos.length : 0;
         origem = "etiqueta em lote";
@@ -8400,7 +8580,9 @@
       var zplBase = null;
       var multi = gerarZPLTodasLinhas();
       var zplAtual = $("zpl") ? $("zpl").value : "";
-      if (multi) {
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        zplBase = loteZplGerarZpl(); /* Pedido 1.140: lote ZPL importado */
+      } else if (multi) {
         zplBase = multi.zpl; /* importação ativa: 1ª linha */
       } else if (loteEspecialAtivo && zplAtual.indexOf("^XA") !== -1 &&
                  (zplAtual.indexOf("^SN") !== -1 || zplAtual.split("^XA").length - 1 > 1)) {
@@ -9427,6 +9609,19 @@
       aplicarStepMapEmArray(elements, stepMap);
     }
     function loteNavegarPara(idx) {
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        /* Pedido 1.140: lote vindo de arquivo ZPL — cada página é o
+           conjunto de elementos de um bloco ^XA..^XZ. */
+        var iZ = Math.max(0, Math.min(loteZplBlocos.length - 1, idx));
+        loteZplSincronizarPaginaAtual();
+        elements = JSON.parse(JSON.stringify(loteZplBlocos[iZ]));
+        selectedElId = null;
+        selectedElIds = [];
+        lotePaginaAtual = iZ;
+        renderStudio();
+        atualizarNavLote();
+        return;
+      }
       if (ehLoteEspecialNavegavel()) {
         var total = loteEspecialBindings.length;
         var i = Math.max(0, Math.min(total - 1, idx));
@@ -9446,7 +9641,10 @@
       if (!nav) return;
       var total = 0;
       var ativo = false;
-      if (ehLoteEspecialNavegavel()) {
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        total = loteZplBlocos.length;
+        ativo = true;
+      } else if (ehLoteEspecialNavegavel()) {
         total = loteEspecialBindings.length;
         ativo = total >= 2;
       } else {
@@ -9570,6 +9768,7 @@
         if (modalImp) modalImp.hide();
         loteEspecialAtivo = false;
         loteEspecialBindings = null;
+        loteZplBlocos = null; /* Pedido 1.140: lote de CSV assume o lugar do lote ZPL */
         $("zpl").value = r.zpl;
         atualizarBarraStatusLote();
         notify(r.total + " etiquetas geradas (uma por linha). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
@@ -9674,6 +9873,7 @@
       $("btn-batch-special-generate").addEventListener("click", function () {
         if (!elements.length && !garantirEtiquetaLoteEspecial()) return;
         loteEspecialAtivo = true;
+        loteZplBlocos = null; /* Pedido 1.140: lote especial assume o lugar do lote ZPL */
 
         var stepBindings = gerarCombinacoesComBinding(batchSpecialTree);
         if (!stepBindings || stepBindings.length === 0) {
@@ -9819,6 +10019,7 @@
           if (data.printerIp) localStorage.setItem(CHAVE_IP, data.printerIp);
           if (data.margens) margens = Object.assign({}, data.margens);
           if (data.elements && Array.isArray(data.elements)) elements = data.elements;
+          loteZplBlocos = null; /* Pedido 1.140: .VIP substitui qualquer lote ZPL */
           if (data.batchSpecialTree && Array.isArray(data.batchSpecialTree)) {
             batchSpecialTree = data.batchSpecialTree;
             loteEspecialAtivo = (data.loteEspecialAtivo !== undefined) ? !!data.loteEspecialAtivo : true; /* .VIP antigo (sem o flag) mantém o comportamento de ativar */
@@ -10677,7 +10878,12 @@
          etiquetas do lote — regeneradas da etiqueta atual + combinações —
          em vez de imprimir apenas a etiqueta corrente do Estúdio. */
       var zpl;
-      if (ehLoteEspecialNavegavel()) {
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        /* Pedido 1.140: lote importado de arquivo ZPL — imprime TODAS as
+           etiquetas (uma por bloco), com os edits da página atual aplicados. */
+        zpl = loteZplGerarZpl() || baseZpl;
+        if (!isEditingZpl) $("zpl").value = zpl;
+      } else if (ehLoteEspecialNavegavel()) {
         var blocosLote = [];
         loteEspecialBindings.forEach(function (stepMap) {
           var cloneLote = elements.map(function (el) { return Object.assign({}, el); });
@@ -11082,6 +11288,7 @@
         selectedElId = null;
         loteEspecialAtivo = false;
         loteEspecialBindings = null;
+        loteZplBlocos = null; /* Pedido 1.140 */
         renderStudio();
         atualizarBarraStatusLote();
         if (bsModalLimpar) bsModalLimpar.hide();
@@ -11167,6 +11374,8 @@
         zplDebounceTimer = setTimeout(function () {
           var val = zplInputEl.value;
           if (val.trim()) {
+            if (importarZplMultiBlocos(val)) { isEditingZpl = false; return; } /* Pedido 1.140: multi-bloco = lote */
+            limparLoteZpl(); /* texto simples: qualquer lote ZPL antigo deixa de valer */
             var parsed = parseZPLToElements(val);
             if (parsed.elements && parsed.elements.length > 0) {
               elements = parsed.elements;
@@ -11190,7 +11399,7 @@
 
     // Download ZPL File
     function baixarZPLArquivo() {
-      var code = $("zpl").value;
+      var code = (loteZplBlocos && loteZplBlocos.length >= 2) ? (loteZplGerarZpl() || $("zpl").value) : $("zpl").value;
       if (!code) return;
       var name = getModelName() || "etiqueta-zebra";
       var fileBase = sanitizarFilename(name);
@@ -11211,7 +11420,11 @@
         if (!arq) return;
         var leitor = new FileReader();
         leitor.onload = function () {
-          $("zpl").value = String(leitor.result || "");
+          var conteudo = String(leitor.result || "");
+          /* Pedido 1.140: ZPL com vários blocos ^XA..^XZ entra como LOTE
+             navegável — antes, todas as etiquetas viravam uma só. */
+          if (importarZplMultiBlocos(conteudo)) return;
+          $("zpl").value = conteudo;
           $("zpl").dispatchEvent(new Event("input"));
           notify("Arquivo ZPL carregado: " + arq.name, "success");
         };
@@ -11367,15 +11580,20 @@
         var scaleW = stageW / labelPxW;
         var scaleH = stageH / labelPxH;
         scaleZoom = Math.min(scaleW, scaleH);
-        scaleZoom = Math.max(0.4, Math.min(2.5, Math.round(scaleZoom * 100) / 100));
+        scaleZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.round(scaleZoom * 100) / 100));
         $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%";
       }
     }
 
     /* Mobile: a etiqueta começa sempre ajustada (fit) à largura da tela — sem
-       necessidade de arrasto lateral dentro do painel do canvas. */
+       necessidade de arrasto lateral dentro do painel do canvas. O zoom
+       ESCOLHIDO pelo usuário é preservado: rolar a página só esconde/mostra
+       a barra de endereço do navegador (resize de ALTURA) e não pode derrubar
+       o ajuste — reajusta apenas quando a LARGURA muda de verdade (rotação,
+       split-screen). (Pedido 1.139) */
     (function () {
       var mqMob = window.matchMedia("(max-width: 991.98px)");
+      var ultLargMobile = window.innerWidth;
       function ajustarZoomMobile() {
         if (!mqMob.matches) return;
         /* Edição de texto in-loco ativa: o teclado virtual dispara resize ao
@@ -11385,14 +11603,24 @@
         renderStudio();
         requestAnimationFrame(renderRulerTracks);
       }
-      window.addEventListener("resize", ajustarZoomMobile);
+      function aoRedimensionarMobile() {
+        if (!mqMob.matches) return;
+        if (document.querySelector(".edicao-inline-input")) return;
+        var w = window.innerWidth;
+        if (Math.abs(w - ultLargMobile) < 2) return; /* só a barra de endereço mexeu */
+        ultLargMobile = w;
+        autoFitCanvas();
+        renderStudio();
+        requestAnimationFrame(renderRulerTracks);
+      }
+      window.addEventListener("resize", aoRedimensionarMobile);
       window.addEventListener("orientationchange", ajustarZoomMobile);
       ajustarZoomMobile();
     })();
 
     // Zoom Controls
-    $("zoom-in").addEventListener("click", function () { scaleZoom = Math.min(2.5, scaleZoom + 0.15); renderStudio(); $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%"; requestAnimationFrame(renderRulerTracks); });
-    $("zoom-out").addEventListener("click", function () { scaleZoom = Math.max(0.4, scaleZoom - 0.15); renderStudio(); $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%"; requestAnimationFrame(renderRulerTracks); });
+    $("zoom-in").addEventListener("click", function () { scaleZoom = Math.min(ZOOM_MAX, scaleZoom + zoomPassoParaCima()); renderStudio(); $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%"; requestAnimationFrame(renderRulerTracks); });
+    $("zoom-out").addEventListener("click", function () { scaleZoom = Math.max(ZOOM_MIN, scaleZoom - zoomPassoParaBaixo()); renderStudio(); $("zoom-val").textContent = Math.round(scaleZoom * 100) + "%"; requestAnimationFrame(renderRulerTracks); });
     $("zoom-fit").addEventListener("click", function () { autoFitCanvas(); renderStudio(); requestAnimationFrame(renderRulerTracks); });
     $("zoom-reset").addEventListener("click", function () { scaleZoom = 1.0; renderStudio(); $("zoom-val").textContent = "100%"; requestAnimationFrame(renderRulerTracks); });
 
@@ -11493,11 +11721,15 @@
       notify("Tamanho personalizado " + wMm + "×" + hMm + " mm criado!", "success");
     });
 
-    // Window Resize Auto-Fit & Ruler Track Update
+    // Window Resize: só atualiza as réguas — NÃO mais auto-fit (Pedido 1.139).
+    // Auto-fit no resize derrubava o zoom escolhido pelo usuário: no mobile a
+    // barra de endereço dispara resize ao rolar a página, e no desktop o zoom
+    // alto faz nascer uma scrollbar que disparava resize em cascata e refazia
+    // o ajuste. Refit continua nos botões Ajustar/100% e, no mobile, em
+    // mudanças reais de largura (rotação/split-screen).
     window.addEventListener("resize", function () {
       if (document.querySelector(".edicao-inline-input")) return;
-      autoFitCanvas();
-      renderStudio();
+      requestAnimationFrame(renderRulerTracks);
     });
 
     var canvasAreaEl = $("stage-canvas-area");
@@ -12401,9 +12633,9 @@
           sbSyncZoom();
         }
         var nzIn = document.getElementById("nav-zoom-in");
-        if (nzIn) nzIn.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = Math.min(2.5, scaleZoom + 0.15); }); });
+        if (nzIn) nzIn.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = Math.min(ZOOM_MAX, scaleZoom + zoomPassoParaCima()); }); });
         var nzOut = document.getElementById("nav-zoom-out");
-        if (nzOut) nzOut.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = Math.max(0.4, scaleZoom - 0.15); }); });
+        if (nzOut) nzOut.addEventListener("click", function () { navZoomAcao(function () { scaleZoom = Math.max(ZOOM_MIN, scaleZoom - zoomPassoParaBaixo()); }); });
         var nzFit = document.getElementById("nav-zoom-fit");
         if (nzFit) nzFit.addEventListener("click", function () { navZoomAcao(function () { autoFitCanvas(); }); });
         var nzReset = document.getElementById("nav-zoom-reset");
@@ -12471,7 +12703,9 @@
         atualizarRotuloOrientacao();
       });
       function sbZoomPasso(delta) {
-        scaleZoom = Math.max(0.4, Math.min(2.5, scaleZoom + delta));
+        if (delta > 0 && scaleZoom >= 2) delta = 0.5;
+        if (delta < 0 && scaleZoom > 2.05) delta = -0.5;
+        scaleZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, scaleZoom + delta));
         renderStudio();
         var zv = document.getElementById("zoom-val");
         if (zv) zv.textContent = Math.round(scaleZoom * 100) + "%";
@@ -13044,7 +13278,7 @@
                   <ul class="small text-muted mb-0 ps-3">
                     <li><strong>Segurar e arrastar</strong> — move o elemento.</li>
                     <li><strong>Alça do canto</strong> — arraste para redimensionar.</li>
-                    <li><strong>Dois dedos</strong> — pinça aumenta/diminui: texto muda a fonte, QR e formas mudam de tamanho.</li>
+                    <li><strong>Dois dedos</strong> — pinça aumenta/diminui: texto muda a fonte, QR e formas mudam de tamanho. O elemento cresce pelo centro em passos de 1mm, com o tamanho atual aparecendo em um indicador no topo da tela; ao levantar um dos dedos o ajuste é concluído na hora — o elemento nunca se move sozinho no meio da pinça.</li>
                     <li><strong>Toque longo</strong> — abre o Editor de Elemento em tela cheia, com campos grandes para digitar.</li>
                     <li><strong>Toque duplo</strong> — edita o texto ali mesmo; tocar fora salva.</li>
                   </ul>
