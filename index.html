@@ -1365,7 +1365,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.005</span>
+      <span class="brand-ver">v1.006</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1634,7 +1634,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.005</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.006</span>
         </div>
       </div>
 
@@ -2903,7 +2903,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.005</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.006</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3205,7 +3205,7 @@
           <div id="modal-dado-simbologia-bloco" class="mt-3 d-none">
             <label class="form-label small fw-bold" for="modal-dado-simbologia" id="modal-dado-simbologia-label">Fontes 1D</label>
             <select class="form-select form-select-sm" id="modal-dado-simbologia" aria-label="Fonte (simbologia) do código"></select>
-            <p class="small text-muted mt-1 mb-0">A “fonte” é o formato do código. Cada uma aceita um tipo de conteúdo (ex.: EAN-13 pede 12–13 dígitos) — conteúdo inválido mostra um exemplo no preview e a impressora pode recusar. Novas simbologias: valide na impressora real.</p>
+            <p class="small text-muted mt-1 mb-0">A “fonte” é o formato do código. Cada uma aceita um tipo de conteúdo (ex.: EAN-13 pede 12–13 dígitos; GS1 pede os AIs com parênteses: <code>(01)…(17)…</code>; EAN/UPC +2/+5 pede código, espaço e complemento) — conteúdo inválido mostra um exemplo no preview e a impressora pode recusar. Novas simbologias: valide na impressora real.</p>
           </div>
         </div>
         <div class="modal-footer py-2 px-3">
@@ -6657,10 +6657,30 @@
           if (!it.texto || it.texto.trim() === "") return;
           var _qSimbZ = it.simbologia || "qr";
           if (_qSimbZ !== "qr") {
-            /* Pedido 1.120 (fase inicial): 2D sem QR — comando nativo da simbologia
-               (orientação + defaults do firmware; validar na impressora real) */
             var infoQ2dZ = simbologiaInfo(_qSimbZ);
-            if (infoQ2dZ) {
+            if (!infoQ2dZ) return;
+            if (infoQ2dZ.gs1 && (_qSimbZ === "gs1_qr" || _qSimbZ === "gs1_datamatrix")) {
+              /* Pedido 1.141 — GS1 QR / GS1 Data Matrix: FNC1 = 0x1D via ^FH
+                 ("_1D"), AIs crus separados por GS. Prática de campo não
+                 documentada na ZPL II Guide — VERIFICAR na impressora real. */
+              var camposGs1Z = gs1CamposZpl(it.texto);
+              var dadosGs1Z = camposGs1Z ? camposGs1Z.join("_1D") : sanitizar(it.texto);
+              var parsQGs1 = _qSimbZ === "gs1_qr" ? ",2," + Math.max(1, Math.min(10, Math.round(Math.min(it.w || 200, it.h || 200) / 33))) + ",Q" : "";
+              p.push("^FO" + px + "," + py + infoQ2dZ.zpl + rC + parsQGs1 + "^FH^FD_1D" + dadosGs1Z + "^FS");
+            } else if (_qSimbZ === "gs1_databar") {
+              /* Pedido 1.141 — ^BR tipo 1 (DataBar Omnidirectional). Formato do
+                 ^FD não documentado na ZPL II Guide: saem AIs crus sem
+                 parênteses. VERIFICAR na impressora real. */
+              var camposDbZ = gs1CamposZpl(it.texto);
+              var dadosDbZ = camposDbZ ? camposDbZ.join("") : sanitizar(it.texto);
+              p.push("^FO" + px + "," + py + "^BY" + Math.max(2, Math.min(10, Math.round((it.w || 200) / 100))) + "^BR" + rC + ",1," + Math.max(1, Math.min(10, Math.round((it.w || 200) / 96))) + ",1^FD" + dadosDbZ + "^FS");
+            } else if (!infoQ2dZ.zpl) {
+              /* Pedido 1.141 — Micro QR: sem comando nativo (^BQ só tem modelos
+                 1/2) → fallback gráfico ^GFA no tamanho da caixa. */
+              if (gerarGfaSimbologia(it)) p.push("^FO" + px + "," + py + gfaRotacaoElemento(it, rot) + "^FS");
+            } else {
+              /* Pedido 1.120 (fase inicial): 2D sem QR — comando nativo da simbologia
+                 (orientação + defaults do firmware; validar na impressora real) */
               p.push("^FO" + px + "," + py + infoQ2dZ.zpl + rC + "^FD" + sanitizar(it.texto) + "^FS");
             }
           } else {
@@ -6688,10 +6708,22 @@
           var bcH = Math.round(it.h || 80);
           var modW = Math.max(1, Math.min(10, Math.round((it.w || 300) / 120)));
           var info1dZ = simbologiaInfo(it.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
-          /* nº de parâmetros após a orientação: ^BC/^B3/^BA/^BU/^BM/^BK levam
-             altura,linha,acima,check; ^BE/^B8/^B2 levam altura,linha,acima */
-          var pars1dZ = "," + bcH + ",Y,N" + (info1dZ.n !== 4 ? ",N" : "");
-          p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + pars1dZ + "^FD" + sanitizar(it.texto) + "^FS");
+          if (info1dZ.chave === "gs1_128") {
+            /* Pedido 1.141 — ^BC modo D (UCC/EAN, GS1-128): a impressora insere
+               o FNC1, calcula o check digit, tira os parênteses da codificação
+               e os mantém no human-readable. Documentado na ZPL II Guide. */
+            p.push("^FO" + px + "," + py + "^BY" + modW + "^BC" + rC + "," + bcH + ",Y,N,N,D^FD" + sanitizar(it.texto) + "^FS");
+          } else if (!info1dZ.zpl) {
+            /* Pedido 1.141 — add-ons EAN/UPC +2/+5: a ZPL II não tem comando
+               para o suplemento (^BE não tem parâmetro de add-on — confirmado
+               na ZPL II Guide) → fallback gráfico ^GFA do compósito inteiro. */
+            if (gerarGfaSimbologia(it)) p.push("^FO" + px + "," + py + gfaRotacaoElemento(it, rot) + "^FS");
+          } else {
+            /* nº de parâmetros após a orientação: ^BC/^B3/^BA/^BU/^BM/^BK levam
+               altura,linha,acima,check; ^BE/^B8/^B2 levam altura,linha,acima */
+            var pars1dZ = "," + bcH + ",Y,N" + (info1dZ.n !== 4 ? ",N" : "");
+            p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + pars1dZ + "^FD" + sanitizar(it.texto) + "^FS");
+          }
         } else if (it.tipo === "linha") {
           var esp = Math.round(it.espessura || it.h || 3);
           var lW = Math.round((prot === 90 || prot === 270) ? esp : (it.w || dispW));
@@ -6784,10 +6816,14 @@
        Cada entrada liga o rótulo que o usuário vê ao formato JsBarcode (1D), ao
        encoder bwip-js (Code 93 e 2D sem QR), ao comando ZPL nativo (com nº de
        parâmetros após a orientação), e a um conteúdo-exemplo usado quando o
-       texto é inválido para o formato. Simbologias marcadas VERIFICAR/SEM
-       SUPORTE no plano (GS1, add-ons, Micro QR, DataBar, Code-39 full ASCII,
-       Plessey etc.) ficam para as próximas fases — nada inventado aqui.
-       Elementos antigos sem el.simbologia = code128/qr (padrão, retrocompatível). */
+       texto é inválido para o formato. Elementos antigos sem el.simbologia =
+       code128/qr (padrão, retrocompatível).
+       Pedido 1.141 (fase final do plano 1.120): GS1-128 nativo (^BC modo D —
+       parens viram human-readable, FNC1 e check digit automáticos), add-ons
+       EAN/UPC +2/+5 e Micro QR via fallback gráfico ^GFA (a ZPL II não tem
+       comando para suplemento nem Micro QR — confirmado na ZPL II Programming
+       Guide), GS1 QR/GS1 Data Matrix via ^FH+_1D (FNC1 = 0x1D — prática de
+       campo, VERIFICAR na impressora) e GS1 DataBar nativo ^BR tipo 1. */
     var CATALOGO_SIMBOLOGIAS = {
       "1d": [
         { chave: "code128",  rotulo: "Code 128 (padrão)", jsbarcode: "CODE128",  zpl: "^BC", n: 5, demo: "12345678" },
@@ -6797,20 +6833,31 @@
         { chave: "code39",   rotulo: "Code 39",           jsbarcode: "CODE39",   zpl: "^B3", n: 5, demo: "ABC-1234" },
         { chave: "code93",   rotulo: "Code 93",           bwip: "code93",       zpl: "^BA", n: 5, demo: "ABC1234" },
         { chave: "ean13",    rotulo: "EAN-13",            jsbarcode: "EAN13",    zpl: "^BE", n: 4, demo: "5901234123457" },
+        { chave: "ean13_2",  rotulo: "EAN-13 + 2",        bwip: "ean13",  zpl: null, n: 0, demo: "5901234123457 12" },
+        { chave: "ean13_5",  rotulo: "EAN-13 + 5",        bwip: "ean13",  zpl: null, n: 0, demo: "5901234123457 51234" },
         { chave: "ean8",     rotulo: "EAN-8",             jsbarcode: "EAN8",     zpl: "^B8", n: 4, demo: "96385074" },
+        { chave: "ean8_2",   rotulo: "EAN-8 + 2",         bwip: "ean8",   zpl: null, n: 0, demo: "96385074 12" },
+        { chave: "ean8_5",   rotulo: "EAN-8 + 5",         bwip: "ean8",   zpl: null, n: 0, demo: "96385074 51234" },
         { chave: "upca",     rotulo: "UPC-A",             jsbarcode: "UPC",      zpl: "^BU", n: 5, demo: "036000291452" },
+        { chave: "upca_2",   rotulo: "UPC-A + 2",         bwip: "upca",   zpl: null, n: 0, demo: "036000291452 12" },
+        { chave: "upca_5",   rotulo: "UPC-A + 5",         bwip: "upca",   zpl: null, n: 0, demo: "036000291452 51234" },
         { chave: "itf",      rotulo: "Entrelaçamento 2 de 5", jsbarcode: "ITF",  zpl: "^B2", n: 4, demo: "12345670" },
         { chave: "itf14",    rotulo: "ITF-14",            jsbarcode: "ITF14",    zpl: "^B2", n: 4, demo: "1234567890123" },
         { chave: "msi",      rotulo: "MSI",               jsbarcode: "MSI",      zpl: "^BM", n: 5, demo: "12345678" },
-        { chave: "codabar",  rotulo: "Codabar",           jsbarcode: "codabar",  zpl: "^BK", n: 5, demo: "A123456A" }
+        { chave: "codabar",  rotulo: "Codabar",           jsbarcode: "codabar",  zpl: "^BK", n: 5, demo: "A123456A" },
+        { chave: "gs1_128",  rotulo: "GS1-128",           bwip: "gs1-128", zpl: "^BC", n: 6, gs1: true, demo: "(01)09506000134306(17)010615" }
       ],
       "2d": [
         { chave: "qr",         rotulo: "QR Code (padrão)", zpl: "^BQ" },
         { chave: "datamatrix", rotulo: "Data Matrix",   bwip: "datamatrix",  zpl: "^BX" },
         { chave: "pdf417",     rotulo: "PDF-417",       bwip: "pdf417",      zpl: "^B7" },
-        { chave: "micropdf",   rotulo: "MicroPDF",      bwip: "micropdf417", zpl: "^BF" },
+        { chave: "micropdf",   rotulo: "MicroPDF",       bwip: "micropdf417", zpl: "^BF" },
         { chave: "aztec",      rotulo: "Aztec",         bwip: "azteccode",   zpl: "^B0" },
-        { chave: "maxicode",   rotulo: "MaxiCode",      bwip: "maxicode",    zpl: "^BD" }
+        { chave: "maxicode",   rotulo: "MaxiCode",      bwip: "maxicode",    zpl: "^BD" },
+        { chave: "microqr",    rotulo: "Micro QR",      bwip: "microqrcode", zpl: null, demo: "MICRO-123" },
+        { chave: "gs1_qr",     rotulo: "GS1 QR Code",   bwip: "gs1qrcode",   zpl: "^BQ", gs1: true, demo: "(01)09506000134306(17)010615" },
+        { chave: "gs1_datamatrix", rotulo: "GS1 Data Matrix", bwip: "gs1datamatrix", zpl: "^BX", gs1: true, demo: "(01)09506000134306(10)ABC123" },
+        { chave: "gs1_databar", rotulo: "GS1 DataBar",  bwip: "databaromni", zpl: "^BR", gs1: true, demo: "(01)01234567890128" }
       ]
     };
     function simbologiaInfo(chave) {
@@ -6848,6 +6895,73 @@
       var cvImg = bwipCanvas(chave, texto);
       if (!cvImg) return "";
       return '<img alt="" src="' + cvImg.toDataURL("image/png") + '" style="width:100%; height:100%; object-fit:contain;">';
+    }
+
+    /* Pedido 1.141: utilidades GS1 — AIs entre parênteses são o formato canônico
+       do editor (bwip-js e o ^BC modo D aceitam a MESMA string). Para os
+       comandos sem modo GS1 dedicado (^BQ/^BX via ^FH) os AIs saem crus,
+       separados por 0x1D (GS/FNC1). Tamanhos fixos dos AIs mais usados; null =
+       comprimento variável (terminado pelo próximo AI ou GS). */
+    function gs1TamanhoAI(ai) {
+      if (ai === "00") return 18;
+      if (ai === "01" || ai === "02") return 14;
+      if (ai === "10" || ai === "21" || ai === "22" || ai === "30" || ai === "37" || ai === "400" || ai === "420") return null;
+      if (ai === "11" || ai === "12" || ai === "13" || ai === "15" || ai === "16" || ai === "17") return 6;
+      if (ai === "20") return 2;
+      if (/^3[1-6]\d$/.test(ai)) return 6; /* 3103–369x: quantidade com decimais */
+      if (/^4(1[0-7])$/.test(ai)) return 13; /* GLN */
+      if (ai === "8001") return 14;
+      if (ai === "8005") return 6;
+      if (/^9[1-9]$/.test(ai)) return null;
+      return null;
+    }
+    /* "(01)09506000134306(17)010615" → ["0109506000134306","17010615"]; sem parênteses → null */
+    function gs1CamposZpl(texto) {
+      var t = String(texto || "");
+      var re = /\((\d{2,4})\)([^()]*)/g, mC, out = [];
+      while ((mC = re.exec(t)) !== null) out.push(mC[1] + mC[2].replace(/\s+/g, ""));
+      return out.length ? out : null;
+    }
+    /* ["0109506000134306","17010615"] → "(01)09506000134306(17)010615" (reimportação) */
+    function gs1Enrolar(campos) {
+      return (campos || []).map(function (c) {
+        var m4 = /^(\d{4})/.exec(c), m3 = /^(\d{3})/.exec(c), m2 = /^(\d{2})/.exec(c);
+        var ai = (m4 && gs1TamAiConhecido(m4[1])) ? m4[1] : (m3 && gs1TamAiConhecido(m3[1])) ? m3[1] : (m2 && gs1TamAiConhecido(m2[1])) ? m2[1] : null;
+        return ai ? "(" + ai + ")" + c.slice(ai.length) : c;
+      }).join("");
+    }
+    function gs1TamAiConhecido(ai) {
+      return ai === "00" || ai === "01" || ai === "02" || ai === "10" || ai === "11" || ai === "12" || ai === "13" || ai === "15" || ai === "16" || ai === "17" || ai === "20" || ai === "21" || ai === "22" || ai === "30" || ai === "37" || ai === "400" || ai === "420" || /^3[1-6]\d$/.test(ai) || /^410$|^411$|^412$|^413$|^414$|^415$|^416$|^417$/.test(ai) || ai === "8001" || ai === "8005" || /^9[1-9]$/.test(ai);
+    }
+    /* Fallback gráfico: simbologia sem comando nativo (add-ons EAN/UPC, Micro QR)
+       rasteriza o canvas do bwip-js no tamanho da caixa — mesmo pipeline 1-bit
+       monocromático das imagens (^GFA). Scanner lê pixels, não comandos. */
+    function gerarGfaSimbologia(it) {
+      var cvBwip = bwipCanvas(it.simbologia, it.texto);
+      if (!cvBwip) return false;
+      var tW = Math.max(8, Math.round(it.w || 200));
+      var tH = Math.max(8, Math.round(it.h || (it.tipo === "qr" ? (it.w || 200) : 100)));
+      var cv = document.createElement("canvas");
+      cv.width = tW; cv.height = tH;
+      var cx = cv.getContext("2d");
+      cx.fillStyle = "#ffffff";
+      cx.fillRect(0, 0, tW, tH);
+      var rG = Math.min(tW / cvBwip.width, tH / cvBwip.height);
+      var dW = Math.max(8, Math.round(cvBwip.width * rG));
+      var dH = Math.max(8, Math.round(cvBwip.height * rG));
+      cx.drawImage(cvBwip, Math.floor((tW - dW) / 2), 0, dW, dH);
+      it.gfaZpl = canvasParaGF(cv);
+      it.gfaZplR = gerarGFARotacao(cv, tW, tH, 90);
+      it.gfaZplI = gerarGFARotacao(cv, tW, tH, 180);
+      it.gfaZplB = gerarGFARotacao(cv, tW, tH, 270);
+      return !!it.gfaZpl;
+    }
+    function gfaRotacaoElemento(it, rot) {
+      var rotGf = (360 - rot) % 360;
+      return rotGf === 90 ? (it.gfaZplR || it.gfaZpl)
+        : rotGf === 180 ? (it.gfaZplI || it.gfaZpl)
+        : rotGf === 270 ? (it.gfaZplB || it.gfaZpl)
+        : it.gfaZpl;
     }
 
     var _qrCache = {}, _qrCacheKeys = [];
@@ -7344,10 +7458,23 @@
             });
           }
         } else if (block.includes("^BQ")) {
+          /* Pedido 1.141: GS1 QR sai com ^FH + FNC1(_1D) — AIs voltam com parênteses */
+          var gs1QrImp = /\^FD_1D([^^]+)\^FS/.exec(block);
           var qrMatch = /\^FDLA,([^^]+)\^FS/.exec(block);
           var magMatch = /\^BQ[NRIB],2,(\d+)/.exec(block);
           var mag = magMatch ? parseInt(magMatch[1], 10) : 6;
-          if (qrMatch) {
+          if (gs1QrImp) {
+            newElements.push({
+              id: "el_bin_" + idx,
+              tipo: "qr",
+              simbologia: "gs1_qr",
+              texto: gs1Enrolar(gs1QrImp[1].split("_1D")),
+              x: x,
+              y: y,
+              w: mag * 33,
+              h: mag * 33
+            });
+          } else if (qrMatch) {
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
@@ -7365,7 +7492,20 @@
           var simb2dImp = null;
           for (var c2i in mapa2dImp) { if (block.indexOf(c2i) !== -1) { simb2dImp = mapa2dImp[c2i]; break; } }
           var dado2dImp = /\^FD([^^]+)\^FS/.exec(block);
-          if (simb2dImp && dado2dImp) {
+          /* Pedido 1.141: GS1 Data Matrix sai com ^FH + FNC1(_1D) */
+          var gs1DmImp = /\^FD_1D([^^]+)\^FS/.exec(block);
+          if (block.indexOf("^BX") !== -1 && gs1DmImp) {
+            newElements.push({
+              id: "el_bin_" + idx,
+              tipo: "qr",
+              simbologia: "gs1_datamatrix",
+              texto: gs1Enrolar(gs1DmImp[1].split("_1D")),
+              x: x,
+              y: y,
+              w: 200,
+              h: 200
+            });
+          } else if (simb2dImp && dado2dImp) {
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
@@ -7377,14 +7517,34 @@
               h: 200
             });
           }
+        } else if (block.indexOf("^BR") !== -1) {
+          /* Pedido 1.141: GS1 DataBar (^BR tipo 1). ^FD cru (AI+dados, sem
+             parênteses) — gs1Enrolar recupera "(01)…" quando dá. */
+          var magDbImp = /\^BR[NRIB],1,(\d+)/.exec(block);
+          var dadoDbImp = /\^FD(\d+)\^FS/.exec(block);
+          if (dadoDbImp) {
+            var magDb2 = magDbImp ? parseInt(magDbImp[1], 10) : 2;
+            newElements.push({
+              id: "el_bin_" + idx,
+              tipo: "qr",
+              simbologia: "gs1_databar",
+              texto: gs1Enrolar([dadoDbImp[1]]),
+              x: x,
+              y: y,
+              w: magDb2 * 96,
+              h: magDb2 * 33
+            });
+          }
         } else if (block.includes("^BC")) {
           var bcHMatch = /\^BC[NRIB],(\d+)/.exec(block);
           var bcMatch = /\^FD([^^]+)\^FS/.exec(block);
+          /* Pedido 1.141: ^BC modo D = GS1-128 (texto mantém os parênteses) */
+          var gs1ModoDImp = /\^BC[NRIB],\d+,[YN],[YN],[YN],D/.test(block);
           if (bcMatch) {
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "barcode",
-              simbologia: "code128",
+              simbologia: gs1ModoDImp ? "gs1_128" : "code128",
               texto: bcMatch[1],
               x: x,
               y: y,
@@ -12962,8 +13122,8 @@
                     <li><i class="fas fa-font me-1"></i> <strong>Texto Livre</strong> — escreva qualquer coisa.</li>
                     <li><i class="fas fa-align-left me-1"></i> <strong>Subtítulo</strong> — texto menor para o topo.</li>
                     <li><i class="fas fa-heading me-1"></i> <strong>Nome do Produto</strong> — texto de destaque grande.</li>
-                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre.</li>
-                    <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código de barras comum.</li>
+                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre. O seletor <strong>Fontes 2D</strong> (duplo clique no elemento) traz Data Matrix, PDF-417, MicroPDF, Aztec, MaxiCode, <strong>Micro QR</strong>, <strong>GS1 QR Code</strong>, <strong>GS1 Data Matrix</strong> e <strong>GS1 DataBar</strong>. As GS1 pedem os AIs com parênteses (ex.: <code>(01)0950…(17)010615</code>); Micro QR e GS1 DataBar saem como imagem otimizada — valide na impressora real.</li>
+                    <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código comum. O seletor <strong>Fontes 1D</strong> (duplo clique) traz Code 128 (A/B/C), Code 39, Code 93, EAN-13, EAN-8, UPC-A, ITF, MSI, Codabar, <strong>GS1-128</strong> e os suplementos <strong>EAN/UPC +2/+5</strong> (digite o código, espaço e o complemento: <code>5901234123457 12</code>). GS1-128 pede os AIs com parênteses — a impressora insere FNC1 e check digit sozinha; os +2/+5 saem como imagem otimizada porque a ZPL não tem comando para o suplemento.</li>
                     <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
                     <li><i class="fas fa-link me-1"></i> <strong>Imagem por Link / Base64</strong> — cole o endereço de uma imagem da internet (PNG, JPG, SVG, GIF, WebP) ou um código base64; o app baixa e embute a figura na etiqueta. Se o site não permitir o download, baixe a figura e use a importação por arquivo.</li>
                     <li><i class="fas fa-calendar-days me-1"></i> <strong>Data e Hora</strong> — escolha o formato (ex.: DD/MM/AAAA) e o texto se atualiza sozinho; funciona dentro de QR e código de barras também.</li>
