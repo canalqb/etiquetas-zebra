@@ -1,0 +1,14 @@
+# ============================================================
+# Arquivos de conhecimento / uso local — NÃO publicar
+# (pasta regras/, leitura obrigatória/, probes temporários,
+#  logs e planos de implementação ficam apenas no computador)
+# ============================================================
+regras/
+leitura obrigat*
+_t*.html
+_t*.htm
+*.bak_*
+inline_0.js
+analisegenerica.txt
+projeto_implementacao.md
+plano-*.md
