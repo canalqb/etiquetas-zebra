@@ -794,12 +794,24 @@
        #studio-tab-content > #tab-canvas:not(.active) { display: none; }
        #studio-tab-content > #tab-canvas.active { display: contents; }
      }
-     /* Impressão do navegador (Ctrl+P): layout volta ao fluxo normal da página */
-     @media print {
-       html, body { height: auto !important; overflow: visible !important; }
-       #app-scroll-wrap { position: static !important; overflow: visible !important; }
-       .ribbons-bar { position: static !important; }
-     }
+      /* Impressão do navegador (Ctrl+P): layout volta ao fluxo normal da página */
+      @media print {
+        html, body { height: auto !important; overflow: visible !important; }
+        #app-scroll-wrap { position: static !important; overflow: visible !important; }
+        .ribbons-bar { position: static !important; }
+      }
+
+      /* Hero (todos os tamanhos — Pedido 1.131 levou o hero ao desktop):
+         card em gradiente escuro nos dois temas, texto claro legível */
+      .mobile-hero-card {
+        background: linear-gradient(135deg, #0b1329 0%, #1e293b 55%, #1e3a8a 100%);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
+      }
+      [data-bs-theme="dark"] .mobile-hero-card {
+        background: linear-gradient(135deg, #070d18 0%, #0f172a 55%, #1e3a8a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
 
 
     /* ===== MOBILE (≤991px): ribbons viram menu expansivo lateral esquerdo =====
@@ -920,16 +932,6 @@
         background: #6c757d;
         display: inline-block;
         flex: 0 0 auto;
-      }
-
-      .mobile-hero-card {
-        background: linear-gradient(135deg, #0b1329 0%, #1e293b 55%, #1e3a8a 100%);
-        border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
-      }
-      [data-bs-theme="dark"] .mobile-hero-card {
-        background: linear-gradient(135deg, #070d18 0%, #0f172a 55%, #1e3a8a 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .mobile-offcanvas-drawer {
@@ -1335,7 +1337,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.003</span>
+      <span class="brand-ver">v1.004</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1604,7 +1606,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.003</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.004</span>
         </div>
       </div>
 
@@ -1687,10 +1689,14 @@
                   <div class="icon-btn icon-btn-danger palette-item" draggable="true" data-type="barcode" data-text="123456789" title="Código de Barras 128 (Clique ou arraste)">
                     <i class="fas fa-barcode"></i>
                   </div>
-                  <div class="icon-btn icon-btn-danger palette-item" id="btn-palette-import-img" draggable="true" data-type="imagem" title="Importar Imagem / Logo (Clique ou arraste)">
-                    <i class="fas fa-image"></i>
-                    <input type="file" id="input-import-imagem" accept="image/*" class="d-none">
-                  </div>
+                   <div class="icon-btn icon-btn-danger palette-item" id="btn-palette-import-img" draggable="true" data-type="imagem" title="Importar Imagem / Logo (Clique ou arraste)">
+                     <i class="fas fa-image"></i>
+                     <input type="file" id="input-import-imagem" accept="image/*" class="d-none">
+                   </div>
+                   <!-- Pedido 1.134: imagem por link da web ou base64 -->
+                   <div class="icon-btn icon-btn-info palette-item" id="btn-palette-import-img-url" draggable="true" data-type="imagem-url" title="Imagem por Link / Base64 — endereço da web (PNG, JPG, SVG…) ou código base64 (Clique ou arraste)">
+                     <i class="fas fa-link"></i>
+                   </div>
                   <!-- Pedido 1.99: máscara de Data e Hora — atualiza sozinha a cada renderização/impressão -->
                   <div class="btn-group">
                     <button type="button" class="icon-btn icon-btn-warning" id="btn-add-datahora" data-bs-toggle="dropdown" data-bs-display="dynamic" title="Data e Hora — insere um texto que atualiza sozinho com a data/hora atual (funciona com QR e código de barras também, via mapeamento)" aria-label="Inserir máscara de data e hora" aria-expanded="false"><i class="fas fa-calendar-days"></i></button>
@@ -1903,6 +1909,11 @@
                       <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left" title="Alinhar à esquerda da etiqueta" aria-label="Alinhar à esquerda"><i class="bi bi-align-start"></i></button>
                       <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right" title="Alinhar à direita da etiqueta" aria-label="Alinhar à direita"><i class="bi bi-align-end"></i></button>
                       <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-center" title="Centralizar na etiqueta" aria-label="Centralizar na etiqueta"><i class="fas fa-arrows-to-dot"></i></button>
+                      <!-- Pedido 1.135: borda + centrado no outro eixo (9 posições completas) -->
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top-center" title="Topo ao centro — encosta no topo e centraliza na horizontal" aria-label="Topo centralizado"><i class="bi bi-arrow-up-circle"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom-center" title="Inferior ao centro — encosta embaixo e centraliza na horizontal" aria-label="Inferior centralizado"><i class="bi bi-arrow-down-circle"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left-center" title="Esquerda ao centro — encosta à esquerda e centraliza na vertical" aria-label="Esquerda centralizada"><i class="bi bi-arrow-left-circle"></i></button>
+                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right-center" title="Direita ao centro — encosta à direita e centraliza na vertical" aria-label="Direita centralizada"><i class="bi bi-arrow-right-circle"></i></button>
                       <div class="vr mx-1" style="height:16px;"></div>
                       <button type="button" class="icon-btn icon-btn-dark icon-btn-sm" id="btn-style-bold" title="Negrito (Simulado)"><i class="fas fa-bold"></i></button>
                       <button type="button" class="icon-btn icon-btn-dark icon-btn-sm" id="btn-style-italic" title="Itálico (Apenas Visual)"><i class="fas fa-italic"></i></button>
@@ -2527,6 +2538,31 @@
     </div>
   </div>
 
+  <!-- Modal Imagem por Link / Base64 (Pedido 1.134) -->
+  <div class="modal fade" id="modal-import-img-url" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalImportImgUrlLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title fs-6 fw-bold" id="modalImportImgUrlLabel"><i class="fas fa-link text-primary me-2"></i>Imagem por Link / Base64</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body py-3">
+          <label class="form-label small fw-semibold" for="input-img-url">Endereço da imagem (https://… ou base64 data:image/…)</label>
+          <input type="text" class="form-control form-control-sm" id="input-img-url" placeholder="https://exemplo.com/logo.png" autocomplete="off" spellcheck="false">
+          <div class="form-text small mt-1">Aceita PNG, JPG, SVG, GIF e WebP por link direto (http/https) ou código base64 (data:image/…). A imagem é baixada e embutida na etiqueta — se o site não permitir (CORS), baixe o arquivo e use a importação por arquivo.</div>
+          <div id="img-url-status" class="small mt-2"></div>
+          <div class="text-center mt-2">
+            <img id="img-url-prev" alt="Pré-visualização da imagem" class="img-fluid d-none" style="max-height:180px;">
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm btn-primary" id="btn-img-url-adicionar"><i class="fas fa-plus me-1" aria-hidden="true"></i> Adicionar à Etiqueta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Enviar ZPL bruto (impressora cadastrada vs range da rede) -->
   <div class="modal fade" id="modal-print-zpl" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalPrintZplLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -2839,7 +2875,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.003</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.004</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -5307,11 +5343,9 @@
       var alvos = elements.filter(function (el) { return ids.indexOf(el.id) !== -1; });
       if (!alvos.length) { notify("Selecione um elemento para alinhar.", "warning"); return; }
 
-      /* Bounding box do GRUPO — com seleção múltipla a posição relativa
-         entre os elementos é preservada; com 1 elemento, alinha a própria caixa. */
+      var caixas = alvos.map(function (el) { return bboxVisualElemento(el, dW, dH); });
       var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      alvos.forEach(function (el) {
-        var b = bboxVisualElemento(el, dW, dH);
+      caixas.forEach(function (b) {
         if (b.x < minX) minX = b.x;
         if (b.y < minY) minY = b.y;
         if (b.x + b.w > maxX) maxX = b.x + b.w;
@@ -5319,15 +5353,61 @@
       });
       var gW = maxX - minX, gH = maxY - minY;
 
-      var dx = 0, dy = 0;
-      if (direcao === "topo")          dy = mT - minY;
-      else if (direcao === "baixo")    dy = (dH - mB) - maxY;
-      else if (direcao === "esquerda") dx = mL - minX;
-      else if (direcao === "direita")  dx = (dW - mR) - maxX;
-      else if (direcao === "centro") {
-        dx = mL + ((dW - mL - mR) - gW) / 2 - minX;
-        dy = mT + ((dH - mT - mB) - gH) / 2 - minY;
+      /* Pedido 1.135: com 2+ elementos selecionados o alinhamento é ENTRE ELES
+         (bordas/centros do próprio grupo, estilo editores profissionais); com
+         1 elemento continua relativo à etiqueta. */
+      if (alvos.length >= 2) {
+        var cxGrupo = (minX + maxX) / 2;
+        var cyGrupo = (minY + maxY) / 2;
+        alvos.forEach(function (el, i) {
+          var b = caixas[i];
+          var dx = 0, dy = 0;
+          if (direcao === "esquerda")       dx = minX - b.x;
+          else if (direcao === "direita")   dx = maxX - (b.x + b.w);
+          else if (direcao === "topo")      dy = minY - b.y;
+          else if (direcao === "baixo")     dy = maxY - (b.y + b.h);
+          else if (direcao === "centro") {
+            dx = cxGrupo - (b.x + b.w / 2);
+            dy = cyGrupo - (b.y + b.h / 2);
+          } else if (direcao === "topo-centro") {
+            dy = minY - b.y;
+            dx = cxGrupo - (b.x + b.w / 2);
+          } else if (direcao === "baixo-centro") {
+            dy = maxY - (b.y + b.h);
+            dx = cxGrupo - (b.x + b.w / 2);
+          } else if (direcao === "esquerda-centro") {
+            dx = minX - b.x;
+            dy = cyGrupo - (b.y + b.h / 2);
+          } else if (direcao === "direita-centro") {
+            dx = maxX - (b.x + b.w);
+            dy = cyGrupo - (b.y + b.h / 2);
+          }
+          el.x += dx;
+          el.y += dy;
+          restringirLimitesElemento(el, dW, dH);
+        });
+        salvarHistorico();
+        renderStudio();
+        var rotGrupo = { topo: "topo entre si", baixo: "base entre si", esquerda: "esquerda entre si", direita: "direita entre si",
+                         centro: "centro entre si", "topo-centro": "topo (centrados entre si)", "baixo-centro": "base (centrados entre si)",
+                         "esquerda-centro": "esquerda (centrados entre si)", "direita-centro": "direita (centrados entre si)" };
+        notify(alvos.length + " elementos alinhados ao " + (rotGrupo[direcao] || direcao) + ".", "success");
+        return;
       }
+
+      /* 1 elemento: as 9 posições da etiqueta (Pedido 1.135 completa o grid) */
+      var dx = 0, dy = 0;
+      var centroX = mL + ((dW - mL - mR) - gW) / 2 - minX;
+      var centroY = mT + ((dH - mT - mB) - gH) / 2 - minY;
+      if (direcao === "topo")              dy = mT - minY;
+      else if (direcao === "baixo")        dy = (dH - mB) - maxY;
+      else if (direcao === "esquerda")    dx = mL - minX;
+      else if (direcao === "direita")     dx = (dW - mR) - maxX;
+      else if (direcao === "centro")      { dx = centroX; dy = centroY; }
+      else if (direcao === "topo-centro") { dy = mT - minY; dx = centroX; }
+      else if (direcao === "baixo-centro") { dy = (dH - mB) - maxY; dx = centroX; }
+      else if (direcao === "esquerda-centro") { dx = mL - minX; dy = centroY; }
+      else if (direcao === "direita-centro")  { dx = (dW - mR) - maxX; dy = centroY; }
 
       alvos.forEach(function (el) {
         el.x += dx;
@@ -5336,14 +5416,20 @@
       });
       salvarHistorico();
       renderStudio();
-      var rotulos = { topo: "topo", baixo: "parte inferior", esquerda: "esquerda", direita: "direita", centro: "centro" };
-      notify(alvos.length + " elemento(s) alinhado(s) ao " + rotulos[direcao] + " da etiqueta.", "success");
+      var rotulos = { topo: "topo", baixo: "parte inferior", esquerda: "esquerda", direita: "direita", centro: "centro",
+                      "topo-centro": "topo (centrado)", "baixo-centro": "parte inferior (centrado)",
+                      "esquerda-centro": "esquerda (centrado)", "direita-centro": "direita (centrado)" };
+      notify("Elemento alinhado ao " + rotulos[direcao] + " da etiqueta.", "success");
     }
     if ($("sel-btn-align-top"))     $("sel-btn-align-top").addEventListener("click", function () { alinharSelecionados("topo"); });
     if ($("sel-btn-align-bottom"))  $("sel-btn-align-bottom").addEventListener("click", function () { alinharSelecionados("baixo"); });
     if ($("sel-btn-align-left"))    $("sel-btn-align-left").addEventListener("click", function () { alinharSelecionados("esquerda"); });
     if ($("sel-btn-align-right"))   $("sel-btn-align-right").addEventListener("click", function () { alinharSelecionados("direita"); });
     if ($("sel-btn-align-center"))  $("sel-btn-align-center").addEventListener("click", function () { alinharSelecionados("centro"); });
+    if ($("sel-btn-align-top-center"))    $("sel-btn-align-top-center").addEventListener("click", function () { alinharSelecionados("topo-centro"); });
+    if ($("sel-btn-align-bottom-center")) $("sel-btn-align-bottom-center").addEventListener("click", function () { alinharSelecionados("baixo-centro"); });
+    if ($("sel-btn-align-left-center"))   $("sel-btn-align-left-center").addEventListener("click", function () { alinharSelecionados("esquerda-centro"); });
+    if ($("sel-btn-align-right-center"))  $("sel-btn-align-right-center").addEventListener("click", function () { alinharSelecionados("direita-centro"); });
 
     // Atalhos de teclado globais (Ctrl no PC, ⌘ Cmd no Mac)
     function ehDispositivoToque() {
@@ -6116,6 +6202,85 @@
     });
     }
 
+    /* ---------------- Pedido 1.134: Imagem por Link / Base64 ----------------
+       Mesmo pipeline da importação por arquivo (dataUrl + GFA): o link é
+       baixado via fetch e convertido para base64 em memória, então o canvas
+       de rasterização ZPL nunca é "tainted" (pixels inacessíveis). */
+    var bsModalImgUrl = null;
+    function abrirImportadorImagemUrl() {
+      var modalUrlEl = $("modal-import-img-url");
+      if (!modalUrlEl) return;
+      if (!bsModalImgUrl) bsModalImgUrl = bootstrap.Modal.getOrCreateInstance(modalUrlEl);
+      $("img-url-status").textContent = "";
+      var prev = $("img-url-prev");
+      if (prev) { prev.classList.add("d-none"); prev.removeAttribute("src"); }
+      bsModalImgUrl.show();
+      setTimeout(function () { try { $("input-img-url").focus(); } catch (e) {} }, 350);
+    }
+    /* o clique do botão é tratado pelo handler genérico da paleta (special-case "imagem-url") */
+    function finalizarImagemPorLink(dataUrl, nome) {
+      if (bsModalImgUrl) bsModalImgUrl.hide();
+      var newId = "el_img_" + Date.now();
+      var newEl = {
+        id: newId,
+        tipo: "imagem",
+        dataUrl: dataUrl,
+        texto: nome || "imagem-web",
+        x: mmToDots(10),
+        y: mmToDots(10),
+        w: 200,
+        h: 200
+      };
+      generateGFAForElement(newEl, function () {
+        garantirPosicaoLivre(newEl);
+        elements.push(newEl);
+        selectElement(newId);
+        renderStudio();
+        notify("Imagem por link '" + (nome || "imagem-web") + "' adicionada!", "success");
+      });
+    }
+    if ($("btn-img-url-adicionar")) {
+      $("btn-img-url-adicionar").addEventListener("click", function () {
+        var url = ($("input-img-url").value || "").trim();
+        var status = $("img-url-status");
+        if (!url) { status.innerHTML = '<span class="text-danger">Cole um endereço ou código base64 primeiro.</span>'; return; }
+        if (/^data:image\//i.test(url)) { finalizarImagemPorLink(url, "base64"); return; }
+        if (!/^https?:\/\//i.test(url)) {
+          status.innerHTML = '<span class="text-danger">Use um link http(s):// ou um código base64 data:image/…</span>';
+          return;
+        }
+        status.textContent = "Baixando imagem…";
+        fetch(url).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.blob();
+        }).then(function (blob) {
+          var fr = new FileReader();
+          fr.onload = function (ev) {
+            var nomeImg = url.split("/").pop().split("?")[0] || "imagem-web";
+            finalizarImagemPorLink(ev.target.result, nomeImg);
+          };
+          fr.readAsDataURL(blob);
+        }).catch(function () {
+          status.innerHTML = '<span class="text-danger">Não foi possível baixar direto (site sem CORS ou link inválido). Baixe a imagem e use a importação por arquivo, ou cole o código base64.</span>';
+        });
+      });
+    }
+    if ($("input-img-url")) {
+      $("input-img-url").addEventListener("input", function () {
+        var v = (this.value || "").trim();
+        var prev = $("img-url-prev");
+        if (!prev) return;
+        if (/^(data:image\/|https?:\/\/)/i.test(v)) {
+          prev.onerror = function () { prev.classList.add("d-none"); };
+          prev.src = v;
+          prev.classList.remove("d-none");
+        } else {
+          prev.classList.add("d-none");
+          prev.removeAttribute("src");
+        }
+      });
+    }
+
     // Drag & Drop HTML5 da Paleta para o Stage
     var paletteItems = document.querySelectorAll(".palette-item");
     paletteItems.forEach(function (item) {
@@ -6127,6 +6292,9 @@
         if (tipo === "imagem") {
           // Imagem: apenas abre o seletor — elemento só é criado ao escolher o arquivo
           abrirImportadorImagem();
+        } else if (tipo === "imagem-url") {
+          // Pedido 1.134: link/base64 abre o modal — elemento nasce ao adicionar
+          abrirImportadorImagemUrl();
         } else {
           adicionarElemento(tipo);
         }
@@ -6142,6 +6310,11 @@
     stageEl.addEventListener("drop", function (e) {
       e.preventDefault();
       var tipo = e.dataTransfer.getData("text/plain");
+      if (tipo === "imagem-url") {
+        /* Pedido 1.134: arrastar o botão de link abre o modal (elemento nasce ao adicionar) */
+        abrirImportadorImagemUrl();
+        return;
+      }
       if (tipo && TIPOS_PALETA.indexOf(tipo) !== -1) {
         adicionarElemento(tipo);
       }
@@ -11795,10 +11968,17 @@
     /* ================================================================
        FOOTER 2 — Páginas legais abrem em modal (mesmo padrão da Ajuda).
        Conteúdo buscado de pages/{pagina}.html com cache em memória;
-       se o fetch falhar (ex.: file://), abre a página em nova aba.
+       se o fetch falhar (ex.: file://), a página entra NUM IFRAME dentro
+       do próprio modal (Pedido 1.137: nunca navega para fora do app).
+       Links internos que existam dentro do conteúdo (ex.: "veja a Política
+       de Cookies" na página Sobre) também trocam o conteúdo do modal.
        ================================================================ */
     (function () {
       var cache = {};
+      var PAGINAS_LEGAL = Array.prototype.map.call(
+        document.querySelectorAll(".btn-pagina-legal"),
+        function (b) { return b.getAttribute("data-pagina"); }
+      );
       function abrir(pagina, nome) {
         var modalEl = document.getElementById("modal-pagina-legal");
         var corpo = document.getElementById("pagina-legal-conteudo");
@@ -11825,14 +12005,43 @@
           cache[pagina] = m ? m.innerHTML : html;
           corpo.innerHTML = cache[pagina];
         }).catch(function () {
-          corpo.innerHTML = '<div class="alert alert-warning mb-0" role="alert">Não foi possível carregar a página dentro do aplicativo — ela foi aberta em uma nova aba.</div>';
-          window.open(url, "_blank", "noopener");
+          /* Pedido 1.137: sem fetch (ex.: aberto via file://) a página é
+             EMBUTIDA em iframe dentro do modal — nada navega para fora. */
+          corpo.innerHTML =
+            '<div class="alert alert-warning py-2 mb-2" role="alert"><i class="fas fa-triangle-exclamation me-1"></i>' +
+            'A página completa está sendo exibida abaixo (modo integrado).</div>' +
+            '<iframe src="' + url + '" title="' + (nome || pagina) + '" style="width:100%;height:62vh;border:1px solid var(--zebra-border);border-radius:10px;background:#fff;" loading="lazy"></iframe>';
         });
       }
       document.querySelectorAll(".btn-pagina-legal").forEach(function (b) {
         b.addEventListener("click", function () {
           abrir(this.getAttribute("data-pagina"), this.getAttribute("data-titulo") || this.textContent.trim());
         });
+      });
+      /* Pedido 1.137: links internos do conteúdo (href="sobre.html" etc.)
+         trocam a página DENTRO do modal em vez de navegar. Listener delegado
+         no document porque #pagina-legal-conteudo só existe mais abaixo no
+         DOM (o script roda antes do modal ser parseado). */
+      document.addEventListener("click", function (e) {
+        var corpo = document.getElementById("pagina-legal-conteudo");
+        if (!corpo || !corpo.contains(e.target)) return;
+        var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+        if (!a) return;
+        var href = a.getAttribute("href") || "";
+        if (!href || /^(https?:|mailto:|tel:|#)/i.test(href)) return;
+        var mInt = href.match(/([\w-]+)\.html?(\?|#|$)/i);
+        if (mInt && PAGINAS_LEGAL.indexOf(mInt[1]) !== -1) {
+          e.preventDefault();
+          abrir(mInt[1], a.textContent.trim() || mInt[1]);
+          var corpoModal = document.getElementById("modal-pagina-legal");
+          if (corpoModal && !corpoModal.classList.contains("show")) bootstrap.Modal.getOrCreateInstance(corpoModal).show();
+          return;
+        }
+        if (/(^|\/)index\.html?(\?|#|$)/i.test(href)) {
+          e.preventDefault();
+          var mod = document.getElementById("modal-pagina-legal");
+          if (mod) bootstrap.Modal.getOrCreateInstance(mod).hide();
+        }
       });
     })();
 
@@ -12402,7 +12611,7 @@
                 <li><strong>Etiquetas de vários tamanhos</strong>: 40×25, 100×50, 100×100, 100×150 mm ou um tamanho seu, na horizontal ou vertical.</li>
                 <li><strong>Textos</strong> livres, subtítulos e nomes de produto, com quebra de linha automática e alinhamento.</li>
                 <li><strong>QR Code e código de barras</strong> com o conteúdo que você quiser (link, código do produto, série...).</li>
-                <strong>Imagens e logos</strong> do seu computador ou celular.
+                <li><strong>Imagens e logos</strong> do seu computador ou celular — ou direto de um <strong>link da internet</strong> / código base64.</li>
                 <li><strong>Formas</strong>: linhas, molduras, círculos, diagonais, cantos arredondados, linhas retas e curvas.</li>
                 <li><strong>Data e hora</strong> que se atualizam sozinhas na hora de imprimir (vários formatos prontos).</li>
                 <li><strong>Numeração automática</strong>: gere sequências como SN-001, SN-002... com prefixo e quantidade de dígitos.</li>
@@ -12410,7 +12619,10 @@
                 <li><strong>Várias etiquetas diferentes</strong> no mesmo projeto — ao imprimir, todas saem juntas.</li>
                 <li><strong>Modelos prontos</strong> de um clique, e os seus próprios modelos salvos no navegador.</li>
                 <li><strong>Pré-visualização</strong> fiel do papel e <strong>salvar a etiqueta como imagem</strong> (PNG).</li>
+                <li><strong>Alinhamento profissional</strong>: encaixe o elemento em 9 posições da etiqueta, ou alinhe <strong>vários elementos entre si</strong> (bordas e centros do próprio grupo).</li>
                 <li><strong>Impressão</strong> por cabo USB, rede (IP) ou Bluetooth, com quantidade de cópias.</li>
+                <li><strong>Impressão em tempo real</strong>: o envio mostra o progresso e, se a impressora avisar falta de papel ou outro erro, o aviso aparece na hora.</li>
+                <li><strong>Para Empresas</strong>, Sobre, Contato e as páginas de segurança/termos abrem <strong>dentro do próprio aplicativo</strong>, em janela — nada sai da página.</li>
                 <li><strong>Celular e computador</strong>: funciona nos dois, com tema claro ou escuro.</li>
               </ul>
             </div>
@@ -12461,7 +12673,7 @@
                         <li><strong>Pré-visualizar</strong> — mostra na tela como o papel vai sair.</li>
                         <li><strong>Imprimir como Imagem</strong> — imprime a etiqueta exatamente como está desenhada (à prova de enrolamento de papel).</li>
                         <li><strong>Imprimir com Cópias</strong> — pergunta quantas cópias imprimir.</li>
-                        <li><strong>Imprimir Agora</strong> — envia direto para a impressora configurada.</li>
+                        <li><strong>Imprimir Agora</strong> — envia direto para a impressora configurada, com progresso em tempo real (um aviso de falta de papel, por exemplo, aparece na tela na hora).</li>
                       </ul>
                     </div>
                     <div class="col-lg-4">
@@ -12519,6 +12731,7 @@
                     <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre.</li>
                     <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código de barras comum.</li>
                     <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
+                    <li><i class="fas fa-link me-1"></i> <strong>Imagem por Link / Base64</strong> — cole o endereço de uma imagem da internet (PNG, JPG, SVG, GIF, WebP) ou um código base64; o app baixa e embute a figura na etiqueta. Se o site não permitir o download, baixe a figura e use a importação por arquivo.</li>
                     <li><i class="fas fa-calendar-days me-1"></i> <strong>Data e Hora</strong> — escolha o formato (ex.: DD/MM/AAAA) e o texto se atualiza sozinho; funciona dentro de QR e código de barras também.</li>
                     <li><i class="fas fa-clone me-1"></i> <strong>Clonar</strong> — duplica o elemento selecionado (Ctrl+D).</li>
                     <li><i class="fas fa-minus me-1"></i> <strong>Linha Divisória</strong> — separa áreas da etiqueta.</li>
@@ -12609,7 +12822,7 @@
                   <ul class="small text-muted mb-0 ps-3">
                     <li>Com um ou mais elementos marcados, a barra oferece <strong>Copiar, Recortar, Colar e Excluir</strong>.</li>
                     <li><strong>Negrito</strong>, <strong>Itálico</strong> e <strong>Sublinhado</strong> para textos.</li>
-                    <li><strong>Alinhamento</strong> — encaixa vários elementos alinhados no topo, na base, na esquerda ou na direita.</li>
+                    <li><strong>Alinhamento</strong> — com 1 elemento selecionado, encaixa em <strong>9 posições da etiqueta</strong> (topo, base, esquerda, direita, centro e as quatro combinações de borda + centro). Com <strong>2 ou mais</strong> selecionados, os elementos são alinhados <strong>entre si</strong> — bordas e centros do próprio grupo, como em editores profissionais.</li>
                     <li>A aba <strong>Elementos</strong> lista tudo que existe na etiqueta com contagem ao vivo — clique num item para localizá-lo e editá-lo.</li>
                   </ul>
                 </div>
@@ -12671,7 +12884,7 @@
             <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-8"><i class="bi bi-folder-check text-primary me-2"></i>8. Modelos, várias etiquetas e arquivos</h5>
             <div class="card p-3 border-0 shadow-sm">
               <ul class="small text-muted mb-0 ps-3">
-                <li><strong>Modelos Prontos</strong> — galeria com 5 layouts para cada tamanho de etiqueta (menu Etiqueta).</li>
+                <li><strong>Modelos Prontos</strong> — galeria com 5 layouts para cada tamanho de etiqueta (menu Etiqueta); publicados na web, os modelos vêm de arquivos binários oficiais (mais leves e rápidos), com os internos como reserva.</li>
                 <li><strong>Salvar Modelo Atual</strong> — guarda quantos modelos quiser no próprio navegador (menu Arquivo).</li>
                 <li><strong>Exportar/importar arquivo .bin</strong> — faz backup do modelo ou transfere para outro computador; o <strong>link de compartilhamento</strong> envia o modelo inteiro pela URL.</li>
                 <li><strong>Várias etiquetas no mesmo projeto</strong> — o botão <strong>+</strong> guarda a etiqueta atual e cria outra em branco; também dá para importar uma etiqueta e adicionar junto. Alterne entre elas pelas setas da barra de status — <strong>ao imprimir, todas são enviadas</strong>.</li>
@@ -12709,6 +12922,7 @@
                 <li><strong>Imprimir</strong> (botão da barra, menu Impressora ou Ctrl+P) — pergunta a quantidade e envia.</li>
                 <li><strong>Pré-visualizar</strong> — mostra o papel exatamente como vai sair; dá para salvar como imagem PNG.</li>
                 <li><strong>Calibrar</strong> — se o papel andar errado ou a impressão sair clara, use o painel Calibrar (tonalidade, tipo de papel, velocidade).</li>
+                <li><strong>Progresso em tempo real</strong> — o envio mostra o andamento; avisos da impressora (fim de papel, cabeça aberta) aparecem na tela e param a impressão na hora.</li>
                 <li><strong>Impressão deslocada?</strong> Use o botão <strong>Margens</strong> da barra de status e ajuste até sair reta.</li>
               </ul>
             </div>
@@ -12815,9 +13029,9 @@
             <div class="row g-3 mb-3">
               <div class="col-md-6">
                 <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-bars me-1"></i>Menu Ferramentas</h6>
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-bars me-1"></i>Painel Processos de Impressão</h6>
                   <ul class="small text-muted mb-0 ps-3">
-                    <li>Toque no botão azul <strong>Ferramentas</strong> (barrinhas no rodapé da tela) para abrir todos os elementos e ajustes.</li>
+                    <li>Toque no botão azul <strong>Ferramentas</strong> (barrinhas no rodapé da tela) para abrir o painel <strong>Processos de Impressão</strong>, com todos os elementos e ajustes.</li>
                     <li>Cada seção (Elementos, Formas, Modelos, Configuração...) abre e fecha ao toque, como um acordeão.</li>
                     <li>Ao inserir um elemento, o menu fecha sozinho; toque no fundo escuro para fechar sem inserir.</li>
                     <li>No topo ficam o tamanho, a orientação e o DPI da etiqueta — toque para trocar.</li>
