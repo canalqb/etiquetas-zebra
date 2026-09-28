@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -510,6 +510,13 @@
     .modal-header.modal-drag textarea { cursor: pointer; }
     .modal.modal-arrastando .modal-header.modal-drag { cursor: grabbing; user-select: none; }
     .modal.modal-arrastando .modal-dialog { transition: none !important; }
+
+    /* Pedido 1.142: no desktop, o mini modal do duplo clique (QR/código de barras)
+       abre à ESQUERDA da tela — o inspector à direita e a prévia ficam livres.
+       Mobile (<992px) mantém o comportamento padrão do Bootstrap. */
+    @media (min-width: 992px) {
+      #modal-editar-dado .modal-dialog { margin-left: 1.5rem; margin-right: auto; }
+    }
 
     /* Regra universal de estado (pedido do usuário):
        todo ícone que liga/desliga fica PRETO E BRANCO na posição OFF
@@ -1365,7 +1372,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.006</span>
+      <span class="brand-ver">v1.007</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1634,7 +1641,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.006</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.007</span>
         </div>
       </div>
 
@@ -1795,6 +1802,8 @@
                   <label class="icon-btn icon-btn-sm" for="toggle-label-grid" title="Grade dentro da etiqueta" aria-label="Mostrar ou ocultar grade da etiqueta"><i class="fas fa-border-all"></i></label>
                   <input class="btn-check" type="checkbox" id="toggle-snap" autocomplete="off">
                   <label class="icon-btn icon-btn-sm" for="toggle-snap" title="Ajuste Magnético (Snap)" aria-label="Ajuste magnético"><i class="fas fa-magnet"></i></label>
+                  <!-- Pedido 1.143: Nova Etiqueta + Limpar Armazenamento (localStorage) -->
+                  <button type="button" class="icon-btn icon-btn-sm" id="btn-reset-app" title="Nova Etiqueta + Limpar Armazenamento — apaga tudo que foi salvo no navegador (histórico, etiqueta, lote, configurações) e abre uma etiqueta em branco" aria-label="Nova etiqueta e limpar armazenamento"><i class="fas fa-rotate-left"></i></button>
 
                   </div>
                   </div>
@@ -1956,6 +1965,13 @@
                         <div class="col-md-4 col-12" id="insp-col-texto">
                           <label class="form-label fw-semibold small mb-1" title="O que vai escrito na etiqueta — é o texto que aparece no elemento selecionado. Digite aqui e o desenho atualiza na hora.">Conteúdo / Texto</label>
                           <input type="text" class="form-control form-control-sm" id="insp-texto">
+                        </div>
+
+                        <!-- Pedido 1.142: Fonte do Código no Editor de Elemento (barcode/QR) —
+                             mesma lista do duplo clique; a troca aplica na hora -->
+                        <div class="col-md-3 col-12 d-none" id="insp-col-simbologia">
+                          <label class="form-label fw-semibold small mb-1" title="A “fonte” é o formato do código (Code 128, EAN-13, GS1-128, QR, Data Matrix…). A troca atualiza o desenho e o ZPL na hora.">Fonte do Código</label>
+                          <select class="form-select form-select-sm" id="insp-simbologia" aria-label="Fonte (simbologia) do código"></select>
                         </div>
 
                         <div class="col-md-2 col-4">
@@ -2413,6 +2429,22 @@
         <div class="d-flex justify-content-center gap-2">
           <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn btn-sm btn-danger px-3" id="btn-confirmar-limpar">Limpar Tudo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Etiqueta + Limpar Armazenamento (Pedido 1.143) -->
+  <div class="modal fade" id="modal-reset-app" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalResetAppLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content text-center p-3 border-0 shadow position-relative">
+        <button type="button" class="btn-close btn-close-sm position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <div class="mb-2 text-warning fs-2"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <h5 class="fw-bold fs-6 mb-1" id="modalResetAppLabel">Nova Etiqueta + Limpar Armazenamento?</h5>
+        <p class="small text-muted mb-3">Apaga <strong>tudo que foi salvo neste navegador</strong> — etiqueta atual, histórico de alterações, lote, modelos salvos e configurações — e abre uma etiqueta em branco. Esta ação não pode ser desfeita.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm btn-danger px-3" id="btn-confirmar-reset-app">Apagar e Recomeçar</button>
         </div>
       </div>
     </div>
@@ -2903,7 +2935,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.006</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.007</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -4800,6 +4832,18 @@
           if (e.key === "Enter") { e.preventDefault(); confirmarModalDado(); }
         });
       }
+      /* Pedido 1.142: troca de fonte no select aplica NA HORA (mobile e desktop) —
+         a prévia, o ZPL e a tabela atualizam sem esperar o botão Salvar */
+      var selSimb = document.getElementById("modal-dado-simbologia");
+      if (selSimb) {
+        selSimb.addEventListener("change", function () {
+          var el = editandoDadoId ? elements.find(function (e) { return e.id === editandoDadoId; }) : null;
+          if (!el || !this.value) return;
+          if ((el.simbologia || simbologiaPadrao(el.tipo)) === this.value) return;
+          el.simbologia = this.value;
+          renderStudio();
+        });
+      }
     })();
 
     /* ---------------- Edição de Texto In-Loco (duplo clique, estilo Canva/Figma) ---------------- */
@@ -5612,6 +5656,26 @@
         $("insp-rotacao").value = el.rotacao || 0;
       }
 
+      /* Pedido 1.142: Fonte do Código no Editor de Elemento — mesma lista do
+         duplo clique, visível só em elementos barcode/qr; troca aplica na hora */
+      var colSimbInsp = $("insp-col-simbologia");
+      var selSimbInsp = $("insp-simbologia");
+      if (colSimbInsp && selSimbInsp) {
+        if (el.tipo === "barcode" || el.tipo === "qr") {
+          var famInsp = el.tipo === "qr" ? "2d" : "1d";
+          if (selSimbInsp.getAttribute("data-familia") !== famInsp || !selSimbInsp.options.length) {
+            selSimbInsp.innerHTML = CATALOGO_SIMBOLOGIAS[famInsp].map(function (s) {
+              return '<option value="' + s.chave + '">' + s.rotulo + '</option>';
+            }).join("");
+            selSimbInsp.setAttribute("data-familia", famInsp);
+          }
+          selSimbInsp.value = el.simbologia || simbologiaPadrao(el.tipo);
+          colSimbInsp.classList.remove("d-none");
+        } else {
+          colSimbInsp.classList.add("d-none");
+        }
+      }
+
       var isText = (el.tipo === "texto" || el.tipo === "sub" || el.tipo === "nome" || el.tipo === "serie");
       var isShape = ehForma(el.tipo);
       var isShapeTexto = ehFormaComTexto(el.tipo);
@@ -5753,6 +5817,16 @@
       var el = elements.find(function (e) { return e.id === selectedElId; });
       if (el) { el.texto = this.value; autoAjustarElementoTexto(el); renderStudio(); }
     });
+    /* Pedido 1.142: troca de fonte no Editor de Elemento aplica na hora */
+    if ($("insp-simbologia")) {
+      $("insp-simbologia").addEventListener("change", function () {
+        var el = elements.find(function (e) { return e.id === selectedElId; });
+        if (el && this.value && (el.simbologia || simbologiaPadrao(el.tipo)) !== this.value) {
+          el.simbologia = this.value;
+          renderStudio();
+        }
+      });
+    }
     $("insp-x-mm").addEventListener("input", function () {
       var el = elements.find(function (e) { return e.id === selectedElId; });
       if (el) { el.x = mmToDots(parseFloat(this.value) || 0); renderStudio(); }
@@ -11441,6 +11515,29 @@
       if (bsModalLimpar) bsModalLimpar.show();
     });
 
+    /* Pedido 1.143: Nova Etiqueta + Limpar Armazenamento — apaga o localStorage
+       inteiro (etiqueta salva, histórico, lote, modelos, configurações) e abre
+       uma etiqueta em branco. Destrutivo: sempre atrás de modal de confirmação. */
+    var modalResetAppEl = $("modal-reset-app");
+    var bsModalResetApp = modalResetAppEl ? new bootstrap.Modal(modalResetAppEl) : null;
+    if ($("btn-reset-app")) {
+      $("btn-reset-app").addEventListener("click", function () {
+        if (bsModalResetApp) bsModalResetApp.show();
+      });
+    }
+    if ($("btn-confirmar-reset-app")) {
+      $("btn-confirmar-reset-app").addEventListener("click", function () {
+        try { localStorage.clear(); } catch (e) { /* modo privado/estrito: segue com o reset em memória */ }
+        history.length = 0;
+        historyIdx = -1;
+        limparEtiqueta();
+        /* limparEtiqueta salva o estado vazio no histórico/sessão — o app volta a
+           persistir do zero a partir da etiqueta em branco */
+        if (bsModalResetApp) bsModalResetApp.hide();
+        notify("Armazenamento limpo — etiqueta nova em branco.", "success");
+      });
+    }
+
     var btnConfirmarLimpar = $("btn-confirmar-limpar");
     if (btnConfirmarLimpar) {
       btnConfirmarLimpar.addEventListener("click", function () {
@@ -13124,6 +13221,7 @@
                     <li><i class="fas fa-heading me-1"></i> <strong>Nome do Produto</strong> — texto de destaque grande.</li>
                     <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre. O seletor <strong>Fontes 2D</strong> (duplo clique no elemento) traz Data Matrix, PDF-417, MicroPDF, Aztec, MaxiCode, <strong>Micro QR</strong>, <strong>GS1 QR Code</strong>, <strong>GS1 Data Matrix</strong> e <strong>GS1 DataBar</strong>. As GS1 pedem os AIs com parênteses (ex.: <code>(01)0950…(17)010615</code>); Micro QR e GS1 DataBar saem como imagem otimizada — valide na impressora real.</li>
                     <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código comum. O seletor <strong>Fontes 1D</strong> (duplo clique) traz Code 128 (A/B/C), Code 39, Code 93, EAN-13, EAN-8, UPC-A, ITF, MSI, Codabar, <strong>GS1-128</strong> e os suplementos <strong>EAN/UPC +2/+5</strong> (digite o código, espaço e o complemento: <code>5901234123457 12</code>). GS1-128 pede os AIs com parênteses — a impressora insere FNC1 e check digit sozinha; os +2/+5 saem como imagem otimizada porque a ZPL não tem comando para o suplemento.</li>
+                    <li><i class="fas fa-sliders2 me-1"></i> <strong>Fonte do Código em todo lugar</strong> — além do duplo clique, a mesma lista de fontes aparece no <strong>Editor de Elemento</strong> (botão direito/toque longo) no campo “Fonte do Código”. A troca aplica <strong>na hora</strong> no desenho e no ZPL, sem esperar Salvar (funciona igual no celular e no desktop). No desktop o mini modal do duplo clique abre à esquerda, deixando a prévia livre à direita.</li>
                     <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
                     <li><i class="fas fa-link me-1"></i> <strong>Imagem por Link / Base64</strong> — cole o endereço de uma imagem da internet (PNG, JPG, SVG, GIF, WebP) ou um código base64; o app baixa e embute a figura na etiqueta. Se o site não permitir o download, baixe a figura e use a importação por arquivo.</li>
                     <li><i class="fas fa-calendar-days me-1"></i> <strong>Data e Hora</strong> — escolha o formato (ex.: DD/MM/AAAA) e o texto se atualiza sozinho; funciona dentro de QR e código de barras também.</li>
@@ -13146,6 +13244,7 @@
                     <li><i class="fas fa-table-cells me-1"></i> <strong>Grade do Palco</strong> — quadradinhos ao redor da etiqueta.</li>
                     <li><i class="fas fa-border-all me-1"></i> <strong>Grade da Etiqueta</strong> — quadradinhos dentro da etiqueta.</li>
                     <li><i class="fas fa-magnet me-1"></i> <strong>Ajuste Magnético</strong> — gruda as pontas das linhas umas nas outras e alinha elementos.</li>
+                    <li><i class="fas fa-rotate-left me-1"></i> <strong>Nova Etiqueta + Limpar Armazenamento</strong> — apaga tudo salvo no navegador (etiqueta, histórico, lote, modelos e configurações) e abre uma etiqueta em branco. Pede confirmação antes.</li>
                   </ul>
                   <p class="small text-muted mb-0 mt-2 ps-3"><i class="bi bi-info-circle me-1"></i> Botões acesos = ligado; apagados = desligado.</p>
                 </div>
