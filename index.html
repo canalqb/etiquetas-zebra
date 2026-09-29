@@ -29,6 +29,46 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Pedido 1.148: coletor global de erros — roda ANTES de tudo para capturar
+       exceções JS, promessas rejeitadas, console.error e recursos que falharam
+       ao carregar. O botão do rodapé legal abre o modal com a lista. -->
+  <script>
+    (function () {
+      var LOG = [];
+      window.__errosAppLog = LOG;
+      function registrarErrosApp(tipo, msg, origem) {
+        try {
+          if (LOG.length >= 300) LOG.shift();
+          LOG.push({
+            ts: new Date().toISOString().replace("T", " ").substring(0, 19),
+            tipo: tipo,
+            msg: String(msg == null ? "" : msg).substring(0, 500),
+            origem: origem ? String(origem).substring(0, 200) : ""
+          });
+          var badge = document.getElementById("erros-app-badge");
+          if (badge) { badge.textContent = LOG.length; badge.style.display = ""; }
+        } catch (e) { /* coletor nunca pode quebrar a página */ }
+      }
+      window.addEventListener("error", function (ev) {
+        if (ev && ev.target && ev.target !== window && (ev.target.src || ev.target.href)) {
+          registrarErrosApp("Recurso", "Falha ao carregar: " + (ev.target.src || ev.target.href), ev.target.tagName);
+          return;
+        }
+        var arq = ev && ev.filename ? String(ev.filename).split("/").pop() + ":" + (ev.lineno || "?") : "";
+        registrarErrosApp("Erro", (ev && ev.message) || "Erro desconhecido", arq);
+      }, true);
+      window.addEventListener("unhandledrejection", function (ev) {
+        var r = ev && ev.reason;
+        registrarErrosApp("Promise", (r && r.message) ? r.message : ("" + r), (r && r.stack) ? String(r.stack).split("\n")[1] || "" : "");
+      });
+      var _consoleError = console.error;
+      console.error = function () {
+        try { registrarErrosApp("console.error", Array.prototype.join.call(arguments, " "), ""); } catch (e) {}
+        return _consoleError.apply(console, arguments);
+      };
+    })();
+  </script>
+
   <!-- QR Code & Barcode Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -70,8 +110,47 @@
     [data-bs-theme="dark"] .ruler-tick-v { border-top-color: #7d8ca3; }
     [data-bs-theme="dark"] #modal-ajuda .modal-body { background-color: var(--zebra-card-bg) !important; }
     /* Índice da Ajuda: âncoras com folga de rolagem + destaque ao chegar */
-    #modal-ajuda h5[id], #modal-ajuda h6[id] { scroll-margin-top: 14px; }
-    #modal-ajuda .ajuda-flash { animation: ajudaFlash 1.6s ease-out 1; border-radius: 8px; }
+      #modal-ajuda h5[id], #modal-ajuda h6[id] { scroll-margin-top: 14px; }
+      #modal-ajuda .ajuda-flash { animation: ajudaFlash 1.6s ease-out 1; border-radius: 8px; }
+      /* Pedido 1.148: mini botão de erros isolado à direita do rodapé legal */
+      .btn-erros-app {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        width: 26px;
+        height: 26px;
+        border: 1px solid var(--zebra-border, #dee2e6);
+        border-radius: 50%;
+        background: transparent;
+        color: var(--zebra-text, #6c757d);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        padding: 0;
+        cursor: pointer;
+        opacity: .5;
+        transition: opacity .15s ease, color .15s ease, border-color .15s ease;
+        z-index: 5;
+      }
+      .btn-erros-app:hover { opacity: 1; color: var(--bs-danger); border-color: var(--bs-danger); }
+      .btn-erros-app .erros-app-badge {
+        position: absolute;
+        top: -5px;
+        right: -7px;
+        min-width: 15px;
+        height: 15px;
+        border-radius: 8px;
+        background: var(--bs-danger);
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 700;
+        line-height: 15px;
+        text-align: center;
+        padding: 0 3px;
+      }
+      #erros-app-lista .erro-item { border-left: 3px solid var(--bs-danger); background: rgba(220,53,69,.06); }
     /* Modal de páginas legais (footer 2): conteúdo injetado de pages/*.html */
     [data-bs-theme="dark"] #modal-pagina-legal .modal-body { background-color: var(--zebra-card-bg) !important; }
     #pagina-legal-conteudo .migalhas { font-size: .82rem; color: var(--zebra-muted); margin-bottom: .6rem; }
@@ -1082,6 +1161,13 @@
       }
     }
 
+    /* Pedido 1.144: fonte do menu mobile reduzida — era 1rem (16px) herdado
+       do body; agora 0.875rem (14px) e os botões .btn 0.8125rem (13px,
+       antes 14px do .btn-sm). Fora do @media para valer sempre — o drawer
+       em si só aparece no mobile. */
+    .mobile-offcanvas-drawer { font-size: 0.875rem; }
+    .mobile-offcanvas-drawer .btn { font-size: 0.8125rem; }
+
     /* ===== IMPORTADOR DE DADOS ===== */
     #import-mapping-container .import-map-row {
       display: flex; align-items: center; gap: 10px;
@@ -1372,7 +1458,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.007</span>
+      <span class="brand-ver">v1.008</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1641,7 +1727,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.007</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.008</span>
         </div>
       </div>
 
@@ -1802,8 +1888,20 @@
                   <label class="icon-btn icon-btn-sm" for="toggle-label-grid" title="Grade dentro da etiqueta" aria-label="Mostrar ou ocultar grade da etiqueta"><i class="fas fa-border-all"></i></label>
                   <input class="btn-check" type="checkbox" id="toggle-snap" autocomplete="off">
                   <label class="icon-btn icon-btn-sm" for="toggle-snap" title="Ajuste Magnético (Snap)" aria-label="Ajuste magnético"><i class="fas fa-magnet"></i></label>
+
+                  </div>
+                  </div>
+
+                  <!-- Pedido 1.144: ribbon Sistema — Imprimir e "Nova Etiqueta +
+                       Limpar Armazenamento" separados dos demais, ícone vermelho -->
+                  <div class="ribbon-group ribbon-reset">
+                  <span class="ribbon-grip" title="Arraste para reordenar o ribbon Sistema" aria-label="Arrastar para reordenar o ribbon Sistema"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
+                  <button type="button" class="icon-btn ribbon-toggle" data-label="Sistema" title="Exibir / Ocultar ícones do Ribbon Sistema" aria-label="Exibir ou ocultar ícones do Ribbon Sistema" aria-expanded="true"><i class="fas fa-gear"></i></button>
+                  <div class="ribbon-body">
+                  <!-- Mesma ação do botão Imprimir do mobile (bottom-btn-imprimir) -->
+                  <button type="button" class="icon-btn icon-btn-sm" id="ribbon-btn-imprimir" title="Imprimir etiqueta (com quantidade de cópias)" aria-label="Imprimir etiqueta"><i class="fas fa-print"></i></button>
                   <!-- Pedido 1.143: Nova Etiqueta + Limpar Armazenamento (localStorage) -->
-                  <button type="button" class="icon-btn icon-btn-sm" id="btn-reset-app" title="Nova Etiqueta + Limpar Armazenamento — apaga tudo que foi salvo no navegador (histórico, etiqueta, lote, configurações) e abre uma etiqueta em branco" aria-label="Nova etiqueta e limpar armazenamento"><i class="fas fa-rotate-left"></i></button>
+                  <button type="button" class="icon-btn icon-btn-sm text-danger" id="btn-reset-app" title="Nova Etiqueta + Limpar Armazenamento — apaga tudo que foi salvo no navegador (histórico, etiqueta, lote, configurações) e abre uma etiqueta em branco" aria-label="Nova etiqueta e limpar armazenamento"><i class="fas fa-rotate-left"></i></button>
 
                   </div>
                   </div>
@@ -2450,6 +2548,28 @@
     </div>
   </div>
 
+  <!-- Modal Erros Capturados (Pedido 1.148) — alimentado pelo coletor global do <head> -->
+  <div class="modal fade" id="modal-erros-app" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalErrosAppLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h5 class="modal-title fs-6 fw-bold" id="modalErrosAppLabel"><i class="fas fa-bug me-1" aria-hidden="true"></i>Erros Capturados Nesta Página</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">Tudo que o navegador capturou desde o carregamento: exceções JavaScript, promessas rejeitadas sem tratamento, <code>console.error</code> e recursos que falharam ao carregar (até 300 registros — os mais antigos são descartados). Útil para diagnosticar problemas durante testes.</p>
+          <div id="erros-app-resumo" class="small fw-semibold mb-2"></div>
+          <div id="erros-app-lista" style="max-height:50vh; overflow:auto;"></div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-erros-app-copiar"><i class="fas fa-copy me-1" aria-hidden="true"></i>Copiar</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" id="btn-erros-app-limpar"><i class="fas fa-trash me-1" aria-hidden="true"></i>Limpar</button>
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Densidade DPI / dpmm -->
   <div class="modal fade" id="modal-dpi" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalDpiLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -2935,7 +3055,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.007</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.008</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -2945,7 +3065,7 @@
 
   <!-- Footer 2: páginas legais/institucionais (abrem em modal, mesmo padrão da Ajuda) -->
   <footer class="container mt-0 mb-3" id="footer-legal" aria-label="Páginas legais e institucionais">
-    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
+    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small position-relative">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2" role="group" aria-label="Links para as páginas legais">
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-pagina-legal" data-pagina="analise-sistema" data-titulo="Análise do Sistema — Para Empresas"><i class="fas fa-briefcase me-1"></i> Para Empresas</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="sobre" data-titulo="Sobre o CanalQb Impressão em Zebras">Sobre</button>
@@ -2959,6 +3079,11 @@
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="declaracao-acessibilidade" data-titulo="Declaração de Acessibilidade">Acessibilidade</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="disclaimer" data-titulo="Disclaimer / Isenção de Responsabilidade">Disclaimer</button>
       </div>
+      <!-- Pedido 1.148: mini botão isolado à direita — abre o modal de erros capturados -->
+      <button type="button" class="btn-erros-app" id="btn-erros-app" data-bs-toggle="modal" data-bs-target="#modal-erros-app" title="Erros capturados nesta página — exceções, promessas, console.error e recursos que falharam (útil em testes)" aria-label="Ver erros capturados nesta página">
+        <i class="fas fa-bug" aria-hidden="true"></i>
+        <span class="erros-app-badge" id="erros-app-badge" style="display:none;">0</span>
+      </button>
     </div>
   </footer>
   </div><!-- /#app-scroll-wrap (Pedido 1.85: desktop rola só o conteúdo) -->
@@ -3010,6 +3135,10 @@
         <div class="d-grid gap-2">
           <button type="button" class="btn btn-outline-danger btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-novo" data-bs-dismiss="offcanvas">
             <span><i class="fas fa-file-circle-plus me-2 text-danger"></i> Nova Etiqueta em Branco</span>
+          </button>
+          <!-- Pedido 1.144: Nova Etiqueta + Limpar Dados (reset do app) -->
+          <button type="button" class="btn btn-outline-danger btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-reset-app" data-bs-dismiss="offcanvas">
+            <span><i class="fas fa-rotate-left me-2 text-danger"></i> Nova Etiqueta + Limpar Dados</span>
           </button>
           <button type="button" class="btn btn-outline-primary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-carregar" data-bs-dismiss="offcanvas">
             <span><i class="fas fa-folder-open me-2 text-primary"></i> Carregar Modelo (.bin)</span>
@@ -7479,17 +7608,65 @@
 
     var isEditingZpl = false;
 
+    /* Pedido 1.146: composicao unica do ZPL de saida — campo #zpl, "Download
+       ZPL" e "Imprimir" entregam a mesma coisa, na ordem do Imprimir: lote
+       ZPL (1.140) > lote especial (1.102) > linhas importadas ("Gerar Todas
+       as Linhas") > etiqueta atual; views guardadas (1.102) entram antes.
+       Sem isso o Download de um lote gerado do Excel/CSV baixava só a
+       etiqueta corrente e a reimportação voltava 1 etiqueta em vez de todas. */
+    function comporZplSaida(paraImpressao) {
+      /* Guard de re-entrância: gerarZPLTodasLinhas → garantirAlvosLote pode
+         chamar renderStudio → renderZPL → comporZplSaida de novo. O aninhado
+         recebe só o bloco atual — o externo é quem compõe o lote completo. */
+      if (comporZplSaida._rodando) {
+        return { zpl: gerarZPLBloco(elements, tamAtualKey, rotAtual), temLote: false };
+      }
+      comporZplSaida._rodando = true;
+      try {
+      var zpl = null;
+      var temLote = false;
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        zpl = loteZplGerarZpl() || null;
+        if (zpl) temLote = true;
+      } else if (ehLoteEspecialNavegavel()) {
+        var blocosLote = [];
+        loteEspecialBindings.forEach(function (stepMap) {
+          var cloneLote = elements.map(function (el) { return Object.assign({}, el); });
+          aplicarStepMapEmArray(cloneLote, stepMap);
+          var blocoLote = gerarZPLBloco(cloneLote, tamAtualKey, rotAtual);
+          if (blocoLote) blocosLote.push(blocoLote);
+        });
+        if (blocosLote.length) { zpl = blocosLote.join("\n\n"); temLote = true; }
+      } else {
+        var multi = gerarZPLTodasLinhas();
+        if (multi) { zpl = multi.zpl; temLote = true; }
+      }
+      if (!zpl) {
+        if (paraImpressao && (localStorage.getItem("etiquetasZebra.printAsImage") === "1" || temTextoGirado())) {
+          zpl = gerarZPLImagem();
+        } else {
+          zpl = gerarZPLBloco(elements, tamAtualKey, rotAtual);
+        }
+      }
+      if (etiquetasMulti.length) {
+        var zplViews = etiquetasMulti.map(function (etq) {
+          return gerarZPLBloco(etq.elements, tamAtualKey, rotAtual);
+        }).filter(Boolean).join("\n\n");
+        if (zplViews) zpl = zplViews + (zpl ? "\n\n" : "") + zpl;
+      }
+      return { zpl: zpl, temLote: temLote };
+      } finally {
+        comporZplSaida._rodando = false;
+      }
+    }
+
     function renderZPL() {
       var code = gerarZPLBloco(elements, tamAtualKey, rotAtual);
       if (!isEditingZpl && $("zpl")) {
-        if (loteZplBlocos && loteZplBlocos.length >= 2) {
-          /* Pedido 1.140: com lote ZPL ativo, o campo mostra TODAS as
-             etiquetas (a página atual reflete os edits do usuário). */
-          var loteZ = loteZplGerarZpl();
-          if (loteZ) $("zpl").value = loteZ;
-        } else {
-          $("zpl").value = code;
-        }
+        /* Pedido 1.146: o campo acompanha a saida completa (lote/linhas/views),
+           igual ao Imprimir e ao Download ZPL. */
+        var saida = comporZplSaida(false);
+        if (saida.zpl) $("zpl").value = saida.zpl;
       }
       return code;
     }
@@ -9542,6 +9719,48 @@
       });
     }
 
+    /* Pedido 1.146: "Ler Colunas" roda sozinho — ao escolher o arquivo e ao
+       "conectar" com a origem (Enter no campo ou mudança de valor válida),
+       sem precisar clicar no botão. A Pasta Local já lê direto ao escolher. */
+    function importAutoLer() {
+      var btn = $("btn-import-ler");
+      if (btn) btn.click();
+    }
+    (function ligarImportAutoLer() {
+      function tipoAtual() {
+        return (document.querySelector("input[name='import-tipo']:checked") || {}).value || "";
+      }
+      function ligar(id, tipo, valido) {
+        var campo = $(id);
+        if (!campo) return;
+        campo.addEventListener("keydown", function (ev) {
+          if (ev.key !== "Enter") return;
+          ev.preventDefault();
+          if (tipoAtual() === tipo && valido(this.value)) importAutoLer();
+        });
+        campo.addEventListener("change", function () {
+          if (tipoAtual() === tipo && valido(this.value)) importAutoLer();
+        });
+      }
+      var fileImp = $("import-file");
+      if (fileImp) fileImp.addEventListener("change", function () {
+        if (!this.files || !this.files.length) return;
+        if (tipoAtual() === "csv" || tipoAtual() === "xlsx") importAutoLer();
+      });
+      ligar("import-url", "gsheets", function (v) {
+        return /^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test((v || "").trim());
+      });
+      ligar("webhook-url", "webhook", function (v) { return !!(v || "").trim(); });
+      ligar("banco-url", "banco-api", function (v) { return !!(v || "").trim(); });
+      ligar("ponte-host", "ponte", function (v) { return !!(v || "").trim(); });
+      ligar("ponte-banco", "ponte", function (v) { return !!(v || "").trim(); });
+      var sqlPonte = $("ponte-sql");
+      if (sqlPonte) sqlPonte.addEventListener("change", function () {
+        var host = (($("ponte-host") || {}).value || "").trim();
+        if (tipoAtual() === "ponte" && host) importAutoLer();
+      });
+    })();
+
     if ($("btn-import-salvar-mapa")) {
       $("btn-import-salvar-mapa").addEventListener("click", function () {
         var mapa = importObterMapeamento();
@@ -9733,8 +9952,11 @@
           baseY = el.y + ((el.tipo === "texto") ? (el.fonte * 1.4) : el.h) + GAP;
           alvos[i] = el;
         });
+        /* Pedido 1.146: render só quando CRIOU elementos — incondicional
+           criava o loop renderStudio → renderZPL → comporZplSaida →
+           gerarZPLTodasLinhas → garantirAlvosLote → renderStudio → … */
+        renderStudio();
       }
-      renderStudio();
       return alvos;
     }
     /* Aplica uma linha do lote aos elementos REAIS do Estúdio (a etiqueta
@@ -11111,40 +11333,13 @@
       /* Pedido 1.102: com Lote Especial gerado, "Imprimir" envia TODAS as
          etiquetas do lote — regeneradas da etiqueta atual + combinações —
          em vez de imprimir apenas a etiqueta corrente do Estúdio. */
-      var zpl;
-      if (loteZplBlocos && loteZplBlocos.length >= 2) {
-        /* Pedido 1.140: lote importado de arquivo ZPL — imprime TODAS as
-           etiquetas (uma por bloco), com os edits da página atual aplicados. */
-        zpl = loteZplGerarZpl() || baseZpl;
-        if (!isEditingZpl) $("zpl").value = zpl;
-      } else if (ehLoteEspecialNavegavel()) {
-        var blocosLote = [];
-        loteEspecialBindings.forEach(function (stepMap) {
-          var cloneLote = elements.map(function (el) { return Object.assign({}, el); });
-          aplicarStepMapEmArray(cloneLote, stepMap);
-          var blocoLote = gerarZPLBloco(cloneLote, tamAtualKey, rotAtual);
-          if (blocoLote) blocosLote.push(blocoLote);
-        });
-        zpl = blocosLote.length ? blocosLote.join("\n\n") : baseZpl;
-        if (!isEditingZpl) $("zpl").value = zpl;
-      } else {
-        var multi = gerarZPLTodasLinhas();
-        if (multi) {
-          zpl = multi.zpl;
-          if (!isEditingZpl) $("zpl").value = multi.zpl;
-        } else if (localStorage.getItem("etiquetasZebra.printAsImage") === "1" || temTextoGirado()) {
-          zpl = gerarZPLImagem();
-        } else {
-          zpl = renderZPL();
-        }
-      }
-      /* Pedido 1.102: projeto com várias etiquetas — imprime também as views guardadas */
-      if (etiquetasMulti.length) {
-        var zplViews = etiquetasMulti.map(function (etq) {
-          return gerarZPLBloco(etq.elements, tamAtualKey, rotAtual);
-        }).filter(Boolean).join("\n\n");
-        if (zplViews) zpl = zplViews + "\n\n" + zpl;
-      }
+      /* Pedido 1.146: a cascata (lote ZPL 1.140 > lote especial 1.102 >
+         linhas importadas > etiqueta atual, com views guardadas antes e
+         modo imagem quando a etiqueta exige) agora vive em comporZplSaida —
+         Imprimir, campo #zpl e Download ZPL compartilham a mesma saida. */
+      var saida = comporZplSaida(true);
+      if (!saida.zpl) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
+      var zpl = saida.zpl;
       if (qtd && qtd > 1) zpl = injetarQuantidadeZPL(zpl, qtd);
 
       var ip = localStorage.getItem(CHAVE_IP);
@@ -11428,6 +11623,15 @@
       if (dnvChip) dnvChip.title = msg;
       if (typeof syncMobileState === "function") syncMobileState();
     }
+    /* Pedido 1.145: duplo clique no chip de status da impressora abre direto
+       o modal de configuração IP / USB / Bluetooth (mesmo fluxo do "Configurar"). */
+    (function ligarDblClickStatusImpressora() {
+      var chipDnv = $("dnv-status-impressora");
+      if (!chipDnv) return;
+      chipDnv.addEventListener("dblclick", function () {
+        if (typeof abrirModalIp === "function") abrirModalIp();
+      });
+    })();
     /* Pedido 1.119: heartbeat de 30s sem vazar memória — a flag de ocupado
        impede empilhamento de checagens, aba oculta não gasta rede e, ao
        voltar para a aba, a verificação é imediata. O abort de 2,5s já
@@ -11535,6 +11739,54 @@
            persistir do zero a partir da etiqueta em branco */
         if (bsModalResetApp) bsModalResetApp.hide();
         notify("Armazenamento limpo — etiqueta nova em branco.", "success");
+      });
+    }
+
+    /* Pedido 1.148: modal de erros capturados — lista o que o coletor global
+       (script do <head>) registrou desde o carregamento da página. */
+    var modalErrosAppEl = $("modal-erros-app");
+    if (modalErrosAppEl) {
+      function escErrosApp(s) {
+        return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+          return { "&": "\u0026amp;", "<": "\u0026lt;", ">": "\u0026gt;", '"': "\u0026quot;" }[c];
+        });
+      }
+      function renderErrosAppLista() {
+        var log = window.__errosAppLog || [];
+        var resumo = $("erros-app-resumo");
+        if (resumo) resumo.textContent = log.length ? log.length + " registro(s) nesta sessão." : "";
+        var lista = $("erros-app-lista");
+        if (!lista) return;
+        if (!log.length) {
+          lista.innerHTML = '<p class="small text-success mb-0"><i class="fas fa-circle-check me-1" aria-hidden="true"></i>Nenhum erro capturado até agora.</p>';
+          return;
+        }
+        lista.innerHTML = log.map(function (e) {
+          var origem = e.origem ? ' <span class="text-muted">— ' + escErrosApp(e.origem) + "</span>" : "";
+          return '<div class="erro-item rounded px-2 py-1 mb-1 small"><span class="text-muted fw-normal">' + escErrosApp(e.ts) + '</span> <span class="badge text-bg-danger">' + escErrosApp(e.tipo) + "</span><br>" + escErrosApp(e.msg) + origem + "</div>";
+        }).join("");
+      }
+      modalErrosAppEl.addEventListener("show.bs.modal", renderErrosAppLista);
+      var btnErrosAppLimpar = $("btn-erros-app-limpar");
+      if (btnErrosAppLimpar) btnErrosAppLimpar.addEventListener("click", function () {
+        if (window.__errosAppLog) window.__errosAppLog.length = 0;
+        var badge = $("erros-app-badge");
+        if (badge) badge.style.display = "none";
+        renderErrosAppLista();
+      });
+      var btnErrosAppCopiar = $("btn-erros-app-copiar");
+      if (btnErrosAppCopiar) btnErrosAppCopiar.addEventListener("click", function () {
+        var log = window.__errosAppLog || [];
+        var txt = log.map(function (e) {
+          return "[" + e.ts + "] " + e.tipo + (e.origem ? " (" + e.origem + ")" : "") + ": " + e.msg;
+        }).join("\n") || "Nenhum erro capturado.";
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(txt).then(function () {
+            notify("Erros copiados para a área de transferência.", "success");
+          }, function () { notify("Não foi possível copiar agora.", "danger"); });
+        } else {
+          notify("Cópia não suportada neste navegador.", "warning");
+        }
       });
     }
 
@@ -11656,7 +11908,11 @@
 
     // Download ZPL File
     function baixarZPLArquivo() {
-      var code = (loteZplBlocos && loteZplBlocos.length >= 2) ? (loteZplGerarZpl() || $("zpl").value) : $("zpl").value;
+      /* Pedido 1.146: baixa TODAS as etiquetas da saida (lote especial,
+         linhas importadas, lote ZPL e views guardadas) — igual ao Imprimir,
+         para o arquivo reimportar como lote completo. */
+      var saida = comporZplSaida(false);
+      var code = saida.zpl || $("zpl").value;
       if (!code) return;
       var name = getModelName() || "etiqueta-zebra";
       var fileBase = sanitizarFilename(name);
@@ -12336,6 +12592,23 @@
         confirmar("Começar uma etiqueta em branco? O desenho atual não salvo será perdido.", function (ok) {
           if (ok) limparEtiqueta();
         });
+      });
+    }
+
+    /* Pedido 1.144: botão de reset no menu mobile — abre a mesma confirmação
+       do btn-reset-app do ribbon Sistema (não limpa direto). */
+    var navResetApp = $("nav-btn-reset-app");
+    if (navResetApp) {
+      navResetApp.addEventListener("click", function() {
+        if (bsModalResetApp) bsModalResetApp.show();
+      });
+    }
+
+    /* Ribbon Sistema (Pedido 1.144): mesmo Imprimir do mobile (bottom-btn-imprimir) */
+    var ribbonImp = $("ribbon-btn-imprimir");
+    if (ribbonImp) {
+      ribbonImp.addEventListener("click", function() {
+        if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias();
       });
     }
 
@@ -13133,7 +13406,7 @@
                     <li><strong>Geração em Lote</strong> — abre o painel de numeração automática (veja a seção 7).</li>
                     <li><strong>Importar Dados (Excel, CSV)</strong> — abre o painel de importação de planilhas (seção 7).</li>
                     <li><strong>Carregar arquivo .ZPL</strong> — traz uma etiqueta salva em arquivo de código.</li>
-                    <li><strong>Download ZPL</strong> — baixa o arquivo de código da etiqueta atual.</li>
+                    <li><strong>Download ZPL</strong> — baixa o arquivo .zpl com <strong>todas as etiquetas da saída atual</strong> (lote gerado de planilha, lote importado de ZPL e views guardadas — igual ao Imprimir); reimportar o arquivo devolve o lote completo.</li>
                   </ul>
                 </div>
               </div>
@@ -13202,8 +13475,8 @@
               <span class="small fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> O chip de status (canto direito):</span>
               <p class="small text-muted mb-0">
                 Ao lado dos menus fica o <strong>pontinho com o IP da impressora</strong>: <span class="text-success fw-semibold">verde</span> = impressora respondendo,
-                <span class="text-danger fw-semibold">vermelho</span> = falha na conexão, cinza = nada configurado. Clique para abrir a configuração ou
-                <strong>clique duplo</strong> para trocar o IP na hora.
+                <span class="text-danger fw-semibold">vermelho</span> = falha na conexão, cinza = nada configurado. <strong>Duplo clique</strong> abre a
+                configuração completa da impressora (IP, USB e Bluetooth).
               </p>
             </div>
           </div>
@@ -13238,13 +13511,16 @@
               </div>
               <div class="col-lg-6">
                 <div class="card p-3 h-100 border-0 shadow-sm">
-                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-tag me-1"></i>Ribbon Etiqueta (guias)</h6>
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-tag me-1"></i>Ribbons Etiqueta e Sistema</h6>
                   <ul class="small text-muted mb-0 ps-3">
                     <li><i class="fas fa-ruler-horizontal me-1"></i> <strong>Régua</strong> — mostra/oculta as réguas com medidas.</li>
                     <li><i class="fas fa-table-cells me-1"></i> <strong>Grade do Palco</strong> — quadradinhos ao redor da etiqueta.</li>
                     <li><i class="fas fa-border-all me-1"></i> <strong>Grade da Etiqueta</strong> — quadradinhos dentro da etiqueta.</li>
                     <li><i class="fas fa-magnet me-1"></i> <strong>Ajuste Magnético</strong> — gruda as pontas das linhas umas nas outras e alinha elementos.</li>
-                    <li><i class="fas fa-rotate-left me-1"></i> <strong>Nova Etiqueta + Limpar Armazenamento</strong> — apaga tudo salvo no navegador (etiqueta, histórico, lote, modelos e configurações) e abre uma etiqueta em branco. Pede confirmação antes.</li>
+                  </ul>
+                  <ul class="small text-muted mb-0 ps-3 mt-2">
+                    <li><i class="fas fa-print me-1"></i> <strong>Imprimir</strong> (ribbon <strong>Sistema</strong>) — mesma ação do botão Imprimir do celular: abre a impressão com quantidade de cópias.</li>
+                    <li><i class="fas fa-rotate-left me-1"></i> <strong>Nova Etiqueta + Limpar Armazenamento</strong> (ribbon <strong>Sistema</strong>, ícone vermelho) — apaga tudo salvo no navegador (etiqueta, histórico, lote, modelos e configurações) e abre uma etiqueta em branco. Pede confirmação antes. No celular, está logo abaixo de “Nova Etiqueta em Branco”.</li>
                   </ul>
                   <p class="small text-muted mb-0 mt-2 ps-3"><i class="bi bi-info-circle me-1"></i> Botões acesos = ligado; apagados = desligado.</p>
                 </div>
@@ -13340,6 +13616,7 @@
                   <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-import me-1"></i>Importar Dados (planilhas)</h6>
                   <ul class="small text-muted mb-0 ps-3">
                     <li>Importe <strong>planilhas do Excel</strong>, arquivos <strong>CSV/TXT</strong> e <strong>planilhas online do Google</strong> — ou fontes avançadas (webhook, banco de dados/API, pasta compartilhada e ponte local).</li>
+                    <li><strong>As colunas são lidas sozinhas</strong>: ao escolher o arquivo, ou ao conectar com a origem (Enter no link/URL ou mudança de valor válido), o “Ler Colunas” roda automaticamente.</li>
                     <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
                     <li><strong>Aplicar</strong> cria os elementos na etiqueta; <strong>Gerar Todas as Linhas</strong> cria uma etiqueta por linha da planilha.</li>
                     <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
