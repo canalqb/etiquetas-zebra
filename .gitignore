@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Arquivos de conhecimento / uso local — NÃO publicar
 # (pasta regras/, leitura obrigatória/, probes temporários,
 #  logs e planos de implementação ficam apenas no computador)
@@ -16,3 +16,5 @@ plano-*.md
 # Dados de teste do usuário e material de referência — NÃO publicar
 Lexmark.xlsx
 zpl-zbi2-pg-en.pdf
+modelo-*.zpl
+adicionais/**/catalogo-original.*

@@ -1476,7 +1476,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.012</span>
+      <span class="brand-ver">v1.013</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1670,6 +1670,35 @@
         </div>
       </li>
 
+      <!-- Dropdown: Adicionais (Pedido 1.155 — cascata: Fabricante → Modelo → páginas) -->
+      <li role="none">
+        <button type="button" class="dnv-menu-btn" id="dnv-btn-adicionais" aria-haspopup="true" aria-expanded="false" role="menuitem">
+          <i class="fas fa-puzzle-piece" aria-hidden="true"></i> Adicionais <i class="fas fa-chevron-down caret" aria-hidden="true"></i>
+        </button>
+        <div class="dnv-dropdown" id="dnv-dd-adicionais" role="menu">
+          <span class="dnv-dropdown-header">Fabricante</span>
+          <div class="dnv-submenu-wrap" id="dnv-sub-fab-wrap">
+            <button type="button" class="dnv-dropdown-item dnv-submenu-btn" id="dnv-sub-fabricante" role="menuitem" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-industry dnv-icon text-secondary"></i> Honeywell <i class="fas fa-chevron-right dnv-sub-caret" aria-hidden="true"></i>
+            </button>
+            <div class="dnv-dropdown dnv-submenu" id="dnv-dd-fabricante" role="menu">
+              <span class="dnv-dropdown-header">Modelo</span>
+              <div class="dnv-submenu-wrap" id="dnv-sub-mod-wrap">
+                <button type="button" class="dnv-dropdown-item dnv-submenu-btn" id="dnv-sub-modelo" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-barcode dnv-icon text-success"></i> 8675i <i class="fas fa-chevron-right dnv-sub-caret" aria-hidden="true"></i>
+                </button>
+                <div class="dnv-dropdown dnv-submenu" id="dnv-dd-modelo" role="menu">
+                  <span class="dnv-dropdown-header">Páginas</span>
+                  <button type="button" class="dnv-dropdown-item" id="dnv-adic-8675i-barcodes" role="menuitem" title="Honeywell 8675i — Códigos de Barras (Configuração do Scanner)">
+                    <i class="fas fa-file-code dnv-icon text-success"></i> codigos-barras.html
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
     </ul>
 
     <!-- Ações rápidas à direita -->
@@ -1745,7 +1774,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.012</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.013</span>
         </div>
       </div>
 
@@ -3100,7 +3129,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.012</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.013</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3353,6 +3382,11 @@
           <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" id="nav-btn-tema">
             <i class="bi bi-moon-stars" id="nav-icon-tema"></i>
             <span id="nav-tema-text">Tema</span>
+          </button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" id="nav-btn-adicionais" data-bs-dismiss="offcanvas">
+            <i class="fas fa-puzzle-piece me-1"></i> Adicionais — Honeywell 8675i (Códigos de Barras)
           </button>
         </div>
         <div class="d-flex justify-content-between align-items-center">
@@ -9253,7 +9287,7 @@
     /* Etiqueta de teste (lote/importação): envia apenas a 1ª etiqueta, 1 cópia. */
     function imprimirEtiquetaTesteLote() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { imprimirEtiquetaTesteLote(); }); return; }
 
       var zplBase = null;
       var multi = gerarZPLTodasLinhas();
@@ -10793,8 +10827,8 @@
           zplCode = $("zpl").value;
         }
         if (zplCode) {
-          var ip = localStorage.getItem(CHAVE_IP);
-          if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
+      var ip = localStorage.getItem(CHAVE_IP);
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { abrirModalQuantidadeImpressao(function (qtd) { var zplFinal = (qtd > 1) ? injetarQuantidadeZPL(zplCode, qtd) : zplCode; enviarImpressao(null, zplFinal); }); }); return; }
           abrirModalQuantidadeImpressao(function (qtd) {
             var zplFinal = (qtd > 1) ? injetarQuantidadeZPL(zplCode, qtd) : zplCode;
             enviarImpressao(ip, zplFinal);
@@ -11482,6 +11516,48 @@
       });
     }
 
+    /* ---------------- Adicionais — Honeywell 8675i (Pedido 1.155) ----------------
+       Página autocontida em adicionais/honeywell/8675i/codigos-barras.html,
+       aberta via IFRAME no modal de páginas (scripts próprios: filtro,
+       terminador . / ! e comando personalizado). Serve ao menu desktop
+       Adicionais e ao botão do painel mobile. */
+    function abrirAdicionaisHoneywell8675i() {
+      var modalEl = document.getElementById("modal-pagina-legal");
+      var corpo = document.getElementById("pagina-legal-conteudo");
+      if (!modalEl || !corpo) return;
+      var titulo = document.getElementById("titulo-pagina-legal");
+      if (titulo) titulo.textContent = "Honeywell 8675i — Códigos de Barras";
+      var link = document.getElementById("link-pagina-legal");
+      if (link) link.setAttribute("href", "adicionais/honeywell/8675i/codigos-barras.html");
+      corpo.innerHTML =
+        '<div class="alert alert-info py-2 mb-2" role="alert"><i class="fas fa-circle-info me-1"></i>' +
+        'Catálogo integrado — use o filtro, o terminador (Gravar / Temporário) e o botão Imprimir dentro da página abaixo.</div>' +
+        '<iframe src="adicionais/honeywell/8675i/codigos-barras.html" title="Honeywell 8675i — Códigos de Barras" style="width:100%;height:72vh;border:1px solid var(--zebra-border);border-radius:10px;background:#fff;" loading="lazy"></iframe>';
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+
+    /* ---------------- Permissão de impressão (Pedido 1.155-condição d) ----------------
+       Se o usuário ainda não deu permissão (sem IP, sem USB autorizado e sem
+       Bluetooth), REPETE o pedido de permissão na hora do clique em Imprimir:
+       o navegador mostra o seletor USB (requestDevice); se o usuário cancelar,
+       cai no painel Configurar Impressora (comportamento antigo). */
+    function repetirPermissaoImpressao(continuar) {
+      if ("usb" in navigator) {
+        notify("Nenhuma impressora com permissão ainda — o navegador vai pedir para escolher a impressora USB (cancele para configurar por IP ou Bluetooth).", "dark");
+        conectarWebUSB().then(function () {
+          if (usbDevice && usbDevice.opened) {
+            if (typeof continuar === "function") continuar();
+          } else {
+            abrirModalIp();
+            notify("Configure a impressora (IP, USB ou Bluetooth).", "danger");
+          }
+        });
+        return;
+      }
+      abrirModalIp();
+      notify("Configure a impressora (IP, USB ou Bluetooth).", "danger");
+    }
+
     /* Caminho único de impressão da etiqueta atual: pergunta cópias → injeta ^PQ → envia. */
     function solicitarImpressaoComCopias() {
       if (!$("zpl").value) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
@@ -11490,7 +11566,7 @@
         return;
       }
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); }); }); return; }
       abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
     }
 
@@ -11498,7 +11574,7 @@
 
     function abrirModalImprimirZPLBruto() {
       var ip = localStorage.getItem(CHAVE_IP);
-      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
+      if (!ip && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { abrirModalImprimirZPLBruto(); }); return; }
       $("zpl-print-ip").textContent = ip;
       if (bsModalPrintZpl) bsModalPrintZpl.show();
     }
@@ -11979,7 +12055,7 @@
     if ($("btn-prev-imprimir")) {
       $("btn-prev-imprimir").addEventListener("click", function () {
         var ipP = localStorage.getItem(CHAVE_IP);
-        if (!ipP && !(usbDevice && usbDevice.opened) && !btChar) { abrirModalIp(); notify("Configure a impressora (IP, USB ou Bluetooth).", "danger"); return; }
+        if (!ipP && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { enviarImpressao(null, gerarZPLImagem()); }); return; }
         enviarImpressao(ipP, gerarZPLImagem());
       });
     }
@@ -13010,6 +13086,13 @@
       });
     }
 
+    var navAdicionais = $("nav-btn-adicionais");
+    if (navAdicionais) {
+      navAdicionais.addEventListener("click", function() {
+        if (typeof abrirAdicionaisHoneywell8675i === "function") abrirAdicionaisHoneywell8675i();
+      });
+    }
+
     /* ================================================================
        FOOTER 2 — Páginas legais abrem em modal (mesmo padrão da Ajuda).
        Conteúdo buscado de pages/{pagina}.html com cache em memória;
@@ -13098,7 +13181,7 @@
     (function () {
       /* "calibrar" entra no MENUS só para os loops de fechamento (dnv-btn-calibrar não existe,
          então o registro de toggle do topo é ignorado — apenas o submenu fecha junto). */
-      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "calibrar"];
+      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "adicionais", "fabricante", "modelo", "calibrar"];
       MENUS.forEach(function (nome) {
         var btn = document.getElementById("dnv-btn-" + nome);
         var dd  = document.getElementById("dnv-dd-" + nome);
@@ -13132,6 +13215,23 @@
           if (abrirSub) atualizarTextosCalibrarSub();
         });
       }
+
+      /* Adicionais (Pedido 1.155): cascata Fabricante → Modelo → página —
+         cada nível abre para a direita e mantém o pai aberto (padrão Calibrar).
+         "fabricante"/"modelo" também entram no MENUS para os loops de fechamento
+         (dnv-btn-fabricante não existe: só os painéis dnv-dd-* são fechados). */
+      [["dnv-sub-fabricante", "dnv-dd-fabricante"], ["dnv-sub-modelo", "dnv-dd-modelo"]].forEach(function (par) {
+        var b = document.getElementById(par[0]);
+        var d = document.getElementById(par[1]);
+        if (!b || !d) return;
+        b.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var abrirSub = !d.classList.contains("dnv-open");
+          d.classList.toggle("dnv-open", abrirSub);
+          b.classList.toggle("dnv-open", abrirSub);
+          b.setAttribute("aria-expanded", String(abrirSub));
+        });
+      });
 
       document.addEventListener("click", function (e) {
         /* Cliques dentro da própria navbar (menus, submenu, sliders, combos nativos
@@ -13384,6 +13484,14 @@
       dnvAcao("dnv-ajuda-tema", function () {
         var btn = $("btn-tema");
         if (btn) btn.click();
+      });
+
+      /* Adicionais (Pedido 1.155): abre o catálogo da Honeywell 8675i no
+         modal de páginas, SEMPRE via IFRAME (a página tem scripts próprios —
+         filtro, terminador e geração de código personalizado; conteúdo
+         injetado via fetch não executaria scripts). */
+      dnvAcao("dnv-adic-8675i-barcodes", function () {
+        if (typeof abrirAdicionaisHoneywell8675i === "function") abrirAdicionaisHoneywell8675i();
       });
 
     })(); /* fim Navbar Fase A */
