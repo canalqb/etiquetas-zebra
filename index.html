@@ -1458,7 +1458,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.008</span>
+      <span class="brand-ver">v1.009</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1727,7 +1727,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.008</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.009</span>
         </div>
       </div>
 
@@ -2306,10 +2306,16 @@
                 <label class="form-label small fw-semibold mb-1" for="input-protocolo-modal">Protocolo de Impressao:</label>
                 <select id="input-protocolo-modal" class="form-select form-select-sm">
                   <option value="http" selected>HTTP Direct (POST /pstprnt - Sem Instalacao)</option>
+                  <option value="https">HTTPS Direct (POST /pstprnt - Link-OS 7.6+)</option>
                   <option value="cloud">Nuvem / Webhook (Cloud Connect API HTTPS)</option>
                   <option value="ftp">FTP (Porta 21 - Servidor Local node print-server.js)</option>
                   <option value="tcp">TCP 9100 (Porta Raw - Servidor Local node print-server.js)</option>
                 </select>
+              </div>
+              <div class="form-text small mt-1 d-none" id="hint-cert-https">
+                Link-OS 7.6+ so atende HTTPS com certificado autoassinado:
+                <a href="#" id="btn-aceitar-cert">abra https://IP da impressora e aceite o certificado</a>
+                (Avancado — Prosseguir) uma vez por sessao antes de imprimir.
               </div>
               <div class="form-text small mt-2">O IP e o protocolo ficam salvos no navegador.</div>
               <div class="mt-2 pt-2 border-top text-center">
@@ -3055,7 +3061,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.008</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.009</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3648,10 +3654,22 @@
       if (typeof syncMobileState === "function") syncMobileState();
     }
 
+    /* Pedido 1.150: Link-OS 7.6+ so atende HTTPS (pstprnt) — helper de URL
+       e fluxo de aceitacao do certificado autoassinado no navegador. */
+    function pstprntUrl(ip, proto) {
+      var schemeP = (proto || getProtocolo()) === "https" ? "https" : "http";
+      return schemeP + "://" + ip + "/pstprnt";
+    }
+    function atualizarHintCertHttps() {
+      var hintHc = $("hint-cert-https");
+      var selHc = $("input-protocolo-modal");
+      if (hintHc && selHc) hintHc.classList.toggle("d-none", selHc.value !== "https");
+    }
     function abrirModalIp() {
       if ($("input-ip-modal")) $("input-ip-modal").value = localStorage.getItem(CHAVE_IP) || "";
       if ($("input-protocolo-modal")) $("input-protocolo-modal").value = getProtocolo();
       if (typeof iniciarDiagnosticoUSB === "function") iniciarDiagnosticoUSB();
+      atualizarHintCertHttps();
       bsModalIp.show();
     }
 
@@ -3713,6 +3731,17 @@
     });
 
     /* Testar Conexão Direct HTTP / Local Server */
+    var selProtoModal = $("input-protocolo-modal");
+    if (selProtoModal) selProtoModal.addEventListener("change", atualizarHintCertHttps);
+    var btnAceitarCert = $("btn-aceitar-cert");
+    if (btnAceitarCert) btnAceitarCert.addEventListener("click", function (evAc) {
+      evAc.preventDefault();
+      var ipAc = ($("input-ip-modal") && $("input-ip-modal").value.trim()) || localStorage.getItem(CHAVE_IP);
+      if (!ipAc) { notify("Digite o IP da impressora Zebra na rede local.", "warning"); return; }
+      window.open("https://" + ipAc + "/", "_blank");
+      notify("Aceite o certificado na aba aberta (Avancado — Prosseguir) e teste a conexao de novo.", "info");
+    });
+
     $("btn-testar-ip-modal").addEventListener("click", function () {
       var testIp = $("input-ip-modal").value.trim() || localStorage.getItem(CHAVE_IP);
       var proto = $("input-protocolo-modal").value;
@@ -3724,14 +3753,17 @@
 
       transmitirZplParaExtensao(testIp, "^XA^XZ");
 
-      if (proto === "http") {
-        notify("Testando conectividade HTTP Direct em http://" + testIp + "/...", "info");
-        fetch("http://" + testIp + "/pstprnt", { method: "POST", body: "^XA^XZ", mode: "no-cors" })
+      if (proto === "http" || proto === "https") {
+        var schemeT = proto === "https" ? "https" : "http";
+        notify("Testando conectividade " + schemeT.toUpperCase() + " Direct em " + schemeT + "://" + testIp + "/...", "info");
+        fetch(pstprntUrl(testIp, proto), { method: "POST", body: "^XA^XZ", mode: "no-cors" })
           .then(function () {
-            notify("✅ Requisição HTTP Direct enviada para " + testIp + "! Impressora pronta.", "success");
+            notify("✅ Requisição " + schemeT.toUpperCase() + " Direct enviada para " + testIp + "! Impressora pronta.", "success");
           })
           .catch(function () {
-            notify("⚠️ Requisição HTTP enviada. Verifique se o IP " + testIp + " está acessível na rede local.", "info");
+            notify(schemeT === "https"
+              ? "⚠️ HTTPS não alcançou " + testIp + ". Link-OS 7.6+ usa certificado autoassinado: clique no link de aceitar o certificado acima, aceite em https://" + testIp + " e teste de novo."
+              : "⚠️ Requisição HTTP enviada. Verifique se o IP " + testIp + " está acessível na rede local.", "info");
           });
       } else {
         notify("Testando servidor local de suporte (localhost:3001)...", "info");
@@ -4499,7 +4531,7 @@
             else div.textContent = "[" + ((simbologiaInfo(_qSimb) || {}).rotulo || "2D") + "]";
           } else {
             var _qSide = el.w || 200;
-            var _cachedQr = qrObter(el.texto);
+            var _cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia));
             var _qMods = _cachedQr ? _cachedQr.count : 33;
             var _qMag = Math.max(1, Math.floor(_qSide / _qMods));
             var szMm = dotsToMm(Math.round(_qMag * _qMods));
@@ -5324,7 +5356,7 @@
                 avisoLimiteDado = true;
                 notify("Sem espaço até a borda da etiqueta para crescer mais — mova o elemento para o centro e tente de novo.", "warning");
               }
-              var modsQ = (qrObter(itemEl.texto) || {}).count || 33;
+              var modsQ = (qrObter(itemEl.texto, qrNivelDe(itemEl.simbologia)) || {}).count || 33;
               if (pedidoSz > (item.origW || 0) + 2 && Math.round(newSz / modsQ) >= 10 && !avisoMagDado) {
                 avisoMagDado = true;
                 notify("QR Code atingiu o tamanho máximo da impressora (magnificação 10 do comando ZPL). Para um QR maior, ative o botão Imprimir como Imagem.", "warning");
@@ -6434,7 +6466,7 @@
        variantes cobrem o giro da etiqueta. Cache por texto|lado|rotação: o hex
        de um QR grande é caro de regerar a cada renderZPL. */
     function gerarGFAQrCode(el) {
-      var cachedQrGfa = qrObter(el.texto);
+      var cachedQrGfa = qrObter(el.texto, qrNivelDe(el.simbologia));
       var modsQrGfa = cachedQrGfa ? cachedQrGfa.count : 33;
       var sideBaseQr = Math.max(8, Math.round(Math.min(el.w || 200, el.h || 200)));
       var magQrGfa = Math.max(1, Math.floor(sideBaseQr / modsQrGfa));
@@ -6859,41 +6891,18 @@
         } else if (it.tipo === "qr") {
           if (!it.texto || it.texto.trim() === "") return;
           var _qSimbZ = it.simbologia || "qr";
-          if (_qSimbZ !== "qr") {
-            var infoQ2dZ = simbologiaInfo(_qSimbZ);
-            if (!infoQ2dZ) return;
-            if (infoQ2dZ.gs1 && (_qSimbZ === "gs1_qr" || _qSimbZ === "gs1_datamatrix")) {
-              /* Pedido 1.141 — GS1 QR / GS1 Data Matrix: FNC1 = 0x1D via ^FH
-                 ("_1D"), AIs crus separados por GS. Prática de campo não
-                 documentada na ZPL II Guide — VERIFICAR na impressora real. */
-              var camposGs1Z = gs1CamposZpl(it.texto);
-              var dadosGs1Z = camposGs1Z ? camposGs1Z.join("_1D") : sanitizar(it.texto);
-              var parsQGs1 = _qSimbZ === "gs1_qr" ? ",2," + Math.max(1, Math.min(10, Math.round(Math.min(it.w || 200, it.h || 200) / 33))) + ",Q" : "";
-              p.push("^FO" + px + "," + py + infoQ2dZ.zpl + rC + parsQGs1 + "^FH^FD_1D" + dadosGs1Z + "^FS");
-            } else if (_qSimbZ === "gs1_databar") {
-              /* Pedido 1.141 — ^BR tipo 1 (DataBar Omnidirectional). Formato do
-                 ^FD não documentado na ZPL II Guide: saem AIs crus sem
-                 parênteses. VERIFICAR na impressora real. */
-              var camposDbZ = gs1CamposZpl(it.texto);
-              var dadosDbZ = camposDbZ ? camposDbZ.join("") : sanitizar(it.texto);
-              p.push("^FO" + px + "," + py + "^BY" + Math.max(2, Math.min(10, Math.round((it.w || 200) / 100))) + "^BR" + rC + ",1," + Math.max(1, Math.min(10, Math.round((it.w || 200) / 96))) + ",1^FD" + dadosDbZ + "^FS");
-            } else if (!infoQ2dZ.zpl) {
-              /* Pedido 1.141 — Micro QR: sem comando nativo (^BQ só tem modelos
-                 1/2) → fallback gráfico ^GFA no tamanho da caixa. */
-              if (gerarGfaSimbologia(it)) p.push("^FO" + px + "," + py + gfaRotacaoElemento(it, rot) + "^FS");
-            } else {
-              /* Pedido 1.120 (fase inicial): 2D sem QR — comando nativo da simbologia
-                 (orientação + defaults do firmware; validar na impressora real) */
-              p.push("^FO" + px + "," + py + infoQ2dZ.zpl + rC + "^FD" + sanitizar(it.texto) + "^FS");
-            }
-          } else {
+          var _infoQ2dZ = simbologiaInfo(_qSimbZ);
+          /* Pedido 1.149: QR nativo = QR padrão e os níveis de correção
+             H/M/L (mesma via ^BQ, 4º parâmetro muda) */
+          var _qrNativoZ = _qSimbZ === "qr" || (_infoQ2dZ && _infoQ2dZ.zpl === "^BQ" && !_infoQ2dZ.gs1);
+          if (_qrNativoZ) {
             var _qSide = Math.min(it.w || 200, it.h || 200);
-            var _cachedQrZ = qrObter(it.texto);
+            var _cachedQrZ = qrObter(it.texto, qrNivelDe(_qSimbZ));
             var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
             var mag = Math.max(1, Math.round(_qSide / _qMods));
             if (mag <= 10) {
               /* Faixa nativa: ^BQ aceita magnificação 1–10 */
-              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + ",Q^FDLA," + sanitizar(it.texto) + "^FS");
+              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + "," + qrNivelDe(_qSimbZ) + "^FDLA," + sanitizar(it.texto) + "^FS");
             } else {
               /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
                  mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
@@ -6906,6 +6915,50 @@
                 : it.gfaZpl;
               if (gfaQr) p.push("^FO" + px + "," + py + gfaQr + "^FS");
             }
+          } else {
+            if (!_infoQ2dZ) return;
+            if (_infoQ2dZ.gs1 && (_qSimbZ === "gs1_qr" || _qSimbZ === "gs1_datamatrix")) {
+              /* Pedido 1.141 — GS1 QR / GS1 Data Matrix: FNC1 = 0x1D via ^FH
+                 ("_1D"). Pedido 1.149: separador GS só após AI de comprimento
+                 VARIÁVEL com outro AI atrás (forma canônica GS1 — AIs fixos
+                 se delimitam sozinhos pelo comprimento). Prática de campo
+                 não documentada na ZPL II Guide — VERIFICAR na impressora. */
+              var camposGs1Z = gs1CamposZpl(it.texto);
+              var dadosGs1Z;
+              if (camposGs1Z) {
+                dadosGs1Z = camposGs1Z.map(function (cGs1, iGs1) {
+                  var m4Q = /^(\d{4})/.exec(cGs1), m3Q = /^(\d{3})/.exec(cGs1), m2Q = /^(\d{2})/.exec(cGs1);
+                  var aiGs1 = (m4Q && gs1TamAiConhecido(m4Q[1])) ? m4Q[1] : (m3Q && gs1TamAiConhecido(m3Q[1])) ? m3Q[1] : (m2Q && gs1TamAiConhecido(m2Q[1])) ? m2Q[1] : "";
+                  var varGs1 = !aiGs1 || gs1TamanhoAI(aiGs1) === null;
+                  return cGs1 + (varGs1 && iGs1 < camposGs1Z.length - 1 ? "_1D" : "");
+                }).join("");
+              } else {
+                dadosGs1Z = sanitizar(it.texto);
+              }
+              var parsQGs1 = _qSimbZ === "gs1_qr" ? ",2," + Math.max(1, Math.min(10, Math.round(Math.min(it.w || 200, it.h || 200) / 33))) + ",Q" : "";
+              p.push("^FO" + px + "," + py + _infoQ2dZ.zpl + rC + parsQGs1 + "^FH^FD_1D" + dadosGs1Z + "^FS");
+            } else if (_infoQ2dZ.br) {
+              /* Pedido 1.149 — família ^BR completa (ZPL II Guide): b = tipo
+                 1–7 (1 Omni, 2 Truncado, 3 Empilhado, 4 Empilhado Omni,
+                 5 Limited, 6 Expandido), c = magnificação 1–10, d = separador
+                 1–2, f = segmentos 2–22 pares (só Expandido; vazio = 22 =
+                 linha única, 4 = expandido empilhado). AIs crus no ^FD
+                 (formato 1.141). VERIFICAR na impressora real. */
+              var camposBr = gs1CamposZpl(it.texto);
+              var dadosBr = camposBr ? camposBr.join("") : sanitizar(it.texto);
+              var cBr = Math.max(1, Math.min(10, Math.round((it.w || 200) / 96)));
+              var cmdBr = "^BR" + rC + "," + _infoQ2dZ.br + "," + cBr + ",1";
+              if (_infoQ2dZ.fSeg) cmdBr += ",," + _infoQ2dZ.fSeg;
+              p.push("^FO" + px + "," + py + "^BY" + Math.max(2, Math.min(10, Math.round((it.w || 200) / 100))) + cmdBr + "^FD" + dadosBr + "^FS");
+            } else if (!_infoQ2dZ.zpl) {
+              /* Pedido 1.141 — Micro QR: sem comando nativo (^BQ só tem modelos
+                 1/2) → fallback gráfico ^GFA no tamanho da caixa. */
+              if (gerarGfaSimbologia(it)) p.push("^FO" + px + "," + py + gfaRotacaoElemento(it, rot) + "^FS");
+            } else {
+              /* Pedido 1.120 (fase inicial): 2D sem QR — comando nativo da simbologia
+                 (orientação + defaults do firmware; validar na impressora real) */
+              p.push("^FO" + px + "," + py + _infoQ2dZ.zpl + rC + "^FD" + sanitizar(it.texto) + "^FS");
+            }
           }
         } else if (it.tipo === "barcode") {
           var bcH = Math.round(it.h || 80);
@@ -6914,8 +6967,35 @@
           if (info1dZ.chave === "gs1_128") {
             /* Pedido 1.141 — ^BC modo D (UCC/EAN, GS1-128): a impressora insere
                o FNC1, calcula o check digit, tira os parênteses da codificação
-               e os mantém no human-readable. Documentado na ZPL II Guide. */
-            p.push("^FO" + px + "," + py + "^BY" + modW + "^BC" + rC + "," + bcH + ",Y,N,N,D^FD" + sanitizar(it.texto) + "^FS");
+               e os mantém no human-readable. Documentado na ZPL II Guide.
+               Pedido 1.149: o ^FD sai pelo gs1FdModoD — ">8" (FNC1) entre
+               AIs de comprimento variável e o próximo (exemplo oficial do
+               guia: (91)0005886>8(10)0000410549>8(99)05). */
+            p.push("^FO" + px + "," + py + "^BY" + modW + "^BC" + rC + "," + bcH + ",Y,N,N,D^FD" + gs1FdModoD(it.texto) + "^FS");
+          } else if (info1dZ.addon) {
+            /* Pedido 1.149 — add-on +2/+5 NATIVO via ^BS (ZPL II Guide,
+               "UPC/EAN Extensions", feito p/ ISBN/UPC-E): o principal sai no
+               comando da simbologia (^BE/^B8/^BU) e o complemento num ^BS
+               próprio ao lado — offset = largura do principal em módulos
+               (95 EAN-13/UPC-A, 67 EAN-8) + 4 módulos de separador; altura =
+               principal − 27 dots (regra do guia). Preview do studio segue
+               o compósito bwip-js. Posicionamento aproximado em rotações —
+               VALIDAR na impressora física. */
+            var partesAd = String(it.texto || "").trim().split(/\s+/);
+            var mainAd = (partesAd[0] || "").slice(0, 14);
+            var compAd = (partesAd[1] || "").slice(0, 5);
+            if (mainAd) {
+              var parsAd = "," + bcH + ",Y,N" + (info1dZ.n !== 4 ? ",N" : "");
+              p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + parsAd + "^FD" + sanitizar(mainAd) + "^FS");
+              if (compAd) {
+                var gapAd = 4 * modW;
+                var extAd = (info1dZ.mods || 95) * modW + gapAd;
+                var dxAd = rC === "R" ? 0 : (rC === "I" ? -extAd : extAd);
+                var dyAd = rC === "R" ? extAd : (rC === "B" ? -extAd : 0);
+                var hAd = Math.max(1, bcH - 27);
+                p.push("^FO" + (px + dxAd) + "," + (py + dyAd) + "^BS" + rC + "," + hAd + ",Y,Y^FD" + sanitizar(compAd) + "^FS");
+              }
+            }
           } else if (!info1dZ.zpl) {
             /* Pedido 1.141 — add-ons EAN/UPC +2/+5: a ZPL II não tem comando
                para o suplemento (^BE não tem parâmetro de add-on — confirmado
@@ -7036,14 +7116,14 @@
         { chave: "code39",   rotulo: "Code 39",           jsbarcode: "CODE39",   zpl: "^B3", n: 5, demo: "ABC-1234" },
         { chave: "code93",   rotulo: "Code 93",           bwip: "code93",       zpl: "^BA", n: 5, demo: "ABC1234" },
         { chave: "ean13",    rotulo: "EAN-13",            jsbarcode: "EAN13",    zpl: "^BE", n: 4, demo: "5901234123457" },
-        { chave: "ean13_2",  rotulo: "EAN-13 + 2",        bwip: "ean13",  zpl: null, n: 0, demo: "5901234123457 12" },
-        { chave: "ean13_5",  rotulo: "EAN-13 + 5",        bwip: "ean13",  zpl: null, n: 0, demo: "5901234123457 51234" },
+        { chave: "ean13_2",  rotulo: "EAN-13 + 2",        bwip: "ean13+2", zpl: "^BE", n: 4, addon: true, mods: 95, demo: "5901234123457 12" },
+        { chave: "ean13_5",  rotulo: "EAN-13 + 5",        bwip: "ean13+5", zpl: "^BE", n: 4, addon: true, mods: 95, demo: "5901234123457 51234" },
         { chave: "ean8",     rotulo: "EAN-8",             jsbarcode: "EAN8",     zpl: "^B8", n: 4, demo: "96385074" },
-        { chave: "ean8_2",   rotulo: "EAN-8 + 2",         bwip: "ean8",   zpl: null, n: 0, demo: "96385074 12" },
-        { chave: "ean8_5",   rotulo: "EAN-8 + 5",         bwip: "ean8",   zpl: null, n: 0, demo: "96385074 51234" },
+        { chave: "ean8_2",   rotulo: "EAN-8 + 2",         bwip: "ean8+2",  zpl: "^B8", n: 4, addon: true, mods: 67, demo: "96385074 12" },
+        { chave: "ean8_5",   rotulo: "EAN-8 + 5",         bwip: "ean8+5",  zpl: "^B8", n: 4, addon: true, mods: 67, demo: "96385074 51234" },
         { chave: "upca",     rotulo: "UPC-A",             jsbarcode: "UPC",      zpl: "^BU", n: 5, demo: "036000291452" },
-        { chave: "upca_2",   rotulo: "UPC-A + 2",         bwip: "upca",   zpl: null, n: 0, demo: "036000291452 12" },
-        { chave: "upca_5",   rotulo: "UPC-A + 5",         bwip: "upca",   zpl: null, n: 0, demo: "036000291452 51234" },
+        { chave: "upca_2",   rotulo: "UPC-A + 2",         bwip: "upca+2",  zpl: "^BU", n: 5, addon: true, mods: 95, demo: "036000291452 12" },
+        { chave: "upca_5",   rotulo: "UPC-A + 5",         bwip: "upca+5",  zpl: "^BU", n: 5, addon: true, mods: 95, demo: "036000291452 51234" },
         { chave: "itf",      rotulo: "Entrelaçamento 2 de 5", jsbarcode: "ITF",  zpl: "^B2", n: 4, demo: "12345670" },
         { chave: "itf14",    rotulo: "ITF-14",            jsbarcode: "ITF14",    zpl: "^B2", n: 4, demo: "1234567890123" },
         { chave: "msi",      rotulo: "MSI",               jsbarcode: "MSI",      zpl: "^BM", n: 5, demo: "12345678" },
@@ -7051,7 +7131,10 @@
         { chave: "gs1_128",  rotulo: "GS1-128",           bwip: "gs1-128", zpl: "^BC", n: 6, gs1: true, demo: "(01)09506000134306(17)010615" }
       ],
       "2d": [
-        { chave: "qr",         rotulo: "QR Code (padrão)", zpl: "^BQ" },
+        { chave: "qr",         rotulo: "QR Code (padrão, correção Q)", zpl: "^BQ", qec: "Q" },
+        { chave: "qr_h",       rotulo: "QR Code — correção H (30%)", zpl: "^BQ", qec: "H" },
+        { chave: "qr_m",       rotulo: "QR Code — correção M (15%)", zpl: "^BQ", qec: "M" },
+        { chave: "qr_l",       rotulo: "QR Code — correção L (7%)",  zpl: "^BQ", qec: "L" },
         { chave: "datamatrix", rotulo: "Data Matrix",   bwip: "datamatrix",  zpl: "^BX" },
         { chave: "pdf417",     rotulo: "PDF-417",       bwip: "pdf417",      zpl: "^B7" },
         { chave: "micropdf",   rotulo: "MicroPDF",       bwip: "micropdf417", zpl: "^BF" },
@@ -7060,7 +7143,13 @@
         { chave: "microqr",    rotulo: "Micro QR",      bwip: "microqrcode", zpl: null, demo: "MICRO-123" },
         { chave: "gs1_qr",     rotulo: "GS1 QR Code",   bwip: "gs1qrcode",   zpl: "^BQ", gs1: true, demo: "(01)09506000134306(17)010615" },
         { chave: "gs1_datamatrix", rotulo: "GS1 Data Matrix", bwip: "gs1datamatrix", zpl: "^BX", gs1: true, demo: "(01)09506000134306(10)ABC123" },
-        { chave: "gs1_databar", rotulo: "GS1 DataBar",  bwip: "databaromni", zpl: "^BR", gs1: true, demo: "(01)01234567890128" }
+        { chave: "gs1_databar", rotulo: "GS1 DataBar",  bwip: "databaromni", zpl: "^BR", gs1: true, br: 1, demo: "(01)01234567890128" },
+        { chave: "databar_trunc",  rotulo: "GS1 DataBar Truncado", bwip: "databartruncated", zpl: "^BR", gs1: true, br: 2, demo: "(01)01234567890128" },
+        { chave: "databar_stack",  rotulo: "GS1 DataBar Empilhado", bwip: "databarstacked", zpl: "^BR", gs1: true, br: 3, demo: "(01)01234567890128" },
+        { chave: "databar_stack_omni", rotulo: "GS1 DataBar Empilhado Omni", bwip: "databarstackedomni", zpl: "^BR", gs1: true, br: 4, demo: "(01)01234567890128" },
+        { chave: "databar_limit",  rotulo: "GS1 DataBar Limited", bwip: "databarlimited", zpl: "^BR", gs1: true, br: 5, demo: "(01)03123456789012" },
+        { chave: "databar_exp",    rotulo: "GS1 DataBar Expandido", bwip: "databarexpanded", zpl: "^BR", gs1: true, br: 6, demo: "(01)03512345000019(15)20251231" },
+        { chave: "databar_exp_stack", rotulo: "GS1 DataBar Expandido Empilhado", bwip: "databarexpandedstacked", zpl: "^BR", gs1: true, br: 6, fSeg: 4, demo: "(01)03512345000019(15)20251231" }
       ]
     };
     function simbologiaInfo(chave) {
@@ -7071,6 +7160,11 @@
       return null;
     }
     function simbologiaPadrao(tipo) { return tipo === "qr" ? "qr" : "code128"; }
+    /* Pedido 1.149: nível de correção do QR pela simbologia (padrão Q) */
+    function qrNivelDe(simb) {
+      var infoQn = simbologiaInfo(simb);
+      return (infoQn && infoQn.qec) || "Q";
+    }
     /* bwip-js → canvas (Code 93 + 2D sem QR). Conteúdo inválido cai no exemplo
        da simbologia — o preview nunca fica em branco sem explicação. */
     var _bwipCache = {}, _bwipCacheKeys = [];
@@ -7125,6 +7219,25 @@
       while ((mC = re.exec(t)) !== null) out.push(mC[1] + mC[2].replace(/\s+/g, ""));
       return out.length ? out : null;
     }
+    /* Pedido 1.149: FNC1 de encadeamento — exigido após AI de comprimento
+       VARIÁVEL quando outro AI segue (exemplo oficial da ZPL II Guide no
+       modo D: ^FD(91)0005886>8(10)0000410549>8(99)05 — ">8" entre campos
+       variáveis; AIs fixos dispensam separador). Gera o ^FD completo com
+       parênteses e ">8" nos lugares certos. */
+    function gs1FdModoD(texto) {
+      var camposFd = gs1CamposZpl(texto);
+      if (!camposFd) return sanitizar(texto);
+      var outFd = [];
+      for (var iFd = 0; iFd < camposFd.length; iFd++) {
+        var cFd = camposFd[iFd];
+        var m4Fd = /^(\d{4})/.exec(cFd), m3Fd = /^(\d{3})/.exec(cFd), m2Fd = /^(\d{2})/.exec(cFd);
+        var aiFd = (m4Fd && gs1TamAiConhecido(m4Fd[1])) ? m4Fd[1] : (m3Fd && gs1TamAiConhecido(m3Fd[1])) ? m3Fd[1] : (m2Fd && gs1TamAiConhecido(m2Fd[1])) ? m2Fd[1] : "";
+        var variavelFd = !aiFd || gs1TamanhoAI(aiFd) === null;
+        outFd.push("(" + aiFd + ")" + cFd.slice(aiFd.length));
+        if (variavelFd && iFd < camposFd.length - 1) outFd.push(">8");
+      }
+      return outFd.join("");
+    }
     /* ["0109506000134306","17010615"] → "(01)09506000134306(17)010615" (reimportação) */
     function gs1Enrolar(campos) {
       return (campos || []).map(function (c) {
@@ -7135,6 +7248,33 @@
     }
     function gs1TamAiConhecido(ai) {
       return ai === "00" || ai === "01" || ai === "02" || ai === "10" || ai === "11" || ai === "12" || ai === "13" || ai === "15" || ai === "16" || ai === "17" || ai === "20" || ai === "21" || ai === "22" || ai === "30" || ai === "37" || ai === "400" || ai === "420" || /^3[1-6]\d$/.test(ai) || /^410$|^411$|^412$|^413$|^414$|^415$|^416$|^417$/.test(ai) || ai === "8001" || ai === "8005" || /^9[1-9]$/.test(ai);
+    }
+    /* Pedido 1.149: re-parse da forma CANÔNICA GS1 (FNC1 "_1D" só após AI
+       variável — AIs fixos se delimitam pelo próprio comprimento). Anda pela
+       string crua AI a AI: fixo corta pelo tamanho da tabela, variável vai
+       até o próximo "_1D". Aceita também a forma antiga (separador depois de
+       todo campo) por tolerância. */
+    function gs1Desenrolar(raw) {
+      var s = String(raw || "");
+      var partes = [];
+      var i = 0;
+      while (i < s.length) {
+        var r = s.slice(i);
+        var m4 = /^(\d{4})/.exec(r), m3 = /^(\d{3})/.exec(r), m2 = /^(\d{2})/.exec(r);
+        var ai = (m4 && gs1TamAiConhecido(m4[1])) ? m4[1] : (m3 && gs1TamAiConhecido(m3[1])) ? m3[1] : (m2 && gs1TamAiConhecido(m2[1])) ? m2[1] : "";
+        if (!ai) { partes.push(r); break; }
+        var fixo = gs1TamanhoAI(ai);
+        if (fixo !== null) {
+          partes.push(ai + r.slice(ai.length, ai.length + fixo));
+          i += ai.length + fixo;
+          if (s.slice(i, i + 3) === "_1D") i += 3;
+        } else {
+          var prox = s.indexOf("_1D", i);
+          if (prox === -1) { partes.push(r); i = s.length; }
+          else { partes.push(s.slice(i, prox)); i = prox + 3; }
+        }
+      }
+      return partes.length ? partes : [s];
     }
     /* Fallback gráfico: simbologia sem comando nativo (add-ons EAN/UPC, Micro QR)
        rasteriza o canvas do bwip-js no tamanho da caixa — mesmo pipeline 1-bit
@@ -7168,14 +7308,14 @@
     }
 
     var _qrCache = {}, _qrCacheKeys = [];
-    function qrObter(texto) {
-      var key = "" + texto;
+    function qrObter(texto, nivel) {
+      var key = (nivel || "Q") + "|" + texto;
       if (_qrCache[key]) return _qrCache[key];
       var out = null;
       if (typeof window.qrcode === "function") {
         try {
-          var qr = window.qrcode(0, "Q");
-          qr.addData(key || "123");
+          var qr = window.qrcode(0, nivel || "Q");
+          qr.addData(texto || "123");
           qr.make();
           out = { count: qr.getModuleCount() || 33, qr: qr, svg: qr.createSvgTag({ cellSize: 2, margin: 0 }) };
         } catch (e) { out = null; }
@@ -7316,7 +7456,7 @@
           var cvQ2 = bwipCanvas(simbQ2, el.texto);
           if (cvQ2) ctx.drawImage(cvQ2, 0, 0, vw, vh);
         } else {
-          var cachedQr = qrObter(el.texto);
+          var cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia));
           if (cachedQr && cachedQr.qr) {
             var sideQ = Math.min(vw, vh);
             var magQ = Math.max(1, Math.floor(sideQ / cachedQr.count));
@@ -7709,17 +7849,20 @@
             });
           }
         } else if (block.includes("^BQ")) {
-          /* Pedido 1.141: GS1 QR sai com ^FH + FNC1(_1D) — AIs voltam com parênteses */
+          /* Pedido 1.141: GS1 QR sai com ^FH + FNC1(_1D) — AIs voltam com parênteses.
+             Pedido 1.149: 4º parâmetro = nível de correção (Q padrão, H/M/L). */
           var gs1QrImp = /\^FD_1D([^^]+)\^FS/.exec(block);
           var qrMatch = /\^FDLA,([^^]+)\^FS/.exec(block);
           var magMatch = /\^BQ[NRIB],2,(\d+)/.exec(block);
           var mag = magMatch ? parseInt(magMatch[1], 10) : 6;
+          var ecMatchQr = /\^BQ[NRIB],2,\d+,([HQML])/.exec(block);
+          var simbQrImp = { H: "qr_h", M: "qr_m", L: "qr_l", Q: "qr" }[ecMatchQr ? ecMatchQr[1] : "Q"];
           if (gs1QrImp) {
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
               simbologia: "gs1_qr",
-              texto: gs1Enrolar(gs1QrImp[1].split("_1D")),
+              texto: gs1Enrolar(gs1Desenrolar(gs1QrImp[1])),
               x: x,
               y: y,
               w: mag * 33,
@@ -7729,7 +7872,7 @@
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
-              simbologia: "qr",
+              simbologia: simbQrImp,
               texto: qrMatch[1],
               x: x,
               y: y,
@@ -7750,7 +7893,7 @@
               id: "el_bin_" + idx,
               tipo: "qr",
               simbologia: "gs1_datamatrix",
-              texto: gs1Enrolar(gs1DmImp[1].split("_1D")),
+              texto: gs1Enrolar(gs1Desenrolar(gs1DmImp[1])),
               x: x,
               y: y,
               w: 200,
@@ -7770,15 +7913,28 @@
           }
         } else if (block.indexOf("^BR") !== -1) {
           /* Pedido 1.141: GS1 DataBar (^BR tipo 1). ^FD cru (AI+dados, sem
-             parênteses) — gs1Enrolar recupera "(01)…" quando dá. */
-          var magDbImp = /\^BR[NRIB],1,(\d+)/.exec(block);
+             parênteses) — gs1Enrolar recupera "(01)…" quando dá.
+             Pedido 1.149: 2º parâmetro = tipo 1–7 (Truncado, Empilhado,
+             Empilhado Omni, Limited, Expandido); tipo 6 com segmento f < 22
+             = Expandido Empilhado. */
+          var tipoDbImp = /\^BR[NRIB],(\d+)/.exec(block);
+          var bDbImp = tipoDbImp ? parseInt(tipoDbImp[1], 10) : 1;
+          var fSegDbImp = /\^BR[NRIB],\d+,\d+,\d+,[^,]*,(\d+)/.exec(block);
+          var fSegDb = fSegDbImp ? parseInt(fSegDbImp[1], 10) : 0;
+          var simbDbImp = bDbImp === 2 ? "databar_trunc"
+            : bDbImp === 3 ? "databar_stack"
+            : bDbImp === 4 ? "databar_stack_omni"
+            : bDbImp === 5 ? "databar_limit"
+            : bDbImp === 6 ? (fSegDb >= 2 && fSegDb < 22 ? "databar_exp_stack" : "databar_exp")
+            : "gs1_databar";
+          var magDbImp = /\^BR[NRIB],\d+,(\d+)/.exec(block);
           var dadoDbImp = /\^FD(\d+)\^FS/.exec(block);
           if (dadoDbImp) {
             var magDb2 = magDbImp ? parseInt(magDbImp[1], 10) : 2;
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
-              simbologia: "gs1_databar",
+              simbologia: simbDbImp,
               texto: gs1Enrolar([dadoDbImp[1]]),
               x: x,
               y: y,
@@ -7789,14 +7945,16 @@
         } else if (block.includes("^BC")) {
           var bcHMatch = /\^BC[NRIB],(\d+)/.exec(block);
           var bcMatch = /\^FD([^^]+)\^FS/.exec(block);
-          /* Pedido 1.141: ^BC modo D = GS1-128 (texto mantém os parênteses) */
+          /* Pedido 1.141: ^BC modo D = GS1-128 (texto mantém os parênteses).
+             Pedido 1.149: o ">8" (FNC1 em modo D) não volta para o editor —
+             o app o reinsere na hora de gerar. */
           var gs1ModoDImp = /\^BC[NRIB],\d+,[YN],[YN],[YN],D/.test(block);
           if (bcMatch) {
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "barcode",
               simbologia: gs1ModoDImp ? "gs1_128" : "code128",
-              texto: bcMatch[1],
+              texto: gs1ModoDImp ? bcMatch[1].replace(/>8/g, "") : bcMatch[1],
               x: x,
               y: y,
               w: 300,
@@ -7821,6 +7979,22 @@
               w: 300,
               h: bcH1dImp ? parseInt(bcH1dImp[1], 10) : 80
             });
+          }
+        } else if (block.indexOf("^BS") !== -1) {
+          /* Pedido 1.149: ^BS = complemento +2/+5 do bloco anterior — o add-on
+             não vira elemento: gruda no código principal ("código complemento")
+             e troca a simbologia pela variante com sufixo, quando existe. */
+          var dadoBsImp = /\^FD(\d{2}|\d{5})\^FS/.exec(block);
+          if (dadoBsImp && newElements.length) {
+            var alvoBs = newElements[newElements.length - 1];
+            if (alvoBs && alvoBs.tipo === "barcode") {
+              var chaveBsImp = (alvoBs.simbologia || "code128") + "_" + dadoBsImp[1].length;
+              var catBsImp = CATALOGO_SIMBOLOGIAS["1d"];
+              for (var bsI = 0; bsI < catBsImp.length; bsI++) {
+                if (catBsImp[bsI].chave === chaveBsImp) { alvoBs.simbologia = chaveBsImp; break; }
+              }
+              alvoBs.texto = (alvoBs.texto || "") + " " + dadoBsImp[1];
+            }
           }
         } else if (block.includes("^GE")) {
           var geMatch = /\^GE(\d+),(\d+),(\d+)/.exec(block);
@@ -10618,7 +10792,7 @@
       window.postMessage({
         type: "zebra_print_label",
         zpl: zpl,
-        url: "http://" + ip + "/pstprnt"
+        url: pstprntUrl(ip)
       }, "*");
 
       // 2. Formato alternativo para extensões TCP 9100 (ex: ZPL printer / JS provider)
@@ -10997,11 +11171,12 @@
         .catch(function () {
           notify("⚠️ Requisição transmitida para o endpoint na nuvem (" + cloudUrl + ").", "info");
         });
-      } else if (proto === "http") {
+      } else if (proto === "http" || proto === "https") {
+        var schemeZ = proto === "https" ? "https" : "http";
         notify(isExtensionDetected
-          ? "Enviando ZPL via Extensão Chrome (http://" + ip + "/pstprnt)..."
-          : "Enviando ZPL via HTTP direto (http://" + ip + "/pstprnt)...", "dark");
-        fetch("http://" + ip + "/pstprnt", {
+          ? "Enviando ZPL via Extensão Chrome (" + schemeZ + "://" + ip + "/pstprnt)..."
+          : "Enviando ZPL via " + schemeZ.toUpperCase() + " direto (" + schemeZ + "://" + ip + "/pstprnt)...", "dark");
+        fetch(pstprntUrl(ip, proto), {
           method: "POST",
           body: zpl,
           mode: "no-cors"
@@ -11012,7 +11187,9 @@
         .catch(function () {
           notify(isExtensionDetected
             ? "⚠️ Comando ZPL transmitido via Extensão Chrome para " + ip + "."
-            : "⚠️ ZPL enviado via HTTP direto para " + ip + " — sem confirmação da impressora (confira a etiqueta impressa).", "info");
+            : (schemeZ === "https"
+              ? "⚠️ HTTPS não alcançou " + ip + " — Link-OS 7.6+ exige aceitar o certificado autoassinado (duplo clique no chip de IP — protocolo HTTPS — e clique no link de aceitar)."
+              : "⚠️ ZPL enviado via HTTP direto para " + ip + " — sem confirmação da impressora (confira a etiqueta impressa)."), "info");
         });
       } else {
         enviarViaServidorLocal(ip, zpl, proto);
@@ -11286,8 +11463,9 @@
     }
 
     function enviarZPLParaLista(ips, zpl) {
+      var schemeL = getProtocolo() === "https" ? "https" : "http";
       ips.forEach(function (ip) {
-        fetch("http://" + ip + "/pstprnt", { method: "POST", body: zpl, mode: "no-cors" }).catch(function () {});
+        fetch(schemeL + "://" + ip + "/pstprnt", { method: "POST", body: zpl, mode: "no-cors" }).catch(function () {});
       });
       notify("Comando ZPL enviado para " + ips.length + " impressora(s): " + ips.join(", ") + ".", "success");
     }
@@ -11648,7 +11826,7 @@
       }
       _impCheckBusy = true;
       atualizarIndicadorImpressora("wait", "Impressora: verificando " + ip + "…");
-      var alvo = /^https?:\/\//.test(ip) ? ip : "http://" + ip + "/";
+      var alvo = /^https?:\/\//.test(ip) ? ip : ((getProtocolo() === "https") ? "https://" : "http://") + ip + "/";
       var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
       var timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e2) {} }, 2500) : null;
       fetch(alvo, { mode: "no-cors", cache: "no-store", signal: ctrl ? ctrl.signal : undefined })
@@ -13492,8 +13670,8 @@
                     <li><i class="fas fa-font me-1"></i> <strong>Texto Livre</strong> — escreva qualquer coisa.</li>
                     <li><i class="fas fa-align-left me-1"></i> <strong>Subtítulo</strong> — texto menor para o topo.</li>
                     <li><i class="fas fa-heading me-1"></i> <strong>Nome do Produto</strong> — texto de destaque grande.</li>
-                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre. O seletor <strong>Fontes 2D</strong> (duplo clique no elemento) traz Data Matrix, PDF-417, MicroPDF, Aztec, MaxiCode, <strong>Micro QR</strong>, <strong>GS1 QR Code</strong>, <strong>GS1 Data Matrix</strong> e <strong>GS1 DataBar</strong>. As GS1 pedem os AIs com parênteses (ex.: <code>(01)0950…(17)010615</code>); Micro QR e GS1 DataBar saem como imagem otimizada — valide na impressora real.</li>
-                    <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código comum. O seletor <strong>Fontes 1D</strong> (duplo clique) traz Code 128 (A/B/C), Code 39, Code 93, EAN-13, EAN-8, UPC-A, ITF, MSI, Codabar, <strong>GS1-128</strong> e os suplementos <strong>EAN/UPC +2/+5</strong> (digite o código, espaço e o complemento: <code>5901234123457 12</code>). GS1-128 pede os AIs com parênteses — a impressora insere FNC1 e check digit sozinha; os +2/+5 saem como imagem otimizada porque a ZPL não tem comando para o suplemento.</li>
+                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre. O seletor <strong>Fontes 2D</strong> (duplo clique no elemento) traz Data Matrix, PDF-417, MicroPDF, Aztec, MaxiCode, <strong>Micro QR</strong>, <strong>GS1 QR Code</strong>, <strong>GS1 Data Matrix</strong> e a família <strong>GS1 DataBar</strong> (Omni, Truncado, Empilhado, Empilhado Omni, Limited, Expandido e Expandido Empilhado — comandos nativos <code>^BR</code>). O QR tem níveis de correção de erro: <strong>QR</strong> (Q, padrão), <strong>QR alta correção</strong> (H), <strong>QR média</strong> (M) e <strong>QR baixa</strong> (L). As GS1 pedem os AIs com parênteses (ex.: <code>(01)0950…(17)010615</code>) — o app e a impressora inserem o separador FNC1 sozinhos; Micro QR sai como imagem otimizada — valide na impressora real.</li>
+                    <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código comum. O seletor <strong>Fontes 1D</strong> (duplo clique) traz Code 128 (A/B/C), Code 39, Code 93, EAN-13, EAN-8, UPC-A, ITF, MSI, Codabar, <strong>GS1-128</strong> e os suplementos <strong>EAN/UPC +2/+5</strong> (digite o código, espaço e o complemento: <code>5901234123457 12</code>). GS1-128 pede os AIs com parênteses — a impressora insere FNC1 e check digit sozinha e o app emenda o separador <code>>8</code> entre AIs de tamanho variável (regra do modo D da ZPL). Os +2/+5 saem nativos: o código principal no comando da simbologia e o complemento num <code>^BS</code> ao lado (ISBN, suplemento de balança) — valide o encaixe na impressora real.</li>
                     <li><i class="fas fa-sliders2 me-1"></i> <strong>Fonte do Código em todo lugar</strong> — além do duplo clique, a mesma lista de fontes aparece no <strong>Editor de Elemento</strong> (botão direito/toque longo) no campo “Fonte do Código”. A troca aplica <strong>na hora</strong> no desenho e no ZPL, sem esperar Salvar (funciona igual no celular e no desktop). No desktop o mini modal do duplo clique abre à esquerda, deixando a prévia livre à direita.</li>
                     <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
                     <li><i class="fas fa-link me-1"></i> <strong>Imagem por Link / Base64</strong> — cole o endereço de uma imagem da internet (PNG, JPG, SVG, GIF, WebP) ou um código base64; o app baixa e embute a figura na etiqueta. Se o site não permitir o download, baixe a figura e use a importação por arquivo.</li>
@@ -13671,7 +13849,7 @@
               <div class="col-md-4">
                 <div class="card p-3 h-100 border-0 shadow-sm">
                   <h6 class="fw-bold text-primary mb-2"><i class="fas fa-network-wired me-1"></i>Rede (IP)</h6>
-                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu.</p>
+                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.6 ou mais novo?</strong> O /pstprnt só funciona em <strong>HTTPS</strong>: escolha o protocolo <strong>HTTPS Direct</strong> e clique no link de aceitar o certificado autoassinado (Avançado — Prosseguir) uma vez por sessão — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
                 </div>
               </div>
               <div class="col-md-4">
@@ -13836,7 +14014,6 @@
       </div>
     </div>
   </div>
-
 </body>
 </html>
 
