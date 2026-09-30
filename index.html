@@ -1458,7 +1458,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.009</span>
+      <span class="brand-ver">v1.010</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1727,7 +1727,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.009</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.010</span>
         </div>
       </div>
 
@@ -3049,9 +3049,7 @@
         </div>
         <div class="modal-footer py-2">
           <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal"><i class="fas fa-xmark me-1" aria-hidden="true"></i>Fechar</button>
-          <button type="button" class="btn btn-sm btn-outline-primary" id="btn-import-salvar-mapa" aria-label="Salvar Mapeamento no navegador"><i class="fas fa-save me-1" aria-hidden="true"></i>Salvar Mapeamento</button>
-          <button type="button" class="btn btn-sm btn-primary" id="btn-import-gerar-todas" aria-label="Gerar etiqueta para todas as linhas importadas"><i class="fas fa-layer-group me-1" aria-hidden="true"></i>Gerar Todas as Linhas</button>
-          <button type="button" class="btn btn-sm btn-success" id="btn-import-aplicar" aria-label="Aplicar na Etiqueta (primeira linha)"><i class="fas fa-check me-1" aria-hidden="true"></i>Aplicar na Etiqueta</button>
+          <button type="button" class="btn btn-sm btn-primary" id="btn-import-gerar-todas" aria-label="Criar uma etiqueta para cada linha importada"><i class="fas fa-layer-group me-1" aria-hidden="true"></i>Criar Etiquetas</button>
         </div>
       </div>
     </div>
@@ -3061,7 +3059,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.009</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.010</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3467,7 +3465,7 @@
 
      /* Toast Helper */
      var toastEl = $("status-toast");
-     var bsToast = new bootstrap.Toast(toastEl, { delay: 3500 });
+     var bsToast = new bootstrap.Toast(toastEl, { delay: 2000 });
      function notify(msg, type) {
        $("toast-message").textContent = msg;
        toastEl.className = "toast align-items-center border-0 shadow " + (type === "danger" ? "text-bg-danger" : (type === "success" ? "text-bg-success" : "text-bg-dark"));
@@ -3501,6 +3499,34 @@
     var _bdJanitorObs = new MutationObserver(function () { _sweepModalBackdrops(); });
     _bdJanitorObs.observe(document.body, { childList: true });
     setInterval(_sweepModalBackdrops, 1000);
+
+    /* Pedido 1.151: ESC DUPLO destrava a tela. Se um modal travou aberto
+       (exceção num handler de ação antes do hide, instância perdida),
+       nenhum botão fecha mais — o usuário aperta Esc 2× seguidas e o app
+       força o fechamento de TODOS os modais normais. Os dois estáticos
+       intencionais (confirmação destrutiva e progresso de impressão) ficam
+       de fora — têm os próprios botões. */
+    var _escAnteriorMs = 0;
+    document.addEventListener("keydown", function (evEsc) {
+      if (evEsc.key !== "Escape") return;
+      var agoraMs = Date.now();
+      if (agoraMs - _escAnteriorMs > 900) { _escAnteriorMs = agoraMs; return; }
+      _escAnteriorMs = 0;
+      var presos = document.querySelectorAll(".modal.show");
+      var fechou = 0;
+      presos.forEach(function (mEsc) {
+        if (mEsc.id === "modal-confirm" || mEsc.id === "modal-print-stream") return;
+        try {
+          var instEsc = bootstrap.Modal.getInstance(mEsc);
+          if (instEsc) instEsc.hide();
+        } catch (eEsc) {}
+        mEsc.classList.remove("show");
+        mEsc.style.display = "none";
+        mEsc.setAttribute("aria-hidden", "true");
+        fechou++;
+      });
+      if (fechou) { _sweepModalBackdrops(); notify("Modais travados foram fechados (Esc 2×).", "info"); }
+    });
 
 
     /* Confirm Helper (Master Rules v9.0 — substitui confirm() nativo) */
@@ -4956,7 +4982,15 @@
     function confirmarModalDado() {
       var campo = document.getElementById("modal-dado-input");
       if (!campo || !editandoDadoId) return;
+      /* Pedido 1.151: fecha PRIMEIRO — os valores já foram lidos; se o
+         render de baixo estourar, o modal não fica preso na tela. */
       var el = elements.find(function (e) { return e.id === editandoDadoId; });
+      editandoDadoId = null;
+      var modalElFc = document.getElementById("modal-editar-dado");
+      if (modalElFc) {
+        var instFc = bootstrap.Modal.getInstance(modalElFc);
+        if (instFc) instFc.hide();
+      }
       if (el) {
         /* Pedido 1.120 (fase inicial): salva a "fonte" (simbologia) escolhida e o
            conteúdo; renderZPL corrige também a aba ZPL, que ficava velha ao
@@ -4976,12 +5010,6 @@
             ? "Fonte (" + ((simbologiaInfo(novaSimb) || {}).rotulo || novaSimb) + ") e conteúdo atualizados."
             : "Conteúdo atualizado.", "success");
         }
-      }
-      editandoDadoId = null;
-      var modalEl = document.getElementById("modal-editar-dado");
-      if (modalEl) {
-        var inst = bootstrap.Modal.getInstance(modalEl);
-        if (inst) inst.hide();
       }
     }
     (function ligarModalDado() {
@@ -7839,14 +7867,38 @@
           var fontMatch = /\^A0[NRIB],(\d+)/.exec(block);
           var textMatch = /\^FD([^^]+)\^FS/.exec(block);
           if (textMatch) {
-            newElements.push({
-              id: "el_bin_" + idx,
-              tipo: "texto",
-              texto: textMatch[1],
-              x: x,
-              y: y,
-              fonte: fontMatch ? parseInt(fontMatch[1], 10) : 30
-            });
+            /* Pedido 1.151: texto BOLD sai como dois campos ^FO (base + sombra
+               a ±1 dot por eixo — o mesmo texto duas vezes para engrossar).
+               O segundo campo é o overlay: NÃO vira elemento — era ele o
+               "elemento fantasma deslocado" que dobrava os textos na
+               reimportação do lote baixado. */
+            var ultimoTexto = newElements.length ? newElements[newElements.length - 1] : null;
+            var textoLimpoImp = textMatch[1].replace(/\\&$/, "");
+            var ehOverlayBold = !!(ultimoTexto
+              && ultimoTexto.tipo === "texto"
+              && ultimoTexto.texto === textoLimpoImp
+              && Math.abs(ultimoTexto.x - x) <= 1
+              && Math.abs(ultimoTexto.y - y) <= 1);
+            if (!ehOverlayBold) {
+              /* Pedido 1.151: reimport fiel — lê o ^FB de volta (largura da
+                 caixa, alinhamento L/C/R/J, linhas e espaçamento) para o texto
+                 renderizar como no original; o "\&" de continuação que o
+                 emitter centralizado emenda no ^FD não é dado do usuário. */
+              var fbMatchImp = /\^FB(\d+),(\d+),(\d+),([LCRJ])/.exec(block);
+              var fbAlignMapImp = { L: 0, C: 1, R: 2, J: 3 };
+              newElements.push({
+                id: "el_bin_" + idx,
+                tipo: "texto",
+                texto: textoLimpoImp,
+                x: x,
+                y: y,
+                w: fbMatchImp ? parseInt(fbMatchImp[1], 10) : undefined,
+                fbLines: fbMatchImp ? parseInt(fbMatchImp[2], 10) : undefined,
+                fbSpacing: fbMatchImp ? parseInt(fbMatchImp[3], 10) : undefined,
+                fbAlign: fbMatchImp ? fbAlignMapImp[fbMatchImp[4]] : undefined,
+                fonte: fontMatch ? parseInt(fontMatch[1], 10) : 30
+              });
+            }
           }
         } else if (block.includes("^BQ")) {
           /* Pedido 1.141: GS1 QR sai com ^FH + FNC1(_1D) — AIs voltam com parênteses.
@@ -10298,9 +10350,9 @@
       var total = importDados.linhas.length || 0;
       if (!total) { atualizarNavLote(); return; }
       var validacao = importValidarMapeamento();
-      if (!validacao.ok) { atualizarNavLote(); return; }
+      if (!validacao.ok) { atualizarNavLote(); notify("Navegação parada: " + validacao.msg, "warning"); return; }
       var pares = obterParesMapeadosLote(validacao.mapa);
-      if (!pares.length) { atualizarNavLote(); return; }
+      if (!pares.length) { atualizarNavLote(); notify("Navegação parada: nenhuma coluna mapeada — reabra o Importar Dados.", "warning"); return; }
 
       /* Pedido 1.93: sem etiqueta criada, a navegação também cria a
          etiqueta sozinha; com etiqueta, aplicarLinha garante os alvos */
@@ -10378,6 +10430,15 @@
         if (!importDados.colunas.length) { notify("Leia as colunas antes de gerar as etiquetas.", "danger"); return; }
         if (!importDados.linhas.length) { notify("A origem não possui linhas de dados.", "danger"); return; }
 
+        /* Pedido 1.151: o modal fecha PRIMEIRO — se qualquer passo do lote
+           estourar depois daqui, a tela nunca fica presa no modal aberto. */
+        var modalImp = bootstrap.Modal.getInstance($("modal-import-dados"));
+        if (modalImp) modalImp.hide();
+
+        /* Pedido 1.151: "Salvar Mapeamento" virou automático (o botão saiu do
+           rodapé — só Fechar e Criar Etiquetas) — salva silenciosamente. */
+        try { localStorage.setItem(IMPORT_MAP_STORAGE_KEY, JSON.stringify(importObterMapeamento())); } catch (errSalvar) {}
+
         /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho
            (textos empilhados, uma coluna por elemento, sem sobreposição) */
         if (!elements.length && !garantirEtiquetaLote()) { notify("Não foi possível criar a etiqueta — verifique o mapeamento.", "danger"); return; }
@@ -10394,8 +10455,6 @@
         ativarAbaStudio("tab-canvas");
         atualizarNavLote();
 
-        var modalImp = bootstrap.Modal.getInstance($("modal-import-dados"));
-        if (modalImp) modalImp.hide();
         loteEspecialAtivo = false;
         loteEspecialBindings = null;
         loteZplBlocos = null; /* Pedido 1.140: lote de CSV assume o lugar do lote ZPL */
@@ -13796,7 +13855,7 @@
                     <li>Importe <strong>planilhas do Excel</strong>, arquivos <strong>CSV/TXT</strong> e <strong>planilhas online do Google</strong> — ou fontes avançadas (webhook, banco de dados/API, pasta compartilhada e ponte local).</li>
                     <li><strong>As colunas são lidas sozinhas</strong>: ao escolher o arquivo, ou ao conectar com a origem (Enter no link/URL ou mudança de valor válido), o “Ler Colunas” roda automaticamente.</li>
                     <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
-                    <li><strong>Aplicar</strong> cria os elementos na etiqueta; <strong>Gerar Todas as Linhas</strong> cria uma etiqueta por linha da planilha.</li>
+                    <li><strong>Criar Etiquetas</strong> gera uma etiqueta por linha da planilha (o mapeamento é salvo no navegador sozinho) — a primeira fica no Estúdio como modelo e as setas ‹ › da barra de status navegam pelas demais.</li>
                     <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
                   </ul>
                 </div>
