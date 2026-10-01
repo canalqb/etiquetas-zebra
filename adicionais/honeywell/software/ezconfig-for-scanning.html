@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EZConfig for Scanning: configure seu scanner Honeywell no PC | @CanalQb</title>
+<meta name="description" content="Guia do EZConfig for Scanning 4.5.68 da Honeywell: download seguro, dispositivos compatíveis como o 8675i, correção do erro do Chrome e o falso positivo do antivírus explicado.">
+<meta name="author" content="@CanalQb">
+<meta property="og:title" content="EZConfig for Scanning: configure seu scanner Honeywell no PC">
+<meta property="og:description" content="Download seguro, correção do erro do Chrome e o falso positivo do antivírus explicados passo a passo.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://canalqb.github.io/etiquetas-zebra/adicionais/honeywell/software/ezconfig-for-scanning.html">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+/* @CanalQb - Exclusive Design License 2026 */
+:root{--bg:#fff;--fg:#333;--fg2:#555;--bd:#e0e0e0;--ok:#28a745;--warn:#ffc107;--err:#d32f2f;--info:#2196f3;--card:#f9f9f9}
+@media (prefers-color-scheme:dark){:root{--bg:#181818;--fg:#e8e8e8;--fg2:#b5b5b5;--bd:#444;--card:#232323}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.7;padding:0 16px 40px;max-width:900px;margin-inline:auto}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+a{color:var(--info)}
+.post_progress_bar{position:fixed;top:0;left:0;height:4px;background:var(--ok);width:0%;transition:width .1s;z-index:9999}
+.post_separator{border:0;border-top:1px solid var(--bd);margin:10px auto;width:95%}
+.post_center{text-align:center}
+.post_badge_leitura{display:inline-block;background:var(--card);border:1px solid var(--bd);color:var(--fg2);border-radius:20px;padding:6px 14px;font-size:.85rem;margin:14px 0 4px}
+.post_tldr{background:var(--card);border:1px solid var(--bd);border-left:4px solid var(--ok);border-radius:8px;padding:16px 18px;margin:22px 0}
+.post_tldr h2{margin:0 0 10px;font-size:1.05rem;color:var(--fg)}
+.post_tldr ul{margin:0;padding-left:20px;color:var(--fg2);font-size:.95rem}
+.post_tldr li{margin:6px 0}
+.post_disclaimer{background:rgba(33,150,243,.1);border-left:4px solid var(--info);padding:15px;border-radius:8px;color:var(--fg2);font-size:.9em;margin:20px 0}
+.post_alerta{background:rgba(255,193,7,.15);border-left:4px solid var(--warn);padding:15px;border-radius:8px;color:var(--fg2);font-size:.92em;margin:20px 0}
+.post_alerta_ok{background:rgba(40,167,69,.12);border-left:4px solid var(--ok);padding:15px;border-radius:8px;color:var(--fg2);font-size:.92em;margin:20px 0}
+h1{color:var(--fg);font-size:1.6rem;line-height:1.3;text-align:center;margin:18px 0 6px}
+h2{color:var(--fg);font-size:1.25rem;border-left:4px solid var(--ok);padding-left:12px;margin-top:44px;line-height:1.35}
+h3{color:var(--fg);font-size:1.05rem;margin-top:28px}
+p{color:var(--fg2)}
+.post_answer{color:var(--fg);font-size:1.02rem}
+.post_bucket{color:var(--fg);font-weight:600;margin:26px 0 10px;font-size:1.02rem}
+.post_cqb_terminal{background:#000!important;color:#4af626!important;padding:20px;border-radius:12px;border:2px solid #333;font-family:"Roboto Mono",monospace!important;font-size:.82rem;overflow-x:auto;position:relative}
+.post_cqb_terminal *,.post_cqb_terminal span{color:#4af626!important;background:transparent!important;text-shadow:none!important}
+.post_cqb_terminal .comment{color:#888!important}
+.post_cqb_codeblock{background:#1a1a1a;color:#f8f8f2;font-family:"Roboto Mono",monospace!important;padding:20px;border-radius:8px;border-left:5px solid var(--warn);overflow-x:auto;font-size:.85rem;position:relative}
+.post_cqb_codeblock *{color:#f8f8f2!important;text-shadow:none!important}
+.post_copy_btn{position:absolute;top:8px;right:8px;background:#333;color:#fff;border:1px solid #555;border-radius:6px;padding:5px 10px;font-size:.72rem;cursor:pointer;min-height:32px;font-family:system-ui,sans-serif}
+.post_copy_btn:hover{background:#444}
+.post_table_wrap{overflow-x:auto;margin:18px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem;background:var(--card)}
+th,td{border:1px solid var(--bd);padding:10px 12px;text-align:left;color:var(--fg2)}
+th{background:var(--card);color:var(--fg);font-weight:700}
+.post_checklist{list-style:none;padding:0;margin:10px 0}
+.post_checklist li{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:.92em;color:var(--fg2);line-height:1.5}
+.post_checklist li i{flex-shrink:0;margin-top:4px}
+.post_download_btn{display:inline-flex;align-items:center;gap:10px;background:var(--ok);color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:10px;margin:10px 0;min-height:48px;font-size:1rem}
+.post_download_btn:hover{background:#218838;color:#fff}
+.post_faq_container{margin:40px 0;padding:0}
+.post_faq_title{color:var(--fg);font-size:1.4rem;margin:30px 0 20px;border-left:4px solid var(--ok);padding-left:12px}
+.post_faq_item{margin:10px 0;border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--card)}
+.post_faq_question{padding:15px;background:var(--card);cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:600;color:var(--fg);min-height:44px}
+.post_faq_question:hover{background:var(--bd)}
+.post_faq_question:focus-visible{outline:2px solid var(--ok);outline-offset:-2px}
+.post_faq_answer{padding:15px;background:var(--bg);color:var(--fg2);line-height:1.6}
+.post_faq_item[open] .post_faq_question{background:rgba(40,167,69,.12);color:var(--ok)}
+.post_refs{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px 20px;margin:34px 0}
+.post_refs h2{border:0;padding:0;margin:0 0 12px;font-size:1.15rem}
+.post_refs ul{margin:0;padding-left:20px;color:var(--fg2);font-size:.92rem}
+.post_refs li{margin:6px 0}
+.post_cta{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:20px;text-align:center;margin:34px 0 10px}
+.post_cta a.btn{display:inline-flex;align-items:center;gap:8px;background:var(--ok);color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:8px;min-height:48px}
+.post_assinatura{text-align:center;color:var(--fg2);font-size:.82rem;margin-top:18px}
+.post_toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;border-left:4px solid var(--ok);border-radius:8px;padding:10px 16px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s;z-index:10000}
+.post_toast.post_toast_show{opacity:1}
+img{max-width:100%;height:auto}
+:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="post_progress_bar" id="post_progress" role="presentation"></div>
+
+<hr class="post_separator">
+<p class="post_center">
+  <a href="https://www.youtube.com/channel/UCdOA_1KzXHIp3gmVyyYv2sg" rel="noopener noreferrer" target="_blank" title="Visite o @CanalQb no YouTube" style="font-size:1.2em;font-weight:bold;text-decoration:none;color:#28a745">@CanalQb no YouTube</a>
+</p>
+<hr class="post_separator">
+<div style="margin:20px 0;text-align:center">
+  <img alt="@CanalQb" fetchpriority="high" decoding="async" width="1280" height="400"
+    src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgAppgdjbwBxn27tGUch6DJBXRrlOAwk1V0ZTtHvEvlt0HoVsARJSfJDizdDRlmkLwKSxSRzbknK5L3jVKs364oRzgozNeD0Vv2aky1vk2QzrJh-O_sgDQEUXJxw5XHtmFNsmI5iv_ITOJcDfW7k6XtoTE9RgJiKZDW6ZTK41oAjDh7smDJMTC9E1h4YOfm/s2560/CanalQb.png"
+    style="border-radius:10px;max-width:100%;height:auto">
+</div>
+<h1>EZConfig for Scanning: configure seu scanner Honeywell no PC</h1>
+<hr class="post_separator">
+
+<p class="post_center"><span class="post_badge_leitura"><i class="fas fa-stopwatch" aria-hidden="true"></i> Leitura: ~9 min</span></p>
+
+<section class="post_tldr" aria-label="Resumo executivo">
+<h2><i class="fas fa-bolt" aria-hidden="true"></i> TL;DR — Resumo Executivo</h2>
+<ul>
+<li>O EZConfig for Scanning é o software oficial e gratuito da Honeywell para configurar scanners como o <strong>8675i</strong> direto no Windows: parâmetros, firmware, prefixos e sufixos, simbologias e cloning barcodes.</li>
+<li>A versão <strong>4.5.68</strong> roda no navegador e, no Chrome, exige abrir por um atalho com <strong>--allow-file-access-from-files</strong> — sem isso aparecem os erros "Unable to load the configuration file" e "EZCS configuration has been corrupted".</li>
+<li>O alerta de vírus na instalação é <strong>falso positivo</strong>: o software não tem certificado Microsoft. Baixe pelo encurtador <strong>canalqb.com.br/?c=ezconfig4_5_68</strong> (aponta para o arquivo oficial), instale como administrador e use o atalho criado pelo instalador.</li>
+</ul>
+</section>
+
+<p class="post_disclaimer">
+  <i class="fas fa-circle-info" aria-hidden="true"></i> <strong>Nota Técnica:</strong> Este conteúdo tem fins exclusivamente educacionais. Os procedimentos descritos envolvem alterar uma configuração de segurança do navegador (acesso a arquivos locais) — faça apenas para usar o EZConfig e pelo atalho criado pelo instalador. O @CanalQb não se responsabiliza por danos, perdas ou bloqueios decorrentes do uso indevido.
+</p>
+
+<h3>O problema não é vírus — é uma flag do Chrome que ninguém te conta.</h3>
+<p>Você baixou o EZConfig da Honeywell, o Windows gritou "vírus detectado", o Chrome abriu uma tela branca com erro e você já estava prestes a jogar o scanner 8675i pela janela. Calma: o scanner está bem, o arquivo é legítimo e o erro do Chrome tem solução de 2 minutos. Neste guia você vai entender o que é o EZConfig, quais equipamentos ele suporta, por que o antivírus reclama, como carregar o software corretamente no navegador e como criar o atalho certo para nunca mais ver essa tela de erro.</p>
+
+<h2>O que é o EZConfig for Scanning e para que serve?</h2>
+<p class="post_answer">O EZConfig for Scanning é o utilitário oficial de configuração da Honeywell para Windows — sucessor do Visual Xpress e totalmente compatível com ele. Ele permite alterar parâmetros do leitor, atualizar firmware, testar o dispositivo e gerar cloning barcodes para replicar configurações entre scanners. É gratuito e distribuído pelo portal oficial de software da Honeywell.</p>
+<p>Na prática, o EZConfig é o "painel de controle" do seu scanner dentro do Windows. Em vez de imprimir dezenas de códigos de barras de programação (como fazemos no <a href="https://www.canalqb.com.br/search?q=codigo+de+barras" target="_blank" rel="noopener noreferrer">catálogo de comandos do 8675i</a> deste mesmo app), você conecta o leitor por USB e muda tudo pela tela: simbologias habilitadas, prefixo e sufixo dos dados, modo de interface, volume do bipe, padronização de dados enviados ao sistema e até a atualização de firmware do equipamento.</p>
+<p>Aqui no @CanalQb, validamos na bancada que o fluxo mais comum é: configurar um único scanner da forma exata que a operação precisa, gerar o <strong>cloning barcode</strong> (um código de barras que carrega toda a configuração) e colar esse código na parede — qualquer unidade nova é configurada em um único bip, sem abrir o EZConfig de novo. Para quem mantém frota de coletores em produção, isso economiza horas de configuração manual.</p>
+<p>O EZConfig também substituiu o antigo Visual Xpress: qualquer parâmetro que você configurava no programa legado funciona igual aqui, porque a Honeywell manteve compatibilidade total com os perfis antigos.</p>
+
+<h2>Quais scanners Honeywell são compatíveis com o EZConfig?</h2>
+<p class="post_answer">A lista oficial cobre as gerações 6 e 7 da Honeywell: os industriais 8620i, 8660i, 8670, 8675i, 8680iB e 8690i, a família Xenon (1900 até 1962), Voyager (1200g até 1472g), Granit (1280i até 1991i e o Ultra 210xi), VuQuest 33x0, além de Genesis, Orbit, Solaris e Stratos. A conexão suportada é USB ou RS232.</p>
+<p>A tabela abaixo organiza as famílias citadas no artigo oficial 000055083 da Honeywell — se o seu modelo está nela, o EZConfig 4.x conversa com ele:</p>
+<div class="post_table_wrap">
+<table>
+<thead><tr><th>Família</th><th>Modelos compatíveis</th></tr></thead>
+<tbody>
+<tr><td><strong>Série 8xxx (industrial)</strong></td><td>8620i, 8660i, 8670, <strong>8675i</strong>, 8680iB, 8690i</td></tr>
+<tr><td><strong>Xenon</strong></td><td>1900, 1902, 1930, 1932g, 1950, 1952g, 1952h, 1952gBF, 1960, 1962</td></tr>
+<tr><td><strong>Voyager</strong></td><td>1200g, 1202g, 1250g, 1350g, 1400g, 1450g, 1470g, 1472g, 1602g</td></tr>
+<tr><td><strong>Granit</strong></td><td>1280i, 1910i, 1911i, 1980i, 1981i, 1990i, 1991i, Ultra 210xi</td></tr>
+<tr><td><strong>VuQuest</strong></td><td>3310g, 3320g, família 33x0</td></tr>
+<tr><td><strong>Leitores fixos</strong></td><td>Genesis 7580g, 7680g; Solaris 7980g; Orbit 7120g, 7990g; Stratos 2700; Hyperion 1300g</td></tr>
+<tr><td><strong>Coleta e manuseio</strong></td><td>HF500, HF52x, HH660, HF680, HH490, HH760</td></tr>
+<tr><td><strong>Legado (use a 3.5.13)</strong></td><td>3800g/3800gHD/3800gPDF/3800r/3800i, 3820/3820i, 4600g/4600r, 4800i, 4820/4820i, 4850DR</td></tr>
+</tbody>
+</table>
+</div>
+<p>Se o seu equipamento for da geração legada (os antigos HHP, como 3800g e Xenon 1900), o caminho é a versão offline 3.5.13 — explico a diferença na próxima seção.</p>
+
+<h2>Qual versão baixar: EZConfig 4.5.68 ou 3.5.13?</h2>
+<p class="post_answer">Baixe a 4.5.68 se o seu scanner for das gerações 6 ou 7 — é a versão atual, baseada em navegador, datada de julho de 2026, homologada para Microsoft Edge, Google Chrome, Internet Explorer e Firefox. A 3.5.13 é a versão offline, mantida apenas para os equipamentos legados da era HHP.</p>
+<p>A diferença prática importa porque muda o comportamento do software na sua máquina:</p>
+<div class="post_table_wrap">
+<table>
+<thead><tr><th>Versão</th><th>Tipo</th><th>Para quem</th><th>Onde fica no portal</th></tr></thead>
+<tbody>
+<tr><td><strong>4.5.68</strong></td><td>Aplicação HTML que roda no navegador</td><td>Gerações 6 e 7 (8675i, Xenon 1950+, Voyager 1470g+...)</td><td>Caminho "Current" (atual)</td></tr>
+<tr><td><strong>3.5.13</strong></td><td>Programa Windows offline (não usa navegador)</td><td>Legados HHP e parte da geração 6 — nem todos os modelos</td><td>Caminho "Archive" (arquivo morto)</td></tr>
+</tbody>
+</table>
+</div>
+<p>Como a 4.x roda no navegador, ela herda as regras de segurança do Chrome — e é exatamente aí que nasce o erro de carregamento que trava muita gente. Guarde essa informação: <strong>versão 4.x no Chrome exige o atalho especial</strong>. Sem ele, o software abre quebrado. Já a 3.5.13 abre como qualquer programa Windows, sem depender de navegador.</p>
+
+<h2>Onde baixar o EZConfig for Scanning com segurança?</h2>
+<p class="post_answer">O download oficial vive no portal de software da Honeywell (hsmftp.honeywell.com), no caminho Software, Barcode Scanners, Software, Tools and Utilities, EZConfig for Scanning, Current. O link encurtado https://canalqb.com.br/?c=ezconfig4_5_68 aponta para o mesmo arquivo oficial da versão 4.5.68 — use o que preferir.</p>
+<p class="post_center">
+<a class="post_download_btn" href="https://canalqb.com.br/?c=ezconfig4_5_68" target="_blank" rel="noopener noreferrer" title="Baixar EZConfig for Scanning 4.5.68 — link encurtado CanalQb para o arquivo oficial"><i class="fas fa-download" aria-hidden="true"></i> Baixar EZConfig for Scanning 4.5.68</a>
+</p>
+<p>Se preferir navegar manualmente até o arquivo no portal oficial da Honeywell, o caminho é este:</p>
+<ul class="post_checklist">
+<li><i class="fas fa-square-check" style="color:#28a745" aria-hidden="true"></i> Acesse o portal <a href="https://hsmftp.honeywell.com/" target="_blank" rel="noopener noreferrer">hsmftp.honeywell.com</a> — é o repositório oficial de drivers e utilitários da Honeywell Safety and Productivity Solutions.</li>
+<li><i class="fas fa-square-check" style="color:#28a745" aria-hidden="true"></i> Siga o caminho Software, depois Barcode Scanners, Software, Tools and Utilities, EZConfig for Scanning.</li>
+<li><i class="fas fa-square-check" style="color:#28a745" aria-hidden="true"></i> A pasta "Current" tem a 4.5.68 (navegador, gerações 6 e 7); a pasta "Archive" tem a 3.5.13 (offline, legados).</li>
+<li><i class="fas fa-square-check" style="color:#28a745" aria-hidden="true"></i> Baixe, instale como administrador e use o atalho que o instalador cria na área de trabalho.</li>
+</ul>
+<p>Não existe licença paga nem taxa: o EZConfig é um utilitário gratuito de suporte à frota de leitores. Se algum site pedir pagamento pelo download, não é a Honeywell.</p>
+
+<h2>Por que o antivírus acusa vírus no instalador do EZConfig?</h2>
+<p class="post_answer">É um falso positivo. O EZConfig não é assinado com certificado digital da Microsoft, então o Windows SmartScreen e antivírus heurísticos marcam o instalador como "aplicativo não reconhecido". O arquivo é o mesmo distribuído pelo portal oficial da Honeywell — o alerta aponta a ausência de certificação, não a presença de malware.</p>
+<p>Entenda o raciocínio do antivírus: ele não lê só o código, ele pontua a "reputação" do arquivo. Software de grande fabricante mas sem certificado de assinatura digital, baixado por pouca gente no mundo, com instalador que descompacta HTML e executa scripts — para um antivírus heurístico, esse perfil se parece com o de um adware, mesmo sendo legítimo. A Honeywell inclusive mantém um artigo oficial de suporte sobre exatamente esse problema, o "EZConfig for Scanning Downloaded from Honeywell Website Failing Virus Scan" — ou seja: reclamação de vírus no arquivo oficial é ocorrência documentada, não novidade.</p>
+<p class="post_alerta">
+<i class="fas fa-shield-halved" aria-hidden="true"></i> <strong>Como proceder com segurança:</strong> baixe apenas pelo portal oficial da Honeywell ou pelo encurtado https://canalqb.com.br/?c=ezconfig4_5_68 (que aponta para o arquivo do portal). No alerta do SmartScreen, clique em "Mais informações" e "Executar assim mesmo". Se quiser paranoia saudável (aprovamos), envie o arquivo para o VirusTotal antes de executar — você verá no máximo detecções genéricas de "PUA/heurística", nunca uma praga identificada com nome próprio. O que você NUNCA deve fazer é baixar EZConfig de sites de "download grátis" genéricos.
+</p>
+
+<h2>Por que o EZConfig não carrega no Chrome?</h2>
+<p class="post_answer">Porque a versão 4.x é uma aplicação HTML que roda localmente e precisa ler os próprios arquivos de configuração pelo protocolo file. O Chrome bloqueia esse acesso por padrão — daí o EZConfig mostrar os erros abaixo em vez de abrir. A correção é abrir o navegador com a flag --allow-file-access-from-files, exatamente como o instalador faz quando cria o atalho da área de trabalho.</p>
+<p>Estas são as mensagens reais que aparecem quando isso acontece:</p>
+<div class="post_cqb_terminal">
+<span class="comment">Erro 1 — o EZConfig não consegue carregar a configuração:</span><br>
+Unable to load the configuration file, Application may not work as desired<br><br>
+<span class="comment">Erro 2 — o Chrome não liberou o acesso aos arquivos locais:</span><br>
+Please close running instances of Chrome and re-launch Chrome with '--allow-file-access-from-files' parameter, or re-install EZConfig to have the installer create a shortcut on your desktop<br><br>
+<span class="comment">Erro 3 — a configuração corrompeu após tentativas de abrir direto:</span><br>
+EZCS configuration has been corrupted, request you to uninstall and install it again
+</div>
+<p>A mensagem do Erro 2 é literal: o próprio EZConfig está pedindo para fechar TODAS as instâncias do Chrome e reabrir com o parâmetro <strong>--allow-file-access-from-files</strong>, ou reinstalar o EZConfig para o instalador criar o atalho correto na área de trabalho. O Erro 3 é o desdobramento: depois de abrir o HTML direto pelo Chrome comum várias vezes, os arquivos de configuração locais corrompem e nem o atalho certo resolve — entra a instalação limpa.</p>
+<p class="post_alerta">
+<i class="fas fa-triangle-exclamation" aria-hidden="true"></i> <strong>Por que não criar a flag na mão no seu Chrome principal?</strong> Porque --allow-file-access-from-files desliga uma proteção de segurança do navegador para TODOS os sites locais que você abrir nessa sessão, não só para o EZConfig. A recomendação da Honeywell (e nossa) é deixar que o <strong>próprio instalador</strong> crie o atalho — ele nasce com a flag e aponta só para o EZConfig. A criação manual que ensino mais abaixo é plano B, para quem já tem a instalação e não quer reinstalar.
+</p>
+
+<h2>Como carregar o EZConfig corretamente no navegador?</h2>
+<p class="post_answer">A forma correta é instalar o EZConfig e abrir pelo atalho que o próprio instalador cria na área de trabalho — ele já inicia o navegador com a flag necessária. Se a configuração já corrompeu, faça a instalação limpa: feche todo o Chrome, desinstale o EZConfig, reinicie o PC, baixe de novo e instale como administrador.</p>
+<p>Seguimos aqui o Protocolo de Profundidade: cada passo com o clique exato, o porquê e o resultado esperado.</p>
+<h3>Passo 1: Feche o Chrome por completo</h3>
+<p>Fechar a janela não basta — o Chrome continua rodando em segundo plano. Pressione <strong>Ctrl + Shift + Esc</strong> para abrir o Gerenciador de Tarefas, procure por processos "Google Chrome" ou <strong>chrome.exe</strong> na aba Processos e clique em "Finalizar tarefa" em cada um. Só com o Chrome 100% morto o instalador consegue recriar o atalho e o navegador reabre com a flag valendo.</p>
+<p><i class="fas fa-triangle-exclamation" style="color:#ffc107" aria-hidden="true"></i> Erro comum: pular este passo. Aí o instalador avisa que "há instâncias do Chrome em execução", a instalação segue pela metade e o atalho novo nem nasce.</p>
+<h3>Passo 2: Desinstale o EZConfig pelo Windows</h3>
+<p>Abra Configurações (tecla Windows + I), Apps, Aplicativos instalados, localize "EZConfig for Scanning" e desinstale. Isso remove os arquivos de configuração corrompidos (o tal "EZCS configuration has been corrupted") — sem isso, reinstalar por cima mantém a corrupção.</p>
+<p><i class="fas fa-triangle-exclamation" style="color:#ffc107" aria-hidden="true"></i> Erro comum: reinstalar sem desinstalar. O instalador não substitui a configuração corrompida, então os erros voltam exatamente iguais — e você perde tempo achando que a versão nova veio quebrada.</p>
+<h3>Passo 3: Reinicie o computador</h3>
+<p>Reinicie (não é "desligar e ligar rápido", use Reiniciar). Isso libera arquivos que o Windows mantinha travados do processo antigo e limpa sessões do Chrome que ficam presas na inicialização.</p>
+<h3>Passo 4: Baixe o instalador de novo</h3>
+<p>Baixe a 4.5.68 pelo <a href="https://canalqb.com.br/?c=ezconfig4_5_68" target="_blank" rel="noopener noreferrer">encurtador https://canalqb.com.br/?c=ezconfig4_5_68</a> ou direto pelo <a href="https://hsmftp.honeywell.com/" target="_blank" rel="noopener noreferrer">portal oficial</a> no caminho Current. Baixe de novo do zero — não reaproveite o ZIP antigo de pasta de Downloads, porque a corrupção pode estar nele.</p>
+<h3>Passo 5: Instale como administrador</h3>
+<p>Clique com o botão direito no instalador e escolha <strong>"Executar como administrador"</strong>. Instalar como administrador garante que o instalador consiga gravar na área de trabalho, registrar os arquivos locais e criar o atalho com a flag do Chrome — a instalação comum, em conta sem privilégio, às vezes silencia justamente essa etapa. Resultado esperado: ao final, um ícone novo do EZConfig aparece na sua área de trabalho.</p>
+<h3>Passo 6: Abra SEMPRE pelo atalho da área de trabalho</h3>
+<p>Dê um clique duplo no atalho criado pelo instalador — não no HTML que está na pasta do EZConfig, não no Chrome do dia a dia. O atalho embute a flag --allow-file-access-from-files e abre o navegador já com a permissão certa. Se a tela do EZConfig carregar com os menus de configuração e o scanner aparecendo na lista de dispositivos, funcionou.</p>
+<h3>Passo 7: Conecte o scanner e valide</h3>
+<p>Com o EZConfig aberto, conecte o 8675i (ou seu modelo) por USB e confira se ele aparece na área de dispositivo conectado. Se aparecer, o software está enxergando o leitor. Se não aparecer, pule direto para a seção sobre detecção de scanner mais abaixo — o problema lá é outro parâmetro (REMIFC), não o Chrome.</p>
+<p class="post_alerta_ok"><i class="fas fa-square-check" style="color:#28a745" aria-hidden="true"></i> Checklist da instalação correta: Chrome totalmente fechado antes de instalar, desinstalação prévia se já houve erro, execução como administrador e abertura sempre pelo atalho do instalador. Cumprindo os quatro, os três erros da tela preta acima desaparecem.</p>
+
+<h2>Como criar um atalho manual do Chrome para o EZConfig?</h2>
+<p class="post_answer">Crie um atalho cujo destino aponte para o chrome.exe seguido de --allow-file-access-from-files e abra o EZConfig sempre por ele. Funciona como o atalho do instalador, mas exige dois cuidados: o caminho entre aspas quando tiver espaços e o entendimento de que a flag vale para toda a sessão do navegador aberta por ele.</p>
+<p>Este é o plano B para quem já tem o EZConfig instalado e funcionando em outra máquina, ou quem perdeu o atalho. Cada passo com o clique exato:</p>
+<h3>Passo 1: Localize o chrome.exe na sua máquina</h3>
+<p>No Windows de 64 bits, o Chrome costuma estar em <strong>C:\Program Files\Google\Chrome\Application\chrome.exe</strong>. Em instalações antigas de 32 bits, fica em C:\Program Files (x86)\Google\Chrome\Application\chrome.exe. Confirme no Explorador de Arquivos antes de prosseguir — se o caminho estiver errado, o atalho simplesmente não abre nada.</p>
+<div class="post_cqb_codeblock" data-copy="C:\Program Files\Google\Chrome\Application\chrome.exe">C:\Program Files\Google\Chrome\Application\chrome.exe<br><span style="color:#888">:: ou, em instalação 32 bits:</span><br>C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</div>
+<h3>Passo 2: Crie o atalho na área de trabalho</h3>
+<p>Clique com o botão direito numa área vazia da área de trabalho, vá em Novo e depois Atalho. O Windows pergunta o local do item: cole o caminho completo do chrome.exe (com aspas, porque "Program Files" tem espaço). Nomeie como "EZConfig — Chrome" para não confundir com o atalho do Chrome comum.</p>
+<h3>Passo 3: Edite o destino e acrescente a flag</h3>
+<p>Botão direito no atalho recém-criado, Propriedades, campo "Destino". Ele está assim:</p>
+<div class="post_cqb_codeblock">"C:\Program Files\Google\Chrome\Application\chrome.exe"</div>
+<p>Deixe exatamente assim — o chrome.exe entre aspas e a flag DEPOIS, fora das aspas:</p>
+<div class="post_cqb_codeblock" data-copy='"C:\Program Files\Google\Chrome\Application\chrome.exe" --allow-file-access-from-files'>"C:\Program Files\Google\Chrome\Application\chrome.exe" --allow-file-access-from-files</div>
+<p>Clique em OK para salvar. Se o Windows recusar com "o nome informado não é válido", sobrou um caractere fora do lugar — apague tudo e cole de novo a linha inteira do bloco acima.</p>
+<p><i class="fas fa-triangle-exclamation" style="color:#ffc107" aria-hidden="true"></i> Erro comum: colar a flag para DENTRO das aspas. Aí o Windows procura por um arquivo chamado "chrome.exe --allow-file-access-from-files", que não existe, e o atalho falha com "destino inválido". As aspas fecham no .exe; a flag vem depois, separada por espaço.</p>
+<h3>Passo 4: Abra o EZConfig por este atalho</h3>
+<p>Dê clique duplo no atalho "EZConfig — Chrome". Ele abre uma janela do Chrome com a proteção de arquivos locais liberada. Nesta janela, abra a página do EZConfig (o HTML da pasta onde ele está instalado) — o software carrega com os menus completos, sem o erro "Unable to load the configuration file".</p>
+<h3>Passo 5: Use este atalho só para o EZConfig</h3>
+<p>A flag vale para a sessão inteira dessa janela — não use esse atalho para navegar em sites da internet. A biblioteca do Chrome aberta por ele considera que qualquer página local pode ler arquivos locais, o que não é o padrão seguro para navegação comum. O atalho do instalador da Honeywell tem o mesmo efeito, por isso a recomendação oficial é preferir reinstalar e usar o atalho que ele cria — o resultado é o mesmo, mas quem cuida da configuração é o próprio EZConfig, reduzindo a chance de erro manual.</p>
+
+<h2>E se o scanner não for detectado pelo EZConfig?</h2>
+<p class="post_answer">Se o scanner está no modo padrão de USB keyboard emulation (TRMUSB124, PAP124) com o REMIFC desativado, a descoberta do dispositivo pode falhar. A Honeywell recomenda habilitar REMIFC1 para melhorar a detecção. Já para comunicação por porta serial virtual (TRMUSB130), é preciso instalar o HSM USB Serial Driver.</p>
+<p>Dois ajustes resolvem 90% dos casos de "apareceu tudo, menos o scanner":</p>
+<ul class="post_checklist">
+<li><i class="fas fa-circle-info" style="color:#2196f3" aria-hidden="true"></i> <strong>REMIFC em 1:</strong> o REMIFC (Remote MasterMind) desligado (valor 0, padrão de fábrica) atrapalha o EZConfig 4.x a enxergar o leitor em emulação de teclado. Habilite REMIFC1 pela interface do EZConfig em Device Settings, ou pelos códigos de programação do guia do usuário do seu modelo. No 8675i, o comando de menu segue o mesmo formato de comandos SYN que você encontra no <a href="https://www.canalqb.com.br/search?q=honeywell" target="_blank" rel="noopener noreferrer">catálogo de comandos do 8675i</a> que publicamos aqui no app.</li>
+<li><i class="fas fa-circle-info" style="color:#2196f3" aria-hidden="true"></i> <strong>Driver serial quando usar TRMUSB130:</strong> se você trocou a interface do leitor para USB Serial Emulation (TRMUSB130), o EZConfig só conversa por uma porta COM virtual — e essa porta exige o HSM USB Serial Driver (artigo 000022739 da Honeywell). O Windows 10 já traz um driver serial genérico, mas ele não suporta tudo: funcionalidades como captura de imagem do leitor e comandos como REVINF precisam do driver oficial da Honeywell.</li>
+</ul>
+<p>Feito isso, desconecte e reconecte o USB e abra o EZConfig de novo pelo atalho correto. O scanner deve aparecer na lista de dispositivos conectados em poucos segundos.</p>
+
+<section class="post_faq_container" aria-label="Perguntas Frequentes">
+<h2 class="post_faq_title"><i class="fas fa-circle-question" aria-hidden="true"></i> Perguntas Frequentes</h2>
+
+<details class="post_faq_item">
+<summary class="post_faq_question"><i class="fas fa-question-circle" aria-hidden="true"></i> O EZConfig for Scanning é gratuito?</summary>
+<div class="post_faq_answer"><p>Sim. O EZConfig é um utilitário de suporte distribuído gratuitamente pela Honeywell no portal oficial de software — não exige licença paga nem assinatura para baixar e instalar. Qualquer site cobrando pelo download não é a fonte oficial. Você encontra o arquivo pelo encurtado https://canalqb.com.br/?c=ezconfig4_5_68 ou navegando pelo <a href="https://hsmftp.honeywell.com/" target="_blank" rel="noopener noreferrer">portal da Honeywell</a>.</p></div>
+</details>
+
+<details class="post_faq_item">
+<summary class="post_faq_question"><i class="fas fa-question-circle" aria-hidden="true"></i> O EZConfig funciona no Windows 11?</summary>
+<div class="post_faq_answer"><p>Funciona. A versão 4.x roda dentro do navegador — Edge, Chrome, Internet Explorer e Firefox são os homologados — então o que manda é o navegador estar com a permissão de acesso a arquivos locais (o atalho do instalador cuida disso), não a versão do Windows. Para os recursos de porta serial (TRMUSB130), o HSM USB Serial Driver é o mesmo do Windows 10. Se quiser garantir comportamento estável, siga a instalação limpa deste guia.</p></div>
+</details>
+
+<details class="post_faq_item">
+<summary class="post_faq_question"><i class="fas fa-question-circle" aria-hidden="true"></i> Preciso de conta Honeywell para baixar o EZConfig?</summary>
+<div class="post_faq_answer"><p>Não. O portal de download é aberto: você entra em hsmftp.honeywell.com, navega até Tools and Utilities e baixa o EZConfig sem login. A conta só é útil para abrir chamados de suporte no SPS Community, como o <a href="https://sps-support.honeywell.com/s/article/Where-can-EZConfig-for-Scanning-be-downloaded" target="_blank" rel="noopener noreferrer">artigo oficial 000055083</a> que documenta o download.</p></div>
+</details>
+
+<details class="post_faq_item">
+<summary class="post_faq_question"><i class="fas fa-question-circle" aria-hidden="true"></i> O que é um cloning barcode e por que gerar um?</summary>
+<div class="post_faq_answer"><p>É um código de barras que carrega dentro de si a configuração completa do scanner que o gerou. Ao bipar esse código em outro leitor compatível, ele assume a mesma configuração — ideal para padronizar uma frota inteira sem configurar unidade por unidade. No EZConfig, você configura um leitor do jeito certo e gera o cloning barcode para replicar nos demais; é mais rápido e menos propenso a erro humano do que repetir cada ajuste manualmente.</p></div>
+</details>
+
+<details class="post_faq_item">
+<summary class="post_faq_question"><i class="fas fa-question-circle" aria-hidden="true"></i> Como resolvo o erro "EZCS configuration has been corrupted"?</summary>
+<div class="post_faq_answer"><p>Esse erro indica que os arquivos locais de configuração do EZConfig corromperam — geralmente depois de abrir o HTML direto pelo Chrome sem a flag. A solução é a instalação limpa: feche todo o Chrome pelo Gerenciador de Tarefas, desinstale o EZConfig em Configurações, reinicie o PC, baixe a 4.5.68 de novo e instale como administrador. Depois, abra sempre pelo atalho criado pelo instalador — a seção "Como carregar o EZConfig corretamente no navegador" deste guia traz o passo a passo completo.</p></div>
+</details>
+
+<details class="post_faq_item">
+<summary class="post_faq_question"><i class="fas fa-question-circle" aria-hidden="true"></i> O EZConfig substitui o Visual Xpress?</summary>
+<div class="post_faq_answer"><p>Sim. O EZConfig for Scanning é o sucessor oficial do Visual Xpress e mantém compatibilidade total com os perfis criados no programa antigo — você pode carregar uma configuração gerada no Visual Xpress no EZConfig sem conversão. A Honeywell recomenda a migração completa, mantendo o Visual Xpress apenas para equipamentos muito antigos já fora da lista de suporte.</p></div>
+</details>
+</section>
+
+<section class="post_refs">
+<h2><i class="fas fa-book" aria-hidden="true"></i> Fontes e Referências</h2>
+<ul>
+<li><a href="https://sps-support.honeywell.com/s/article/Where-can-EZConfig-for-Scanning-be-downloaded" target="_blank" rel="noopener noreferrer">Honeywell SPS — Artigo 000055083: Where can EZConfig for Scanning be downloaded?</a> (fonte oficial das versões, compatibilidade e notas)</li>
+<li><a href="https://hsmftp.honeywell.com/" target="_blank" rel="noopener noreferrer">Portal oficial de software da Honeywell (hsmftp.honeywell.com)</a> — download atual de EZConfig e drivers</li>
+<li>Tutorial oficial de introdução ao EZConfig — Artigo 000052779 e menu Help do próprio EZConfig</li>
+<li>HSM USB Serial Driver — Artigo 000022739 da Honeywell (necessário para TRMUSB130)</li>
+<li>Leituras do @CanalQb: <a href="https://www.canalqb.com.br/search?q=ezconfig" target="_blank" rel="noopener noreferrer">EZConfig</a>, <a href="https://www.canalqb.com.br/search?q=honeywell+8675i" target="_blank" rel="noopener noreferrer">Honeywell 8675i</a> e <a href="https://www.canalqb.com.br/search?q=impressao+de+etiquetas" target="_blank" rel="noopener noreferrer">impressão de etiquetas</a></li>
+</ul>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "EZConfig for Scanning: configure seu scanner Honeywell no PC",
+  "description": "Guia do EZConfig for Scanning 4.5.68 da Honeywell: download seguro, dispositivos compatíveis como o 8675i, correção do erro do Chrome e o falso positivo do antivírus explicado.",
+  "author": {"@type": "Person", "name": "@CanalQb", "url": "https://canalqb.com.br"},
+  "publisher": {
+    "@type": "Organization", "name": "@CanalQb", "url": "https://canalqb.com.br",
+    "logo": {"@type": "ImageObject", "url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgAppgdjbwBxn27tGUch6DJBXRrlOAwk1V0ZTtHvEvlt0HoVsARJSfJDizdDRlmkLwKSxSRzbknK5L3jVKs364oRzgozNeD0Vv2aky1vk2QzrJh-O_sgDQEUXJxw5XHtmFNsmI5iv_ITOJcDfW7k6XtoTE9RgJiKZDW6ZTK41oAjDh7smDJMTC9E1h4YOfm/s2560/CanalQb.png"}
+  },
+  "datePublished": "2026-09-30",
+  "dateModified": "2026-09-30",
+  "mainEntityOfPage": "https://canalqb.github.io/etiquetas-zebra/adicionais/honeywell/software/ezconfig-for-scanning.html",
+  "copyrightHolder": {"@type": "Person", "name": "@CanalQb"},
+  "license": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+  "inLanguage": "pt-BR"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "O EZConfig for Scanning é gratuito?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. O EZConfig é um utilitário de suporte distribuído gratuitamente pela Honeywell no portal oficial de software — não exige licença paga nem assinatura para baixar e instalar. Qualquer site cobrando pelo download não é a fonte oficial."}},
+    {"@type": "Question", "name": "O EZConfig funciona no Windows 11?", "acceptedAnswer": {"@type": "Answer", "text": "Funciona. A versão 4.x roda dentro do navegador — Edge, Chrome, Internet Explorer e Firefox são os homologados — então o que manda é o navegador estar com a permissão de acesso a arquivos locais, garantida pelo atalho que o instalador cria."}},
+    {"@type": "Question", "name": "Preciso de conta Honeywell para baixar o EZConfig?", "acceptedAnswer": {"@type": "Answer", "text": "Não. O portal de download é aberto: você entra em hsmftp.honeywell.com, navega até Tools and Utilities e baixa o EZConfig sem login. A conta só é útil para abrir chamados de suporte."}},
+    {"@type": "Question", "name": "O que é um cloning barcode e por que gerar um?", "acceptedAnswer": {"@type": "Answer", "text": "É um código de barras que carrega a configuração completa do scanner que o gerou. Ao bipar esse código em outro leitor compatível, ele assume a mesma configuração — ideal para padronizar uma frota sem configurar unidade por unidade."}},
+    {"@type": "Question", "name": "Como resolvo o erro EZCS configuration has been corrupted?", "acceptedAnswer": {"@type": "Answer", "text": "Esse erro indica que os arquivos locais de configuração do EZConfig corromperam. A solução é a instalação limpa: feche todo o Chrome pelo Gerenciador de Tarefas, desinstale o EZConfig, reinicie o PC, baixe a 4.5.68 de novo, instale como administrador e use o atalho criado pelo instalador."}},
+    {"@type": "Question", "name": "O EZConfig substitui o Visual Xpress?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. O EZConfig for Scanning é o sucessor oficial do Visual Xpress e mantém compatibilidade total com os perfis criados no programa antigo, sem necessidade de conversão."}}
+  ]
+}
+</script>
+
+<div class="post_cta">
+<p style="margin:0 0 12px;font-weight:600;color:var(--fg)"><i class="fas fa-bell" aria-hidden="true"></i> Gostou do guia? Tem mais no canal:</p>
+<a class="btn" href="https://www.youtube.com/channel/UCdOA_1KzXHIp3gmVyyYv2sg" target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube" aria-hidden="true"></i> Assistir @CanalQb no YouTube</a>
+<p style="margin:12px 0 0;font-size:.9rem;color:var(--fg2)">Este guia faz parte do app <strong>CanalQb Impressão em Zebras</strong> — abra o menu Adicionais para ver também o catálogo de comandos do scanner Honeywell 8675i.</p>
+</div>
+
+<p class="post_assinatura">Feito com Master Rules Claude v9.0 — revisão estrutural v8.5 · @CanalQb 2026</p>
+
+<script>
+(function () {
+  'use strict';
+  /* Reading Progress Bar */
+  var bar = document.getElementById('post_progress');
+  function atualizaBarra() {
+    if (!bar) return;
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = pct + '%';
+  }
+  window.addEventListener('scroll', atualizaBarra, { passive: true });
+  atualizaBarra();
+
+  /* Toast (sem alert — regra @CanalQb) */
+  var toast = document.createElement('div');
+  toast.className = 'post_toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  document.body.appendChild(toast);
+  var toastTimer = null;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('post_toast_show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('post_toast_show'); }, 2200);
+  }
+
+  /* Botao Copiar em cada code block/terminal */
+  document.querySelectorAll('.post_cqb_codeblock, .post_cqb_terminal').forEach(function (bloco) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'post_copy_btn';
+    btn.setAttribute('aria-label', 'Copiar comando');
+    btn.innerHTML = '<i class="fas fa-copy" aria-hidden="true"></i> Copiar';
+    bloco.appendChild(btn);
+    btn.addEventListener('click', function () {
+      var alvo = bloco.getAttribute('data-copy');
+      var texto = alvo !== null ? alvo : bloco.innerText.replace(/\s*Copiar\s*$/, '');
+      function ok() { showToast('Comando copiado — cole no PowerShell ou no campo indicado.'); }
+      function falha() { showToast('Não consegui copiar automaticamente — selecione e copie manualmente.'); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(ok, function () {
+          fallback();
+        });
+      } else { fallback(); }
+      function fallback() {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = texto;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          var okDoc = document.execCommand('copy');
+          ta.remove();
+          if (okDoc) { ok(); } else { falha(); }
+        } catch (e) { falha(); }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

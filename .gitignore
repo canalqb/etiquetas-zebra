@@ -18,3 +18,11 @@ Lexmark.xlsx
 zpl-zbi2-pg-en.pdf
 modelo-*.zpl
 adicionais/**/catalogo-original.*
+
+# Pedido 1.160/1.161: material local de trabalho e drivers fonte dos instaladores
+# (instalador lexmark.txt contém token GitHub — NUNCA versionar)
+instalador lexmark.txt
+honeywell.txt
+Lexmark/
+Xerox_C415/
+Link-OS-7.6.2-Release-Notes.pdf
