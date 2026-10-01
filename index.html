@@ -1476,7 +1476,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.013</span>
+      <span class="brand-ver">v1.014</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1556,20 +1556,22 @@
             <div class="dnv-dropdown dnv-submenu" id="dnv-dd-calibrar" role="menu">
               <!-- Estado das configurações migradas do ribbon Impressora (hidden) -->
               <div class="d-none">
-                <input type="radio" class="btn-check" name="ribbon" id="ribbon-nao" value="N" checked>
+                <input type="radio" class="btn-check" name="ribbon" id="ribbon-default" value="D" checked>
+                <input type="radio" class="btn-check" name="ribbon" id="ribbon-nao" value="N">
                 <input type="radio" class="btn-check" name="ribbon" id="ribbon-sim" value="Y">
                 <input type="radio" class="btn-check" name="quality" id="quality-grayscale" value="grayscale" checked>
                 <input type="radio" class="btn-check" name="quality" id="quality-bitonal" value="bitonal">
               </div>
-              <button type="button" class="dnv-dropdown-item" id="dnv-imp-modo" role="menuitem">
-                <i class="fas fa-tape dnv-icon text-secondary"></i> <span id="dnv-modo-text">Modo Ribbon: Sem (Térmica Direta)</span>
+              <button type="button" class="dnv-dropdown-item" id="dnv-imp-modo" role="menuitem" title="Ciclo: Padrão da impressora → Sem (Térmica Direta) → Com (Transferência) — Padrão não envia ^MT e a impressora usa a configuração do painel">
+                <i class="fas fa-tape dnv-icon text-secondary"></i> <span id="dnv-modo-text">Modo Ribbon: Padrão da impressora</span>
               </button>
               <!-- Tipo de mídia: combobox direto no submenu (^MN) -->
               <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-midia" title="Tipo de mídia">
                 <i class="fas fa-tags dnv-icon text-secondary"></i>
                 <select class="form-select form-select-sm flex-grow-1" id="sel-tipo-midia" aria-label="Tipo de mídia">
+                  <option value="" selected>Padrão da impressora</option>
                   <option value="C">Etiquetas contínuas</option>
-                  <option value="N" selected>Etiquetas com intervalos</option>
+                  <option value="N">Etiquetas com intervalos</option>
                   <option value="M">Etiquetas com marcações pretas</option>
                   <option value="F">Etiquetas com ranhuras laterais</option>
                 </select>
@@ -1578,7 +1580,7 @@
               <div class="dnv-dropdown-item dnv-select-row" id="dnv-imp-modoop" title="Modo operacional de impressão">
                 <i class="fas fa-gears dnv-icon text-secondary"></i>
                 <select class="form-select form-select-sm flex-grow-1" id="sel-modo-operacional" aria-label="Modo operacional">
-                  <option value="" selected>Usar padrão da impressora</option>
+                  <option value="" selected>Padrão da impressora</option>
                   <option value="T">Arrancar</option>
                   <option value="P">Descolar</option>
                   <option value="C">Cortador</option>
@@ -1590,10 +1592,11 @@
                 </select>
               </div>
               <!-- Tonalidade: slider direto no submenu (sem fechar o menu) -->
-              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-ton" title="Tonalidade — Intensidade de Queima (10 a 30)">
+              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-ton" title="Tonalidade — Intensidade de Queima (10 a 30). Padrão da impressora não envia ^MD">
+                <button type="button" class="btn btn-sm btn-success px-2 py-0 text-nowrap" id="ton-padrao" role="switch" aria-checked="true" title="Padrão da impressora: o app não envia ^MD e a impressora usa a tonalidade do painel"><i class="bi bi-check-lg"></i> Padrão</button>
                 <i class="fas fa-sun dnv-icon text-warning"></i>
-                <input type="range" class="form-range mb-0 flex-grow-1" id="tonalidade" min="10" max="30" value="18" step="1" aria-label="Tonalidade (Darkness ^MD)">
-                <span class="badge bg-secondary text-white" id="ton-val" style="font-size:0.7rem; min-width:20px; text-align:center;">18</span>
+                <input type="range" class="form-range mb-0 flex-grow-1" id="tonalidade" min="10" max="30" value="18" step="1" aria-label="Tonalidade (Darkness ^MD)" disabled>
+                <span class="badge bg-secondary text-white" id="ton-val" style="font-size:0.7rem; min-width:26px; text-align:center;">auto</span>
               </div>
               <!-- Tamanho do papel: listagem direta no submenu (sem fechar o menu) -->
               <div class="dnv-dropdown-item dnv-item-static">
@@ -1603,13 +1606,18 @@
               </div>
               <div class="d-flex flex-wrap gap-1 px-3 pb-1" id="dnv-papel-opcoes"></div>
               <!-- Velocidade: slider direto no submenu (^PR 2 a 14 pol/s, padrão 6) -->
-              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-veloc" title="Velocidade de impressão (2 a 14 pol/s)">
+              <div class="dnv-dropdown-item dnv-slider-row" id="dnv-imp-veloc" title="Velocidade de impressão (2 a 14 pol/s). Padrão da impressora não envia ^PR">
+                <button type="button" class="btn btn-sm btn-success px-2 py-0 text-nowrap" id="vel-padrao" role="switch" aria-checked="true" title="Padrão da impressora: o app não envia ^PR e a impressora usa a velocidade do painel"><i class="bi bi-check-lg"></i> Padrão</button>
                 <i class="fas fa-gauge-high dnv-icon text-secondary"></i>
-                <input type="range" class="form-range mb-0 flex-grow-1" id="velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)">
-                <span class="badge bg-secondary text-white" id="veloc-val" style="font-size:0.7rem; min-width:20px; text-align:center;">6</span>
+                <input type="range" class="form-range mb-0 flex-grow-1" id="velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)" disabled>
+                <span class="badge bg-secondary text-white" id="veloc-val" style="font-size:0.7rem; min-width:26px; text-align:center;">auto</span>
               </div>
               <button type="button" class="dnv-dropdown-item" id="dnv-imp-qual" role="menuitem">
                 <i class="fas fa-adjust dnv-icon text-secondary"></i> <span id="dnv-qual-text">Qualidade: Escala de Cinza</span>
+              </button>
+              <hr class="dnv-dropdown-divider">
+              <button type="button" class="dnv-dropdown-item" id="dnv-imp-reset-cal" role="menuitem" title="Volta todos os itens acima para o Padrão da impressora (Ribbon, Mídia, Modo operacional, Tonalidade e Velocidade)">
+                <i class="fas fa-rotate-left dnv-icon text-warning"></i> <span class="text-warning">Redefinir Configurações</span>
               </button>
               <hr class="dnv-dropdown-divider">
               <button type="button" class="dnv-dropdown-item fw-semibold" id="dnv-imp-cal-exec" role="menuitem">
@@ -1774,7 +1782,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.013</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.014</span>
         </div>
       </div>
 
@@ -3129,7 +3137,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.013</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.014</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3250,14 +3258,15 @@
           <hr class="my-2">
           <span class="small fw-bold text-secondary d-block mb-2">Calibração — os ajustes abaixo aplicam ao Calibrar Agora:</span>
           <div class="d-grid gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-modo">
-              <i class="fas fa-tape me-1"></i> <span id="nav-cal-modo-text">Modo Ribbon: Sem (Térmica Direta)</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-modo" title="Ciclo: Padrão da impressora → Sem (Térmica Direta) → Com (Transferência)">
+              <i class="fas fa-tape me-1"></i> <span id="nav-cal-modo-text">Modo Ribbon: Padrão da impressora</span>
             </button>
             <div>
               <label class="form-label small fw-semibold mb-1" for="nav-sel-midia">Tipo de Mídia</label>
               <select class="form-select form-select-sm" id="nav-sel-midia" aria-label="Tipo de mídia">
+                <option value="" selected>Padrão da impressora</option>
                 <option value="C">Etiquetas contínuas</option>
-                <option value="N" selected>Etiquetas com intervalos</option>
+                <option value="N">Etiquetas com intervalos</option>
                 <option value="M">Etiquetas com marcações pretas</option>
                 <option value="F">Etiquetas com ranhuras laterais</option>
               </select>
@@ -3265,7 +3274,7 @@
             <div>
               <label class="form-label small fw-semibold mb-1" for="nav-sel-modoop">Modo Operacional</label>
               <select class="form-select form-select-sm" id="nav-sel-modoop" aria-label="Modo operacional">
-                <option value="" selected>Usar padrão da impressora</option>
+                <option value="" selected>Padrão da impressora</option>
                 <option value="T">Arrancar</option>
                 <option value="P">Descolar</option>
                 <option value="C">Cortador</option>
@@ -3277,14 +3286,16 @@
               </select>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <span class="small text-muted" style="min-width:74px;">Tonalidade</span>
-              <input type="range" class="form-range mb-0 flex-grow-1" id="nav-tonalidade" min="10" max="30" value="18" step="1" aria-label="Tonalidade (Darkness ^MD)">
-              <span class="badge bg-secondary text-white" id="nav-ton-val" style="font-size:0.7rem; min-width:20px; text-align:center;">18</span>
+              <button type="button" class="btn btn-sm btn-success px-2 py-0 text-nowrap" id="nav-ton-padrao" role="switch" aria-checked="true" title="Padrão da impressora: o app não envia ^MD"><i class="bi bi-check-lg"></i> Padrão</button>
+              <span class="small text-muted" style="min-width:60px;">Tonalidade</span>
+              <input type="range" class="form-range mb-0 flex-grow-1" id="nav-tonalidade" min="10" max="30" value="18" step="1" aria-label="Tonalidade (Darkness ^MD)" disabled>
+              <span class="badge bg-secondary text-white" id="nav-ton-val" style="font-size:0.7rem; min-width:26px; text-align:center;">auto</span>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <span class="small text-muted" style="min-width:74px;">Velocidade</span>
-              <input type="range" class="form-range mb-0 flex-grow-1" id="nav-velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)">
-              <span class="badge bg-secondary text-white" id="nav-veloc-val" style="font-size:0.7rem; min-width:20px; text-align:center;">6</span>
+              <button type="button" class="btn btn-sm btn-success px-2 py-0 text-nowrap" id="nav-vel-padrao" role="switch" aria-checked="true" title="Padrão da impressora: o app não envia ^PR"><i class="bi bi-check-lg"></i> Padrão</button>
+              <span class="small text-muted" style="min-width:60px;">Velocidade</span>
+              <input type="range" class="form-range mb-0 flex-grow-1" id="nav-velocidade" min="2" max="14" value="6" step="1" aria-label="Velocidade (pol/s)" disabled>
+              <span class="badge bg-secondary text-white" id="nav-veloc-val" style="font-size:0.7rem; min-width:26px; text-align:center;">auto</span>
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <span class="small text-muted">Tamanho do Papel</span>
@@ -3294,9 +3305,14 @@
             <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-qual">
               <i class="fas fa-adjust me-1"></i> <span id="nav-cal-qual-text">Qualidade: Escala de Cinza</span>
             </button>
-            <button type="button" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center gap-2" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
-              <i class="fas fa-sliders-h"></i> Calibrar Agora
-            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-warning text-start flex-grow-1" id="nav-btn-cal-reset" title="Volta todos os itens acima para o Padrão da impressora">
+                <i class="fas fa-rotate-left me-1"></i> Redefinir Configurações
+              </button>
+              <button type="button" class="btn btn-sm btn-primary text-nowrap" id="nav-btn-calibrar" data-bs-dismiss="offcanvas">
+                <i class="fas fa-sliders-h"></i> Calibrar Agora
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -6796,24 +6812,28 @@
 
       var ribbon = getRibbonMode();
       var darkness = getTonalidade();
+      var tipoMidia = getTipoMidia();
 
+      /* Pedido 1.159: itens em "Padrão da impressora" NÃO emitem o comando
+         (^MT/^MD/^MN) — a impressora usa a configuração do próprio painel. */
       var p = [
         "^XA",
         "^CI28",
         "^JMA",
         "^PW" + W,
-        "^LL" + H,
-        "^MT" + (ribbon === "Y" ? "T" : "D"),
-        "^MD" + darkness,
-        "^MN" + getTipoMidia(),
-        "^PM" + ((espelhoModo === "h" || espelhoModo === "v") ? "Y" : "N"),
-        "^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N")
+        "^LL" + H
       ];
+      if (ribbon !== "D") p.push("^MT" + (ribbon === "Y" ? "T" : "D"));
+      if (darkness !== null) p.push("^MD" + darkness);
+      if (tipoMidia) p.push("^MN" + tipoMidia);
+      p.push("^PM" + ((espelhoModo === "h" || espelhoModo === "v") ? "Y" : "N"));
+      p.push("^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N"));
       /* Configurações encenadas do submenu Calibrar viajam em cada etiqueta:
          sem calibrar, valem só para a impressão; Calibrar Agora persiste na impressora. */
       var modoOpLbl = getModoOperacional();
       if (modoOpLbl) p.push("^MM" + modoOpLbl);
-      p.push("^PR" + velocAtualValida());
+      var velLbl = velocAtualValida();
+      if (velLbl !== null) p.push("^PR" + velLbl);
 
       /* Injeta deslocamento de hardware ^LH (Label Home) se houver margens de ajuste de impressora */
       var lhX = Math.round(mmToDots(margens.left));
@@ -7751,22 +7771,24 @@
        sem reposicionamento/reinterpretacao de fontes pela impressora. */
     function gerarZPLImagem() {
       var cv = aplicarEspelhoCanvas(renderizarEtiquetaCanvas(true)); /* espelho já embutido no bitmap */
-      var ribbon = getRibbonMode(), darkness = getTonalidade();
+      var ribbon = getRibbonMode(), darkness = getTonalidade(), tipoMidiaImg = getTipoMidia();
+      /* Pedido 1.159: Padrão da impressora omitte ^MT/^MD/^MN */
       var p = [
         "^XA",
         "^CI28",
         "^JMA",
         "^PW" + cv.width,
-        "^LL" + cv.height,
-        "^MT" + (ribbon === "Y" ? "T" : "D"),
-        "^MD" + darkness,
-        "^MN" + getTipoMidia(),
-        "^PMN",
-        "^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N")
+        "^LL" + cv.height
       ];
+      if (ribbon !== "D") p.push("^MT" + (ribbon === "Y" ? "T" : "D"));
+      if (darkness !== null) p.push("^MD" + darkness);
+      if (tipoMidiaImg) p.push("^MN" + tipoMidiaImg);
+      p.push("^PMN");
+      p.push("^LR" + (localStorage.getItem("etiquetasZebra.reverso") === "1" ? "Y" : "N"));
       var modoOpImg = getModoOperacional();
       if (modoOpImg) p.push("^MM" + modoOpImg);
-      p.push("^PR" + velocAtualValida());
+      var velImg = velocAtualValida();
+      if (velImg !== null) p.push("^PR" + velImg);
       p.push("^FO0,0" + canvasParaGF(cv) + "^FS");
       p.push("^XZ");
       return p.join("\n");
@@ -8271,7 +8293,10 @@
         scaleZoom: scaleZoom,
         unidade: $("select-unidade") ? $("select-unidade").value : "mm",
         ribbon: getRibbonMode(),
-        tonalidade: getTonalidade(),
+        tonalidade: getTonalidade(), /* null quando "Padrão da impressora" (Pedido 1.159) */
+        velocidade: velocAtualValida(), /* null quando "Padrão da impressora" */
+        tonalidadePadrao: tonalidadePadraoAtiva(),
+        velocidadePadrao: velocidadePadraoAtiva(),
         tamanho: $("tamanho") ? $("tamanho").value : "100x50",
         density: getDensityMode(),
         quality: getQualityMode(),
@@ -8303,7 +8328,11 @@
 
         /* Menos de 24 horas -> carrega os valores e renova o contador para +24h */
         if (data.ribbon !== undefined) setRibbonMode(data.ribbon);
-        if (data.tonalidade !== undefined) setTonalidade(data.tonalidade);
+        /* Pedido 1.159: restaura os toggles Padrão antes do valor do slider */
+        if (data.tonalidadePadrao !== undefined) setTonalidadePadrao(!!data.tonalidadePadrao);
+        if (data.velocidadePadrao !== undefined) setVelocidadePadrao(!!data.velocidadePadrao);
+        if (data.tonalidade !== undefined && data.tonalidade !== null) setTonalidade(data.tonalidade);
+        if (data.velocidade !== undefined && data.velocidade !== null) localStorage.setItem(VEL_KEY, String(data.velocidade));
         if (data.density !== undefined) setDensityMode(data.density);
         if (data.quality !== undefined) setQualityMode(data.quality);
         if (data.tamanho !== undefined && SIZES[data.tamanho] && $("tamanho")) {
@@ -10778,7 +10807,7 @@
           if (data.rotacao !== undefined) rotAtual = (data.rotacao === 90 || data.rotacao === 270) ? data.rotacao : 0;
           if (data.dpmm) setDensityMode(data.dpmm);
           if (data.ribbon) setRibbonMode(data.ribbon);
-          if (data.tonalidade) setTonalidade(data.tonalidade);
+          if (data.tonalidade) { setTonalidadePadrao(false); setTonalidade(data.tonalidade); } /* Pedido 1.159: VIP com valor desliga o Padrão */
           if (data.quality) setQualityMode(data.quality);
           if (data.printerIp) localStorage.setItem(CHAVE_IP, data.printerIp);
           if (data.margens) margens = Object.assign({}, data.margens);
@@ -10841,14 +10870,24 @@
     /* ---------------- Impressão FTP & Ações ---------------- */
     function getRibbonMode() {
       var el = document.querySelector('input[name="ribbon"]:checked');
-      return el ? el.value : "N";
+      if (el && (el.value === "Y" || el.value === "N")) return el.value;
+      return "D"; /* Pedido 1.159: Padrão da impressora (^MT não é enviado) */
     }
     function setRibbonMode(val) {
-      val = (val === "Y") ? "Y" : "N";
+      val = (val === "Y") ? "Y" : ((val === "N") ? "N" : "D");
       var el = document.querySelector('input[name="ribbon"][value="' + val + '"]');
       if (el) el.checked = true;
     }
+    var TON_PADRAO_KEY = "etiquetasZebra.tonalidadePadrao";
+    function tonalidadePadraoAtiva() {
+      var v = localStorage.getItem(TON_PADRAO_KEY);
+      return v !== "0"; /* ausente = Padrão da impressora (Pedido 1.159) */
+    }
+    function setTonalidadePadrao(on) {
+      localStorage.setItem(TON_PADRAO_KEY, on ? "1" : "0");
+    }
     function getTonalidade() {
+      if (tonalidadePadraoAtiva()) return null; /* null = não enviar ^MD */
       var el = $("tonalidade");
       return el ? parseInt(el.value, 10) : 18;
     }
@@ -11715,7 +11754,16 @@
     var VEL_KEY = "etiquetasZebra.velocidade";
     var MIDIA_KEY = "etiquetasZebra.tipoMidia";
     var MODOOP_KEY = "etiquetasZebra.modoOperacional";
+    var VEL_PADRAO_KEY = "etiquetasZebra.velocidadePadrao";
+    function velocidadePadraoAtiva() {
+      var v = localStorage.getItem(VEL_PADRAO_KEY);
+      return v !== "0"; /* ausente = Padrão da impressora (Pedido 1.159) */
+    }
+    function setVelocidadePadrao(on) {
+      localStorage.setItem(VEL_PADRAO_KEY, on ? "1" : "0");
+    }
     function velocAtualValida() {
+      if (velocidadePadraoAtiva()) return null; /* null = não enviar ^PR */
       var v = parseInt(localStorage.getItem(VEL_KEY) || "6", 10);
       if (isNaN(v)) v = 6;
       return Math.max(2, Math.min(14, v));
@@ -11724,7 +11772,7 @@
       var v = localStorage.getItem(MIDIA_KEY);
       if (v === "C" || v === "N" || v === "M" || v === "F") return v;
       if (localStorage.getItem("etiquetasZebra.gapMedia") === "off") return "C";
-      return "N";
+      return ""; /* vazio = Padrão da impressora (não enviar ^MN) */
     }
     function getModoOperacional() {
       var v = localStorage.getItem(MODOOP_KEY) || "";
@@ -11739,17 +11787,52 @@
         return;
       }
       var sz = SIZES[tamAtualKey] || SIZES["100x50"];
-      var modo = getRibbonMode() === "Y" ? "T" : "D";
+      var modo = getRibbonMode();
       var escuro = getTonalidade();
       var midia = getTipoMidia();
       var modoOp = getModoOperacional();
       var vel = velocAtualValida();
       var pw = mmToDots(sz.mmW), ll = mmToDots(sz.mmH);
-      var zplCal = "^XA^MCD^MT" + modo + "^MD" + escuro + "^MN" + midia;
+      /* Pedido 1.159: itens em "Padrão da impressora" não são enviados nem
+         na calibração — o ajuste do painel da impressora é respeitado. */
+      var zplCal = "^XA^MCD";
+      if (modo !== "D") zplCal += "^MT" + (modo === "Y" ? "T" : "D");
+      if (escuro !== null) zplCal += "^MD" + escuro;
+      if (midia) zplCal += "^MN" + midia;
       if (modoOp) zplCal += "^MM" + modoOp;
-      zplCal += "^PR" + vel + "^PW" + pw + "^LL" + ll + "^XZ";
+      if (vel !== null) zplCal += "^PR" + vel;
+      zplCal += "^PW" + pw + "^LL" + ll + "^XZ";
       enviarImpressao(ip, zplCal);
-      notify("Calibração enviada: ribbon " + modo + " · tonalidade " + escuro + " · mídia " + midia + (modoOp ? " · modo " + modoOp : "") + " · velocidade " + vel + " · papel " + sz.mmW + "×" + sz.mmH + " mm.", "success");
+      notify("Calibração enviada: ribbon " + (modo === "D" ? "padrão da impressora" : (modo === "Y" ? "transferência" : "térmica direta")) +
+        " · tonalidade " + (escuro === null ? "padrão da impressora" : escuro) +
+        " · mídia " + (midia || "padrão da impressora") +
+        (modoOp ? " · modo " + modoOp : "") +
+        " · velocidade " + (vel === null ? "padrão da impressora" : vel) +
+        " · papel " + sz.mmW + "×" + sz.mmH + " mm.", "success");
+    }
+
+    /* Pedido 1.159: redefinir as configurações do submenu Calibrar — todos os
+       itens voltam a "Padrão da impressora" (o app para de enviar ^MT/^MD/^MN/
+       ^MM/^PR e a impressora usa o que está configurado no painel). */
+    function redefinirConfigCalibracao() {
+      localStorage.removeItem(VEL_KEY);
+      localStorage.removeItem(MIDIA_KEY);
+      localStorage.removeItem(MODOOP_KEY);
+      setTonalidadePadrao(true);
+      setVelocidadePadrao(true);
+      setRibbonMode("D");
+      /* Sliders voltam aos valores de fábrica do app para quando o usuário desligar o Padrão */
+      var ton = $("tonalidade"); if (ton) ton.value = "18";
+      var vel = $("velocidade"); if (vel) vel.value = "6";
+      var navTon = $("nav-tonalidade"); if (navTon) navTon.value = "18";
+      var navVel = $("nav-velocidade"); if (navVel) navVel.value = "6";
+      var selM = $("sel-tipo-midia"); if (selM) selM.value = "";
+      var selO = $("sel-modo-operacional"); if (selO) selO.value = "";
+      var navSelM = $("nav-sel-midia"); if (navSelM) navSelM.value = "";
+      var navSelO = $("nav-sel-modoop"); if (navSelO) navSelO.value = "";
+      saveFieldsToSession();
+      renderZPL();
+      notify("Configurações de calibragem redefinidas: todos os itens voltaram para o Padrão da impressora.", "success");
     }
 
     /* ---------------- Event Listeners Globais ---------------- */
@@ -11816,6 +11899,7 @@
     /* Tonalidade & Ribbon display/render listeners */
     if ($("tonalidade")) {
       $("tonalidade").addEventListener("input", function () {
+        if (tonalidadePadraoAtiva()) setTonalidadePadrao(false); /* Pedido 1.159 */
         if ($("ton-val")) $("ton-val").textContent = this.value;
         var dnvTon = document.getElementById("dnv-ton-text");
         if (dnvTon) dnvTon.textContent = "Tonalidade: " + this.value;
@@ -12045,8 +12129,9 @@
       var mmWPrev = mmVertical ? szP.mmH : szP.mmW;
       var mmHPrev = mmVertical ? szP.mmW : szP.mmH;
       var dpiP = parseInt((($("badge-dpi") || {}).textContent) || "", 10) || 203;
+      var tonP = getTonalidade();
       $("prev-info").textContent = mmWPrev + " × " + mmHPrev + " mm • Saída: " + rotRotulo() +
-        " (" + cvFonte.width + "×" + cvFonte.height + " dots) • Tonalidade ^MD" + getTonalidade() + " • ~" + dpiP + " DPI" +
+        " (" + cvFonte.width + "×" + cvFonte.height + " dots) • " + (tonP === null ? "Tonalidade: Padrão da impressora" : "Tonalidade ^MD" + tonP) + " • ~" + dpiP + " DPI" +
         (espelhoModo !== "0" ? " • ESPELHO " + (espelhoModo === "h" ? "HORIZONTAL ^PM" : espelhoModo === "v" ? "VERTICAL" : "V+H (180°)") : "") + (reversoAtivo ? " • REVERSO ^LR" : "");
       bsModalPrev.show();
     }
@@ -13354,40 +13439,75 @@
       }
 
       function atualizarTextosCalibrarSub() {
+        var rb = getRibbonMode();
+        var rbTxt = rb === "Y" ? "Com (Transferência)" : (rb === "N" ? "Sem (Térmica Direta)" : "Padrão da impressora");
         var m = document.getElementById("dnv-modo-text");
-        if (m) m.textContent = "Modo Ribbon: " + (getRibbonMode() === "Y" ? "Com (Transferência)" : "Sem (Térmica Direta)");
+        if (m) m.textContent = "Modo Ribbon: " + rbTxt;
         var q = document.getElementById("dnv-qual-text");
         if (q) q.textContent = "Qualidade: " + (getQualityMode() === "bitonal" ? "Preto e Branco (Bitonal)" : "Escala de Cinza");
         var sz = SIZES[tamAtualKey] || SIZES["100x50"];
         var p = document.getElementById("dnv-papel-text");
         if (p) p.textContent = sz.mmW + " × " + sz.mmH + " mm";
+        /* Pedido 1.159: Padrão da impressora nos sliders — travados + badge "auto" */
+        var tonOn = tonalidadePadraoAtiva();
+        var velOn = velocidadePadraoAtiva();
+        var slT = document.getElementById("tonalidade");
+        if (slT) slT.disabled = tonOn;
+        var bT = document.getElementById("ton-val");
+        if (bT) bT.textContent = tonOn ? "auto" : String(getTonalidade());
+        var btnT = document.getElementById("ton-padrao");
+        if (btnT) {
+          btnT.className = "btn btn-sm px-2 py-0 text-nowrap " + (tonOn ? "btn-success" : "btn-outline-secondary");
+          btnT.setAttribute("aria-checked", tonOn ? "true" : "false");
+          btnT.innerHTML = tonOn ? '<i class="bi bi-check-lg"></i> Padrão' : 'Padrão';
+        }
+        var rawVel = parseInt(localStorage.getItem(VEL_KEY) || "6", 10);
+        if (isNaN(rawVel)) rawVel = 6;
         var slV = document.getElementById("velocidade");
-        if (slV) slV.value = String(velocAtualValida());
+        if (slV) { slV.disabled = velOn; slV.value = String(rawVel); }
         var bv = document.getElementById("veloc-val");
-        if (bv) bv.textContent = velocAtualValida();
+        if (bv) bv.textContent = velOn ? "auto" : String(velocAtualValida());
+        var btnV = document.getElementById("vel-padrao");
+        if (btnV) {
+          btnV.className = "btn btn-sm px-2 py-0 text-nowrap " + (velOn ? "btn-success" : "btn-outline-secondary");
+          btnV.setAttribute("aria-checked", velOn ? "true" : "false");
+          btnV.innerHTML = velOn ? '<i class="bi bi-check-lg"></i> Padrão' : 'Padrão';
+        }
         var selM = document.getElementById("sel-tipo-midia");
         if (selM) selM.value = getTipoMidia();
         var selO = document.getElementById("sel-modo-operacional");
         if (selO) selO.value = getModoOperacional();
         /* Mobile (offcanvas, pedido 1.123): espelha os mesmos valores encenados */
         var mM = document.getElementById("nav-cal-modo-text");
-        if (mM) mM.textContent = "Modo Ribbon: " + (getRibbonMode() === "Y" ? "Com (Transferência)" : "Sem (Térmica Direta)");
+        if (mM) mM.textContent = "Modo Ribbon: " + rbTxt;
         var qM = document.getElementById("nav-cal-qual-text");
         if (qM) qM.textContent = "Qualidade: " + (getQualityMode() === "bitonal" ? "Preto e Branco (Bitonal)" : "Escala de Cinza");
         var pM = document.getElementById("nav-cal-papel-text");
         if (pM) pM.textContent = sz.mmW + " × " + sz.mmH + " mm";
+        var navTonSl = document.getElementById("nav-tonalidade");
+        if (navTonSl) navTonSl.disabled = tonOn;
+        var navTonVl = document.getElementById("nav-ton-val");
+        if (navTonVl) navTonVl.textContent = tonOn ? "auto" : String(getTonalidade());
+        var navBtnT = document.getElementById("nav-ton-padrao");
+        if (navBtnT) {
+          navBtnT.className = "btn btn-sm px-2 py-0 text-nowrap " + (tonOn ? "btn-success" : "btn-outline-secondary");
+          navBtnT.setAttribute("aria-checked", tonOn ? "true" : "false");
+          navBtnT.innerHTML = tonOn ? '<i class="bi bi-check-lg"></i> Padrão' : 'Padrão';
+        }
         var slVM = document.getElementById("nav-velocidade");
-        if (slVM) slVM.value = String(velocAtualValida());
+        if (slVM) { slVM.disabled = velOn; slVM.value = String(rawVel); }
         var bvM = document.getElementById("nav-veloc-val");
-        if (bvM) bvM.textContent = velocAtualValida();
+        if (bvM) bvM.textContent = velOn ? "auto" : String(velocAtualValida());
+        var navBtnV = document.getElementById("nav-vel-padrao");
+        if (navBtnV) {
+          navBtnV.className = "btn btn-sm px-2 py-0 text-nowrap " + (velOn ? "btn-success" : "btn-outline-secondary");
+          navBtnV.setAttribute("aria-checked", velOn ? "true" : "false");
+          navBtnV.innerHTML = velOn ? '<i class="bi bi-check-lg"></i> Padrão' : 'Padrão';
+        }
         var selMM = document.getElementById("nav-sel-midia");
         if (selMM) selMM.value = getTipoMidia();
         var selOM = document.getElementById("nav-sel-modoop");
         if (selOM) selOM.value = getModoOperacional();
-        var tonM = document.getElementById("nav-tonalidade");
-        if (tonM) tonM.value = String(getTonalidade());
-        var tonVM = document.getElementById("nav-ton-val");
-        if (tonVM) tonVM.textContent = getTonalidade();
         renderPapelOpcoes();
       }
 
@@ -13397,10 +13517,24 @@
         if (btn) btn.addEventListener("click", function (e) { e.stopPropagation(); fn(); atualizarTextosCalibrarSub(); });
       }
       toggleEncenado("dnv-imp-modo", function () {
-        setRibbonMode(getRibbonMode() === "Y" ? "N" : "Y");
+        var atual = getRibbonMode();
+        setRibbonMode(atual === "D" ? "N" : (atual === "N" ? "Y" : "D"));
         saveFieldsToSession();
         renderZPL();
       });
+      /* Pedido 1.159: toggles "Padrão" da tonalidade/velocidade */
+      toggleEncenado("ton-padrao", function () {
+        setTonalidadePadrao(!tonalidadePadraoAtiva());
+        saveFieldsToSession();
+        renderZPL();
+      });
+      toggleEncenado("vel-padrao", function () {
+        setVelocidadePadrao(!velocidadePadraoAtiva());
+        saveFieldsToSession();
+        renderZPL();
+      });
+      /* Pedido 1.159: Redefinir Configurações — tudo volta ao Padrão da impressora */
+      toggleEncenado("dnv-imp-reset-cal", redefinirConfigCalibracao);
       toggleEncenado("dnv-imp-qual", function () {
         var novo = getQualityMode() === "bitonal" ? "grayscale" : "bitonal";
         var el = document.querySelector('input[name="quality"][value="' + novo + '"]');
@@ -13416,6 +13550,7 @@
       /* Velocidade: slider encenado persiste em VEL_KEY (envia só no Calibrar Agora) */
       var slVel = document.getElementById("velocidade");
       if (slVel) slVel.addEventListener("input", function () {
+        if (velocidadePadraoAtiva()) setVelocidadePadrao(false); /* Pedido 1.159 */
         var bv = document.getElementById("veloc-val");
         if (bv) bv.textContent = this.value;
         /* Pedido 1.127: espelha ao vivo no menu mobile */
@@ -13441,10 +13576,23 @@
          nada é enviado fora do "Calibrar Agora" (calibrarImpressora lê as
          mesmas chaves/slider de tonalidade) */
       toggleEncenado("nav-btn-cal-modo", function () {
-        setRibbonMode(getRibbonMode() === "Y" ? "N" : "Y");
+        var atual = getRibbonMode();
+        setRibbonMode(atual === "D" ? "N" : (atual === "N" ? "Y" : "D"));
         saveFieldsToSession();
         renderZPL();
       });
+      /* Pedido 1.159: toggles Padrão + Redefinir (espelhos mobile) */
+      toggleEncenado("nav-ton-padrao", function () {
+        setTonalidadePadrao(!tonalidadePadraoAtiva());
+        saveFieldsToSession();
+        renderZPL();
+      });
+      toggleEncenado("nav-vel-padrao", function () {
+        setVelocidadePadrao(!velocidadePadraoAtiva());
+        saveFieldsToSession();
+        renderZPL();
+      });
+      toggleEncenado("nav-btn-cal-reset", redefinirConfigCalibracao);
       toggleEncenado("nav-btn-cal-qual", function () {
         var novo = getQualityMode() === "bitonal" ? "grayscale" : "bitonal";
         var el = document.querySelector('input[name="quality"][value="' + novo + '"]');
@@ -13454,6 +13602,7 @@
       });
       var navSlTon = document.getElementById("nav-tonalidade");
       if (navSlTon) navSlTon.addEventListener("input", function () {
+        if (tonalidadePadraoAtiva()) setTonalidadePadrao(false); /* Pedido 1.159 */
         var tv = document.getElementById("nav-ton-val");
         if (tv) tv.textContent = this.value;
         setTonalidade(this.value);
@@ -13462,6 +13611,7 @@
       });
       var navSlVel = document.getElementById("nav-velocidade");
       if (navSlVel) navSlVel.addEventListener("input", function () {
+        if (velocidadePadraoAtiva()) setVelocidadePadrao(false); /* Pedido 1.159 */
         var bv = document.getElementById("nav-veloc-val");
         if (bv) bv.textContent = this.value;
         localStorage.setItem(VEL_KEY, this.value);
