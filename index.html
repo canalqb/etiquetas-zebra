@@ -1476,7 +1476,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.015</span>
+      <span class="brand-ver">v1.016</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1708,6 +1708,20 @@
             </button>
           </div>
           </div>
+          <div class="dnv-submenu-wrap" id="dnv-sub-xer-wrap">
+            <button type="button" class="dnv-dropdown-item dnv-submenu-btn" id="dnv-sub-xerox" role="menuitem" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-print dnv-icon text-secondary"></i> Xerox - Lexmark <i class="fas fa-chevron-right dnv-sub-caret" aria-hidden="true"></i>
+            </button>
+            <div class="dnv-dropdown dnv-submenu" id="dnv-dd-xerox" role="menu">
+              <span class="dnv-dropdown-header">Instaladores (cole no PowerShell)</span>
+              <button type="button" class="dnv-dropdown-item" id="dnv-adic-lexmark-inst" role="menuitem" title="Clique para copiar o comando e cole no PowerShell — instala o driver Lexmark M3350/XM3350 pela internet">
+                <i class="fas fa-terminal dnv-icon text-primary"></i> Instalar Lexmark (M3350/XM3350) <i class="fas fa-copy ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="dnv-dropdown-item" id="dnv-adic-xerox-inst" role="menuitem" title="Clique para copiar o comando e cole no PowerShell — instala o driver Xerox VersaLink C415 pela internet">
+                <i class="fas fa-terminal dnv-icon text-primary"></i> Instalar Xerox C415 <i class="fas fa-copy ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </li>
 
@@ -1786,7 +1800,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.015</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.016</span>
         </div>
       </div>
 
@@ -3141,7 +3155,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.015</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.016</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -11599,6 +11613,36 @@
       bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 
+    /* ---------------- Adicionais — Xerox: instaladores "copiar comando" (Pedido 1.161) ----------------
+       Copia o comando irm ... | iex (release do github.com/canalqb/Xerox-Installer)
+       para a área de transferência; o usuário cola no PowerShell. Sem admin:
+       o instalador baixa o ZIP de drivers do release e só pede UAC no final. */
+    function copiarComandoInstalador(cmd, nome) {
+      function ok() {
+        notify("Comando copiado (" + nome + "). Cole no PowerShell e pressione Enter: " + cmd, "success");
+      }
+      function falha() {
+        notify("Copie manualmente (" + nome + "): " + cmd, "warning");
+      }
+      function fallback() {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = cmd;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          var okDoc = document.execCommand("copy");
+          ta.remove();
+          if (okDoc) { ok(); } else { falha(); }
+        } catch (e) { falha(); }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(ok, fallback);
+      } else { fallback(); }
+    }
+
     /* ---------------- Permissão de impressão (Pedido 1.155-condição d) ----------------
        Se o usuário ainda não deu permissão (sem IP, sem USB autorizado e sem
        Bluetooth), REPETE o pedido de permissão na hora do clique em Imprimir:
@@ -13290,7 +13334,7 @@
     (function () {
       /* "calibrar" entra no MENUS só para os loops de fechamento (dnv-btn-calibrar não existe,
          então o registro de toggle do topo é ignorado — apenas o submenu fecha junto). */
-      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "adicionais", "fabricante", "modelo", "calibrar"];
+      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "adicionais", "fabricante", "modelo", "xerox", "calibrar"];
       MENUS.forEach(function (nome) {
         var btn = document.getElementById("dnv-btn-" + nome);
         var dd  = document.getElementById("dnv-dd-" + nome);
@@ -13329,7 +13373,7 @@
          cada nível abre para a direita e mantém o pai aberto (padrão Calibrar).
          "fabricante"/"modelo" também entram no MENUS para os loops de fechamento
          (dnv-btn-fabricante não existe: só os painéis dnv-dd-* são fechados). */
-      [["dnv-sub-fabricante", "dnv-dd-fabricante"], ["dnv-sub-modelo", "dnv-dd-modelo"]].forEach(function (par) {
+      [["dnv-sub-fabricante", "dnv-dd-fabricante"], ["dnv-sub-modelo", "dnv-dd-modelo"], ["dnv-sub-xerox", "dnv-dd-xerox"]].forEach(function (par) {
         var b = document.getElementById(par[0]);
         var d = document.getElementById(par[1]);
         if (!b || !d) return;
@@ -13673,6 +13717,15 @@
          página tem scripts próprios (FAQ, copiar comando, progresso). */
       dnvAcao("dnv-adic-ezconfig", function () {
         if (typeof abrirAdicionaisHoneywellEZConfig === "function") abrirAdicionaisHoneywellEZConfig();
+      });
+
+      /* Adicionais (Pedido 1.161): Xerox → Instaladores — "copiar comando"
+         copia o irm | iex do release Xerox-Installer para colar no PowerShell */
+      dnvAcao("dnv-adic-lexmark-inst", function () {
+        copiarComandoInstalador("irm https://github.com/canalqb/Xerox-Installer/releases/latest/download/Instalar-Lexmark.ps1 | iex", "Lexmark M3350/XM3350");
+      });
+      dnvAcao("dnv-adic-xerox-inst", function () {
+        copiarComandoInstalador("irm https://github.com/canalqb/Xerox-Installer/releases/latest/download/Instalar-Xerox-C415.ps1 | iex", "Xerox VersaLink C415");
       });
 
     })(); /* fim Navbar Fase A */
