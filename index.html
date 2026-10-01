@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -1157,6 +1157,42 @@
         position: relative;
         margin-top: -14px;
       }
+      /* Pedido 1.157 — bottom-sheet do Adicionais (drill-down mobile) */
+      .modal-bottom-sheet .modal-dialog {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: 0;
+        max-width: 100%;
+        width: 100%;
+        align-items: flex-end;
+      }
+      .modal-bottom-sheet .modal-content {
+        border: 0;
+        border-bottom: 0;
+        border-radius: 18px 18px 0 0;
+        max-height: 78vh;
+      }
+      .modal-bottom-sheet .modal-header { border-bottom: 1px solid var(--zebra-border); }
+      .modal-bottom-sheet .adic-mob-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        width: 100%;
+        text-align: left;
+        padding: 0.8rem 0.9rem;
+        border: 1px solid var(--zebra-border);
+        border-radius: 10px;
+        background: var(--zebra-card-bg, #fff);
+        color: inherit;
+        font-weight: 600;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+      }
+      .modal-bottom-sheet .adic-mob-btn:active { transform: scale(0.98); }
+      .modal-bottom-sheet .adic-mob-btn i:first-child { width: 1.4rem; text-align: center; }
       .mobile-fab-circle {
         width: 46px;
         height: 46px;
@@ -1476,7 +1512,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.016</span>
+      <span class="brand-ver">v1.017</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1800,7 +1836,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.016</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.017</span>
         </div>
       </div>
 
@@ -3155,7 +3191,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.016</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.017</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3214,6 +3250,10 @@
         <span class="badge-cont" id="bottom-el-count">0</span>
       </span>
       <span>Elementos</span>
+    </button>
+    <button type="button" class="mobile-bottom-item" id="bottom-btn-adicionais" aria-label="Abrir Adicionais">
+      <i class="fas fa-puzzle-piece fs-5"></i>
+      <span>Adicionais</span>
     </button>
   </nav>
 
@@ -3419,11 +3459,6 @@
           </button>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" id="nav-btn-adicionais" data-bs-dismiss="offcanvas">
-            <i class="fas fa-puzzle-piece me-1"></i> Adicionais — Honeywell 8675i (Códigos de Barras)
-          </button>
-        </div>
-        <div class="d-flex justify-content-between align-items-center">
           <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" id="nav-btn-ajuda" data-bs-dismiss="offcanvas">
             <i class="fas fa-circle-question me-1"></i> Central de Ajuda (F1)
           </button>
@@ -13239,10 +13274,136 @@
       });
     }
 
-    var navAdicionais = $("nav-btn-adicionais");
-    if (navAdicionais) {
-      navAdicionais.addEventListener("click", function() {
-        if (typeof abrirAdicionaisHoneywell8675i === "function") abrirAdicionaisHoneywell8675i();
+    /* ================================================================
+       PEDIDO 1.157 — Adicionais no mobile-bottom-nav com drill-down
+       Fabricantes → Modelos/Software/Instaladores → Páginas.
+       Bottom-sheet #modal-adicionais-mobile renderizado por nível a
+       partir da estrutura ADICIONAIS_MOBILE (data-driven): cada nível
+       tem título, botão "Voltar" ao pai e itens que ou navegam para
+       um subnível (dest) ou executam a mesma ação do menu desktop
+       (acao → abrirAdicionais* / copiarComandoInstalador).
+       ================================================================ */
+    var ADICIONAIS_MOBILE = {
+      raiz: {
+        titulo: "Adicionais — Fabricantes",
+        voltar: null,
+        itens: [
+          { id: "adic-mob-honeywell", icone: "fa-industry", texto: "Honeywell", dest: "honeywell" },
+          { id: "adic-mob-xerox", icone: "fa-print", texto: "Xerox - Lexmark", dest: "xerox" }
+        ]
+      },
+      honeywell: {
+        titulo: "Honeywell",
+        voltar: "raiz",
+        itens: [
+          { id: "adic-mob-8675i", icone: "fa-barcode", texto: "Modelo 8675i", dest: "paginas8675i" },
+          { id: "adic-mob-ezconfig", icone: "fa-file-code", texto: "Software — EZConfig for Scanning", acao: "ezconfig" }
+        ]
+      },
+      paginas8675i: {
+        titulo: "8675i — Páginas",
+        voltar: "honeywell",
+        itens: [
+          { id: "adic-mob-codigos", icone: "fa-file-code", texto: "codigos-barras.html", acao: "codigos" }
+        ]
+      },
+      xerox: {
+        titulo: "Xerox - Lexmark — Instaladores",
+        voltar: "raiz",
+        itens: [
+          { id: "adic-mob-inst-lexmark", icone: "fa-terminal", texto: "Instalar Lexmark (M3350/XM3350)", acao: "inst-lexmark" },
+          { id: "adic-mob-inst-xerox", icone: "fa-terminal", texto: "Instalar Xerox C415", acao: "inst-xerox" }
+        ]
+      }
+    };
+    var adicMobNivelAtual = "raiz";
+
+    function renderAdicionaisMobile(nivelId) {
+      var nivel = ADICIONAIS_MOBILE[nivelId];
+      if (!nivel) { nivelId = "raiz"; nivel = ADICIONAIS_MOBILE.raiz; }
+      adicMobNivelAtual = nivelId;
+      var titulo = document.getElementById("adic-mob-titulo");
+      if (titulo) {
+        titulo.innerHTML = '<i class="fas fa-puzzle-piece text-primary" aria-hidden="true"></i> ' + nivel.titulo;
+      }
+      var btnVoltar = document.getElementById("adic-mob-voltar");
+      if (btnVoltar) {
+        if (nivel.voltar) { btnVoltar.classList.remove("d-none"); }
+        else { btnVoltar.classList.add("d-none"); }
+      }
+      var corpo = document.getElementById("adic-mob-corpo");
+      if (!corpo) return;
+      corpo.innerHTML = "";
+      nivel.itens.forEach(function (item) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "adic-mob-btn mb-2";
+        b.id = item.id;
+        b.innerHTML =
+          '<i class="fas ' + item.icone + ' text-secondary" aria-hidden="true"></i>' +
+          '<span class="flex-grow-1">' + item.texto + '</span>' +
+          (item.dest ? '<i class="fas fa-chevron-right text-muted small" aria-hidden="true"></i>' : '');
+        b.addEventListener("click", function () {
+          if (item.dest) {
+            renderAdicionaisMobile(item.dest);
+            return;
+          }
+          switch (item.acao) {
+            case "codigos":
+              if (typeof abrirAdicionaisHoneywell8675i === "function") abrirAdicionaisHoneywell8675i();
+              break;
+            case "ezconfig":
+              if (typeof abrirAdicionaisHoneywellEZConfig === "function") abrirAdicionaisHoneywellEZConfig();
+              break;
+            case "inst-lexmark":
+              copiarComandoInstalador("irm https://github.com/canalqb/Xerox-Installer/releases/latest/download/Instalar-Lexmark.ps1 | iex", "Lexmark M3350/XM3350");
+              break;
+            case "inst-xerox":
+              copiarComandoInstalador("irm https://github.com/canalqb/Xerox-Installer/releases/latest/download/Instalar-Xerox-C415.ps1 | iex", "Xerox VersaLink C415");
+              break;
+          }
+          /* Fechamento com retry: se o usuário tocar num item logo após abrir
+             o sheet, o Modal ainda está em _isTransitioning e o hide() vazio
+             do Bootstrap retornaria sem fazer nada — repete até surtir efeito. */
+          (function fecharSheet(n) {
+            var elSheet = document.getElementById("modal-adicionais-mobile");
+            if (!elSheet) return;
+            var inst = window.bootstrap && window.bootstrap.Modal ? window.bootstrap.Modal.getInstance(elSheet) : null;
+            if (inst) inst.hide();
+            if (elSheet.classList.contains("show") && n > 0) {
+              setTimeout(function () { fecharSheet(n - 1); }, 150);
+            }
+          })(20);
+        });
+        corpo.appendChild(b);
+      });
+    }
+
+    /* O markup do bottom-sheet fica DEPOIS deste script no HTML: os listeners
+       só podem ser anexados quando o modal existir no DOM — anexo lazy na
+       primeira abertura (padrão já usado pelo app nos modais após o script). */
+    var bottomAdicionais = $("bottom-btn-adicionais");
+    if (bottomAdicionais) {
+      var adicMobAnexado = false;
+      bottomAdicionais.addEventListener("click", function () {
+        var el = document.getElementById("modal-adicionais-mobile");
+        if (!el) return;
+        if (!adicMobAnexado) {
+          adicMobAnexado = true;
+          el.addEventListener("show.bs.modal", function () {
+            renderAdicionaisMobile("raiz");
+          });
+          var vb = document.getElementById("adic-mob-voltar");
+          if (vb) {
+            vb.addEventListener("click", function () {
+              var nivel = ADICIONAIS_MOBILE[adicMobNivelAtual];
+              if (nivel && nivel.voltar) renderAdicionaisMobile(nivel.voltar);
+            });
+          }
+        }
+        if (window.bootstrap && window.bootstrap.Modal) {
+          window.bootstrap.Modal.getOrCreateInstance(el).show();
+        }
       });
     }
 
@@ -13370,9 +13531,11 @@
       }
 
       /* Adicionais (Pedido 1.155): cascata Fabricante → Modelo → página —
-         cada nível abre para a direita e mantém o pai aberto (padrão Calibrar).
+         cada nível abre para a direita e mantém o menu pai aberto (padrão Calibrar).
          "fabricante"/"modelo" também entram no MENUS para os loops de fechamento
-         (dnv-btn-fabricante não existe: só os painéis dnv-dd-* são fechados). */
+         (dnv-btn-fabricante não existe: só os painéis dnv-dd-* são fechados).
+         Acordeão (pedido da sessão do 1.157): abrir um submenu fecha o irmão
+         do mesmo nível (e os submenus aninhados que estiverem abertos dentro dele). */
       [["dnv-sub-fabricante", "dnv-dd-fabricante"], ["dnv-sub-modelo", "dnv-dd-modelo"], ["dnv-sub-xerox", "dnv-dd-xerox"]].forEach(function (par) {
         var b = document.getElementById(par[0]);
         var d = document.getElementById(par[1]);
@@ -13380,6 +13543,16 @@
         b.addEventListener("click", function (e) {
           e.stopPropagation();
           var abrirSub = !d.classList.contains("dnv-open");
+          if (abrirSub) {
+            var grupo = b.parentElement && b.parentElement.parentElement ? b.parentElement.parentElement : null;
+            if (grupo) {
+              Array.prototype.forEach.call(grupo.querySelectorAll(".dnv-submenu-btn.dnv-open, .dnv-submenu.dnv-open"), function (irmao) {
+                if (irmao === b || irmao === d || d.contains(irmao)) return;
+                irmao.classList.remove("dnv-open");
+                if (irmao.classList.contains("dnv-submenu-btn")) irmao.setAttribute("aria-expanded", "false");
+              });
+            }
+          }
           d.classList.toggle("dnv-open", abrirSub);
           b.classList.toggle("dnv-open", abrirSub);
           b.setAttribute("aria-expanded", String(abrirSub));
@@ -13923,6 +14096,24 @@
           </div>
           <article id="pagina-legal-conteudo" class="card card-custom border p-3 p-lg-4"></article>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pedido 1.157 — Bottom-sheet Adicionais (drill-down mobile: Fabricantes → Modelos/Software/Instaladores → Páginas) -->
+  <div class="modal fade modal-bottom-sheet" id="modal-adicionais-mobile" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="adic-mob-titulo" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content shadow-lg">
+        <div class="modal-header py-2 px-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 d-none" id="adic-mob-voltar" aria-label="Voltar ao nível anterior">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Voltar
+          </button>
+          <h5 class="modal-title d-flex align-items-center gap-2 fs-6" id="adic-mob-titulo">
+            <i class="fas fa-puzzle-piece text-primary" aria-hidden="true"></i> Adicionais
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body p-3" id="adic-mob-corpo" style="overflow-y: auto;"></div>
       </div>
     </div>
   </div>
