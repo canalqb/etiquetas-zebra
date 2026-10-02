@@ -3,13 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-NX8ZW87H');</script>
+  <!-- End Google Tag Manager -->
+
   <title>CanalQb Impressão em Zebras</title>
   <meta name="description" content="CanalQb Impressão em Zebras — crie, personalize e imprima etiquetas para impressoras Zebra direto do navegador: textos, QR Code, código de barras, imagens, lotes com numeração automática e modelos prontos. Grátis, sem cadastro e sem instalar nada.">
   <meta name="robots" content="index, follow">
+  <meta name="google-site-verification" content="xbqqUAyX_ZUwfEdi1Vb981vW_hBRdaYpJzJpHEAv6tY" />
+  <meta name="theme-color" content="#0d6efd">
+  <link rel="canonical" href="https://canalqb.github.io/etiquetas-zebra/">
   <meta property="og:title" content="CanalQb Impressão em Zebras">
   <meta property="og:description" content="Crie e imprima etiquetas para impressoras Zebra com QR Code, código de barras e editor visual — direto do navegador.">
   <meta property="og:type" content="website">
-  
+  <meta property="og:url" content="https://canalqb.github.io/etiquetas-zebra/">
+  <meta property="og:locale" content="pt_BR">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CanalQb Impressão em Zebras">
+  <meta name="twitter:description" content="Crie e imprima etiquetas para impressoras Zebra com QR Code, código de barras e editor visual — direto do navegador.">
+
   <!-- Favicons & Web Manifest (PWA) -->
     <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico?v=3">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/favicon-192.png?v=3">
@@ -231,6 +244,12 @@
       border-width: 0 !important;
       opacity: 0;
     }
+    /* Pedido 1.163: garantia de largura mínima do slot durante a medição —
+       o TagError "No slot size for availableWidth=0" volta a aparecer se o
+       AdSense medir o <ins> em qualquer instante de largura 0 (auction
+       assíncrona). min-width assegura availableWidth > 0 sempre que o
+       container estiver renderizado (ad-loading). */
+    .adsense-container.ad-loading ins.adsbygoogle { min-width: 320px; }
     .adsense-container.ad-active,
     .adsense-container:has(ins.adsbygoogle[data-ad-status="filled"]) {
       display: block !important;
@@ -820,9 +839,11 @@
     /* Mobile-First: touch targets >= 44px em telas touch */
     @media (pointer: coarse) {
       .icon-btn { width: 44px; height: 44px; font-size: 1.1rem; }
-      /* Ribbons: 20% menor também no toque (44→35; sm 38→30), ícone intacto */
-      .ribbon-body .icon-btn { width: 35px; height: 35px; }
-      .ribbon-body .icon-btn.icon-btn-sm { width: 30px; height: 30px; }
+      /* Ribbons (mobile): todos os ícones do MESMO tamanho — Pedido 1.163
+         padroniza: antes misturava 35px (.icon-btn) e 30px (.icon-btn-sm)
+         no mesmo toolbar. */
+      .ribbon-body .icon-btn,
+      .ribbon-body .icon-btn.icon-btn-sm { width: 34px; height: 34px; font-size: 1rem; }
     /* Ícones maiores na paleta de elementos (pedido do usuário — Item 2) */
     .palette-item { font-size: 1.3rem; }
     .palette-item i { font-size: 1.3rem; }
@@ -896,6 +917,19 @@
        ficava com opacidade 0 mas display:block — invisível e ocupando altura.
        Força display:none em todo painel inativo do Studio. */
      #sec-studio .tab-pane.fade:not(.active) { display: none; }
+     /* Pedido 1.163: abas exclusivas — Estúdio/ZPL/Elementos são visões únicas.
+        Os blocos do estúdio (barras, palco, tabs de modelos, editor de elemento)
+        são IRMÃOS das panes dentro de #studio-tab-content; ao ativar ZPL ou
+        Elementos eles saem de cena — só o painel escolhido permanece. */
+     #studio-tab-content.modo-painel > #sb-desktop-bar,
+     #studio-tab-content.modo-painel > #stage-wrap,
+     #studio-tab-content.modo-painel > #stage-resize-handle,
+     #studio-tab-content.modo-painel > #status-bar-lote,
+     #studio-tab-content.modo-painel > #tabs-modelos,
+     #studio-tab-content.modo-painel > #editor-elemento-card { display: none !important; }
+     /* Pedido 1.163: lista de elementos compacta — linhas mais próximas para
+        caber mais elementos na tela. */
+     #tab-list .table > :not(caption) > * > * { padding-top: 0.2rem; padding-bottom: 0.2rem; }
 
      /* ===== DESKTOP (≥992px) — Pedido 1.85: header fixo + rolagem só no estúdio =====
         A navbar já é sticky; a barra de ribbons (paleta) agora gruda logo abaixo
@@ -1501,6 +1535,10 @@
 </head>
 <body>
 
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NX8ZW87H" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
   <!-- Skip Link (Acessibilidade Teclado - WCAG 2.1 AA) -->
   <a class="skip-link" href="#stage-wrap">Ir para o editor de etiquetas</a>
 
@@ -1512,7 +1550,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.017</span>
+      <span class="brand-ver">v1.018</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1595,7 +1633,8 @@
                 <input type="radio" class="btn-check" name="ribbon" id="ribbon-default" value="D" checked>
                 <input type="radio" class="btn-check" name="ribbon" id="ribbon-nao" value="N">
                 <input type="radio" class="btn-check" name="ribbon" id="ribbon-sim" value="Y">
-                <input type="radio" class="btn-check" name="quality" id="quality-grayscale" value="grayscale" checked>
+                <input type="radio" class="btn-check" name="quality" id="quality-default" value="padrao" checked>
+                <input type="radio" class="btn-check" name="quality" id="quality-grayscale" value="grayscale">
                 <input type="radio" class="btn-check" name="quality" id="quality-bitonal" value="bitonal">
               </div>
               <button type="button" class="dnv-dropdown-item" id="dnv-imp-modo" role="menuitem" title="Ciclo: Padrão da impressora → Sem (Térmica Direta) → Com (Transferência) — Padrão não envia ^MT e a impressora usa a configuração do painel">
@@ -1649,7 +1688,7 @@
                 <span class="badge bg-secondary text-white" id="veloc-val" style="font-size:0.7rem; min-width:26px; text-align:center;">auto</span>
               </div>
               <button type="button" class="dnv-dropdown-item" id="dnv-imp-qual" role="menuitem">
-                <i class="fas fa-adjust dnv-icon text-secondary"></i> <span id="dnv-qual-text">Qualidade: Escala de Cinza</span>
+                <i class="fas fa-adjust dnv-icon text-secondary"></i> <span id="dnv-qual-text">Qualidade: Padrão da impressora</span>
               </button>
               <hr class="dnv-dropdown-divider">
               <button type="button" class="dnv-dropdown-item" id="dnv-imp-reset-cal" role="menuitem" title="Volta todos os itens acima para o Padrão da impressora (Ribbon, Mídia, Modo operacional, Tonalidade e Velocidade)">
@@ -1836,7 +1875,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.017</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.018</span>
         </div>
       </div>
 
@@ -2047,7 +2086,7 @@
                   </button>
                   <span class="sb-sep"></span>
                   <!-- Orientacao (clique = alternar) -->
-                  <button type="button" class="sb-chip" id="sb-rot" title="Orientacao - clique para alternar (Horizontal / Vertical / invertidas)">
+                  <button type="button" class="sb-chip" id="sb-rot" title="Orientacao - clique para alternar (Horizontal / Vertical)">
                     <i class="fas fa-arrows-alt-h text-warning"></i>
                     <span class="sb-chip-val" id="sb-rot-label-val">Horizontal</span>
                   </button>
@@ -2147,10 +2186,15 @@
                         try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
                         return; /* o observador resolve: filled → ad-active; unfilled → tira o loading */
                       }
-                      boxAd.classList.remove("ad-loading");
-                      if (++tentativas < 40) setTimeout(tentarAd, 700); /* coluna oculta (mobile) não empurra */
-                    }
-                    tentarAd();
+                       boxAd.classList.remove("ad-loading");
+                       if (++tentativas < 40) setTimeout(tentarAd, 700); /* coluna oculta (mobile) não empurra */
+                     }
+                     /* Pedido 1.163: nada de push no parse — a fila do adsbygoogle
+                        é processada de forma assíncrona e medições cedo demais
+                        pegam layout incompleto (TagError availableWidth=0).
+                        A primeira tentativa só sai depois do load completo. */
+                     if (document.readyState === "complete") tentarAd();
+                     else window.addEventListener("load", function () { setTimeout(tentarAd, 50); });
                   })();
                   </script>
                 </div>
@@ -2364,7 +2408,7 @@
                       <tr>
                         <th>#</th>
                         <th>Tipo</th>
-                        <th>Conteúdo / Detalhes</th>
+                        <th>Conteúdo</th>
                         <th>X (mm)</th>
                         <th>Y (mm)</th>
                         <th class="text-end">Ações</th>
@@ -3191,7 +3235,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.017</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.018</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3273,12 +3317,11 @@
       <div class="mb-4">
         <span class="text-uppercase text-muted fw-bold small d-block mb-2" style="font-size:0.7rem; letter-spacing:1px;">Etiquetas &amp; Lotes</span>
         <div class="d-grid gap-2">
+          <!-- Pedido 1.163: um único botão "Nova Etiqueta em Branco" — abre a
+               confirmação de reset do app (apaga dados salvos e abre em branco).
+               O botão duplicado "Nova Etiqueta + Limpar Dados" saiu de cena. -->
           <button type="button" class="btn btn-outline-danger btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-novo" data-bs-dismiss="offcanvas">
             <span><i class="fas fa-file-circle-plus me-2 text-danger"></i> Nova Etiqueta em Branco</span>
-          </button>
-          <!-- Pedido 1.144: Nova Etiqueta + Limpar Dados (reset do app) -->
-          <button type="button" class="btn btn-outline-danger btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-reset-app" data-bs-dismiss="offcanvas">
-            <span><i class="fas fa-rotate-left me-2 text-danger"></i> Nova Etiqueta + Limpar Dados</span>
           </button>
           <button type="button" class="btn btn-outline-primary btn-sm text-start py-2 px-3 d-flex align-items-center justify-content-between" id="nav-btn-carregar" data-bs-dismiss="offcanvas">
             <span><i class="fas fa-folder-open me-2 text-primary"></i> Carregar Modelo (.bin)</span>
@@ -3361,7 +3404,7 @@
             </div>
             <div class="d-flex flex-wrap gap-1" id="nav-cal-papel-opcoes"></div>
             <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="nav-btn-cal-qual">
-              <i class="fas fa-adjust me-1"></i> <span id="nav-cal-qual-text">Qualidade: Escala de Cinza</span>
+              <i class="fas fa-adjust me-1"></i> <span id="nav-cal-qual-text">Qualidade: Padrão da impressora</span>
             </button>
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-sm btn-outline-warning text-start flex-grow-1" id="nav-btn-cal-reset" title="Volta todos os itens acima para o Padrão da impressora">
@@ -3542,6 +3585,10 @@
     };
 
     var ROT_SEQ = [0, 180, 90, 270];
+    /* Pedido 1.163: o ciclo dos botões só alterna Horizontal/Vertical. O
+       ROT_SEQ fica para compatibilidade com modelos salvos (rotacao 180/270
+       carregam, mas o usuário não alcança mais via clique). */
+    var ROT_CICLO = [0, 90];
     var rotAtual = 0;
     function rotRotulo() {
       if (rotAtual === 90) return "Vertical";
@@ -5184,7 +5231,9 @@
       if (div.querySelector(".edicao-inline-input")) return; // já em edição, ignora 2º dblclick
 
       /* Quebra automática universal: campo sempre multilinha — Enter confirma,
-         Shift+Enter insere nova linha (o texto quebra sozinho no limite da caixa). */
+         Shift+Enter ou Ctrl+Enter insere nova linha. Pedido 1.163: a largura
+         cresce junto com o texto digitado até a borda direita da etiqueta —
+         no limite o texto quebra (wrap) e a altura acompanha. */
       var multiline = true;
       var campo = document.createElement("textarea");
       campo.className = "edicao-inline-input";
@@ -5224,6 +5273,40 @@
       campo.focus();
       campo.select();
 
+      /* Pedido 1.163: campo elástico — mede a linha mais longa com a fonte
+         real do campo (canvas 2D) e cresce até o limite direito da ETIQUETA
+         (borda direita do pai/preview). A partir do limite, o textarea quebra
+         a linha sozinho (wrap) e a altura cresce pelo scrollHeight. */
+      function ajustarCampoEdicao() {
+        var cs = getComputedStyle(campo);
+        var cnvMed = ajustarCampoEdicao._cnv || (ajustarCampoEdicao._cnv = document.createElement("canvas"));
+        var ctxMed = cnvMed.getContext("2d");
+        ctxMed.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+        var maxW = 0;
+        String(campo.value || "").split("\n").forEach(function (ln) {
+          maxW = Math.max(maxW, ctxMed.measureText(ln).width);
+        });
+        var divRect = div.getBoundingClientRect();
+        var limRect = (div.parentNode || div).getBoundingClientRect();
+        /* O palco escala via CSS zoom (auto-fit): os rects acima vêm em px de
+           tela, mas style.width é em px LOCAIS. A proporção renderizado/local
+           do próprio div captura todo zoom/transform dos ancestrais. */
+        var fator = 1;
+        var offW = div.offsetWidth || 1;
+        if (offW > 0 && divRect.width > 0) fator = divRect.width / offW;
+        var limite = Math.max(60, Math.ceil((limRect.right - divRect.left) / fator) - 6);
+        var minW = Math.max(60, Math.ceil(divRect.width / fator));
+        campo.style.right = "auto";
+        campo.style.bottom = "auto";
+        /* Nunca passa da borda direita da etiqueta: o piso de largura útil (60)
+           só vence quando o próprio elemento já está colado no limite. */
+        campo.style.width = Math.min(Math.max(minW, Math.ceil(maxW) + 6), Math.max(limite, 60)) + "px";
+        campo.style.height = "auto";
+        campo.style.height = (Math.max(Math.ceil(divRect.height / fator), campo.scrollHeight) + 2) + "px";
+      }
+      campo.addEventListener("input", ajustarCampoEdicao);
+      ajustarCampoEdicao();
+
       // Toque/arraste dentro do campo posiciona o cursor/seleciona texto — nunca
       // deve mover o elemento (arraste), reabrir menus ou sofrer preventDefault
       // do handler de touch do div (o toque nativo precisa focar o campo).
@@ -5256,8 +5339,9 @@
       campo.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
           /* Mobile (teclado virtual): Enter insere quebra de linha — salvar é
-             tocar fora do campo (blur confirma). PC: Enter confirma, Shift+Enter quebra. */
-          if (ehDispositivoToque() || e.shiftKey) return;
+             tocar fora do campo (blur confirma). PC: Enter confirma,
+             Shift+Enter ou Ctrl+Enter quebra. */
+          if (ehDispositivoToque() || e.shiftKey || e.ctrlKey) return;
           e.preventDefault();
           confirmar();
         } else if (e.key === "Escape") {
@@ -10629,6 +10713,11 @@
           pane.classList.toggle("show", id === paneId);
         }
       });
+      /* Pedido 1.163: abas exclusivas — fora do Estúdio, os blocos do estúdio
+         (barras, palco, tabs de modelos, editor de elemento) somem via CSS
+         (seletor .modo-painel); o anúncio continua visível. */
+      var stc = $("studio-tab-content");
+      if (stc) stc.classList.toggle("modo-painel", paneId !== "tab-canvas");
       var mapaBottom = { "tab-canvas": "bottom-btn-estudio", "tab-zpl": "bottom-btn-zpl", "tab-list": "bottom-btn-elementos" };
       Object.keys(mapaBottom).forEach(function (pid) {
         var btn = $(mapaBottom[pid]);
@@ -10968,12 +11057,17 @@
 
     function getQualityMode() {
       var el = document.querySelector('input[name="quality"]:checked');
-      return el ? el.value : "grayscale";
+      return el ? el.value : "padrao";
     }
     function setQualityMode(val) {
-      val = (val === "bitonal") ? "bitonal" : "grayscale";
+      val = (val === "grayscale" || val === "bitonal") ? val : "padrao";
       var el = document.querySelector('input[name="quality"][value="' + val + '"]');
       if (el) el.checked = true;
+    }
+    /* Pedido 1.163: três estados de qualidade com "Padrão da impressora". */
+    function qualityRotulo() {
+      var q = getQualityMode();
+      return q === "bitonal" ? "Preto e Branco (Bitonal)" : (q === "grayscale" ? "Escala de Cinza" : "Padrão da impressora");
     }
 
     function atualizarDpiHeader(dpmm) {
@@ -11924,6 +12018,7 @@
       setTonalidadePadrao(true);
       setVelocidadePadrao(true);
       setRibbonMode("D");
+      setQualityMode("padrao");
       /* Sliders voltam aos valores de fábrica do app para quando o usuário desligar o Padrão */
       var ton = $("tonalidade"); if (ton) ton.value = "18";
       var vel = $("velocidade"); if (vel) vel.value = "6";
@@ -11947,8 +12042,9 @@
 
     var btnRotacaoAntigo = $("btn-rotacao");
     if (btnRotacaoAntigo) btnRotacaoAntigo.addEventListener("click", function () {
-      rotAtual = ROT_SEQ[(ROT_SEQ.indexOf(rotAtual) + 1) % ROT_SEQ.length];
+      rotAtual = ROT_CICLO[(ROT_CICLO.indexOf(rotAtual) + 1) % ROT_CICLO.length];
       renderStudio();
+      if (typeof atualizarRotuloOrientacao === "function") atualizarRotuloOrientacao();
     });
 
     /* ---------------- MODAIS ARRASTÁVEIS PELO CABEÇALHO ---------------- */
@@ -13134,19 +13230,10 @@
 
     var navNovo = $("nav-btn-novo");
     if (navNovo) {
+      /* Pedido 1.163: abre a mesma confirmação do btn-reset-app do ribbon
+         Sistema — a ação "Nova Etiqueta em Branco" do offcanvas agora é a
+         que limpa o desenho E os dados salvos (Pedido 1.144 unificado). */
       navNovo.addEventListener("click", function() {
-        if (!elements.length) { limparEtiqueta(); return; }
-        confirmar("Começar uma etiqueta em branco? O desenho atual não salvo será perdido.", function (ok) {
-          if (ok) limparEtiqueta();
-        });
-      });
-    }
-
-    /* Pedido 1.144: botão de reset no menu mobile — abre a mesma confirmação
-       do btn-reset-app do ribbon Sistema (não limpa direto). */
-    var navResetApp = $("nav-btn-reset-app");
-    if (navResetApp) {
-      navResetApp.addEventListener("click", function() {
         if (bsModalResetApp) bsModalResetApp.show();
       });
     }
@@ -13685,7 +13772,7 @@
         var m = document.getElementById("dnv-modo-text");
         if (m) m.textContent = "Modo Ribbon: " + rbTxt;
         var q = document.getElementById("dnv-qual-text");
-        if (q) q.textContent = "Qualidade: " + (getQualityMode() === "bitonal" ? "Preto e Branco (Bitonal)" : "Escala de Cinza");
+        if (q) q.textContent = "Qualidade: " + qualityRotulo();
         var sz = SIZES[tamAtualKey] || SIZES["100x50"];
         var p = document.getElementById("dnv-papel-text");
         if (p) p.textContent = sz.mmW + " × " + sz.mmH + " mm";
@@ -13722,7 +13809,7 @@
         var mM = document.getElementById("nav-cal-modo-text");
         if (mM) mM.textContent = "Modo Ribbon: " + rbTxt;
         var qM = document.getElementById("nav-cal-qual-text");
-        if (qM) qM.textContent = "Qualidade: " + (getQualityMode() === "bitonal" ? "Preto e Branco (Bitonal)" : "Escala de Cinza");
+        if (qM) qM.textContent = "Qualidade: " + qualityRotulo();
         var pM = document.getElementById("nav-cal-papel-text");
         if (pM) pM.textContent = sz.mmW + " × " + sz.mmH + " mm";
         var navTonSl = document.getElementById("nav-tonalidade");
@@ -13777,7 +13864,8 @@
       /* Pedido 1.159: Redefinir Configurações — tudo volta ao Padrão da impressora */
       toggleEncenado("dnv-imp-reset-cal", redefinirConfigCalibracao);
       toggleEncenado("dnv-imp-qual", function () {
-        var novo = getQualityMode() === "bitonal" ? "grayscale" : "bitonal";
+        var atual = getQualityMode();
+        var novo = atual === "padrao" ? "grayscale" : (atual === "grayscale" ? "bitonal" : "padrao");
         var el = document.querySelector('input[name="quality"][value="' + novo + '"]');
         if (el) el.checked = true;
         saveFieldsToSession();
@@ -13835,7 +13923,8 @@
       });
       toggleEncenado("nav-btn-cal-reset", redefinirConfigCalibracao);
       toggleEncenado("nav-btn-cal-qual", function () {
-        var novo = getQualityMode() === "bitonal" ? "grayscale" : "bitonal";
+        var atual = getQualityMode();
+        var novo = atual === "padrao" ? "grayscale" : (atual === "grayscale" ? "bitonal" : "padrao");
         var el = document.querySelector('input[name="quality"][value="' + novo + '"]');
         if (el) el.checked = true;
         saveFieldsToSession();
@@ -13925,9 +14014,9 @@
       var _origAtuRot = atualizarRotuloOrientacao;
       atualizarRotuloOrientacao = function () {
         _origAtuRot();
-        sbSet("sb-rot-val", (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal");
+        sbSet("sb-rot-label-val", (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal");
       };
-      sbSet("sb-rot-val", (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal");
+      sbSet("sb-rot-label-val", (typeof rotRotulo === "function") ? rotRotulo() : "Horizontal");
 
       /* Elementos */
       var _origContElem = atualizarContagemElementos;
@@ -14026,9 +14115,10 @@
         }
       });
       clic("sb-rot", function () {
-        rotAtual = ROT_SEQ[(ROT_SEQ.indexOf(rotAtual) + 1) % ROT_SEQ.length];
+        rotAtual = ROT_CICLO[(ROT_CICLO.indexOf(rotAtual) + 1) % ROT_CICLO.length];
         renderStudio();
         atualizarRotuloOrientacao();
+        sbSet("sb-rot-label-val", rotRotulo());
       });
       function sbZoomPasso(delta) {
         if (delta > 0 && scaleZoom >= 2) delta = 0.5;
