@@ -1,8 +1,9 @@
 ﻿# ============================================================
 # Arquivos de conhecimento / uso local — NÃO publicar
-# (pasta regras/, leitura obrigatória/, probes temporários,
-#  logs e planos de implementação ficam apenas no computador)
+# (pasta trabalho/ concentra tudo que é material de criação:
+#  registros, referências, drivers, planilhas, logs e probes)
 # ============================================================
+trabalho/
 regras/
 leitura obrigat*
 _t*.html
