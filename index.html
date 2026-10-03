@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -1059,6 +1059,13 @@
       }
       /* Pedido 1.169c: rótulos dos grupos de alinhamento (Etiqueta / Entre si) */
       .sel-toolbar-grupo-label { font-size: .62rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--zebra-muted); margin-right: .1rem; white-space: nowrap; align-self: center; }
+      /* Pedido 1.169e: montador GS1 — linha AI + dado */
+      .gs1-linha { display: flex; gap: .35rem; align-items: center; margin-bottom: .4rem; }
+      .gs1-linha .gs1-ai { flex: 0 0 46%; }
+      .gs1-linha .gs1-ai-custom { flex: 0 0 18%; }
+      .gs1-linha .gs1-valor { flex: 1 1 auto; min-width: 0; }
+      #gs1-status .gs1-erro { color: var(--zebra-danger, #dc3545); font-weight: 600; }
+      #gs1-status .gs1-aviso { color: var(--zebra-warning, #8a6d00); }
       #editor-elemento-card .vr { display: none; }
       #form-inspector .row { row-gap: .5rem; }
 
@@ -1557,7 +1564,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.021</span>
+      <span class="brand-ver">v1.022</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1882,7 +1889,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.021</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.022</span>
         </div>
       </div>
 
@@ -3259,7 +3266,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.021</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.022</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3581,12 +3588,44 @@
           <div id="modal-dado-simbologia-bloco" class="mt-3 d-none">
             <label class="form-label small fw-bold" for="modal-dado-simbologia" id="modal-dado-simbologia-label">Fontes 1D</label>
             <select class="form-select form-select-sm" id="modal-dado-simbologia" aria-label="Fonte (simbologia) do código"></select>
-            <p class="small text-muted mt-1 mb-0">A “fonte” é o formato do código. Cada uma aceita um tipo de conteúdo (ex.: EAN-13 pede 12–13 dígitos; GS1 pede os AIs com parênteses: <code>(01)…(17)…</code>; EAN/UPC +2/+5 pede código, espaço e complemento) — conteúdo inválido mostra um exemplo no preview e a impressora pode recusar. Novas simbologias: valide na impressora real.</p>
+            <p class="small text-muted mt-1 mb-0">A “fonte” é o formato do código. Cada uma aceita um tipo de conteúdo (ex.: EAN-13 pede 12–13 dígitos; EAN/UPC +2/+5 pede código, espaço e complemento) — conteúdo inválido mostra um exemplo no preview e a impressora pode recusar. Nas fontes <strong>GS1</strong> use o botão abaixo para montar os dados pelos identificadores de aplicação, sem escrever a sintaxe na mão. Novas simbologias: valide na impressora real.</p>
+            <!-- Pedido 1.169e: montador GS1 — aparece só com fonte GS1 (1D ou 2D) -->
+            <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2 d-none" id="modal-dado-btn-gs1" title="Abrir o montador de dados GS1 — campos por identificador de aplicação (AI)">
+              <i class="fas fa-table-list me-1" aria-hidden="true"></i> Montar dados GS1
+            </button>
           </div>
         </div>
         <div class="modal-footer py-2 px-3">
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn btn-sm btn-primary" id="modal-dado-salvar"><i class="fas fa-check me-1" aria-hidden="true"></i> Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pedido 1.169e: Modal GS1 — montador estruturado de dados por AI para
+       qualquer simbologia GS1 (1D ou 2D). Compõe no formato (AI)dado que o
+       app já processa (ZPL com >8 e bwip-js com parênteses direto). -->
+  <div class="modal fade" id="modal-gs1" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modal-gs1-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header py-2 px-3">
+          <h2 class="modal-title h6 fw-bold" id="modal-gs1-label"><i class="fas fa-table-list me-1" aria-hidden="true"></i> Montar Dados GS1</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body py-3 px-3">
+          <div id="gs1-linhas"></div>
+          <button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-1" id="gs1-add"><i class="fas fa-plus me-1" aria-hidden="true"></i> Adicionar campo</button>
+          <div class="mt-3 p-2 rounded border" style="background:var(--zebra-bg);">
+            <div class="small fw-bold mb-1">Prévia do conteúdo</div>
+            <div class="font-monospace small text-break" id="gs1-preview"></div>
+            <div class="small mt-1 mb-0" id="gs1-status"></div>
+          </div>
+          <p class="small text-muted mt-2 mb-0">Cada campo é um <strong>identificador de aplicação (AI)</strong> com seu dado — o conteúdo sai no formato <code>(01)…(17)…</code>, pronto para qualquer fonte GS1. AIs de tamanho fixo dispensam separador; os variáveis recebem o separador GS1 automaticamente ao gerar o código.</p>
+        </div>
+        <div class="modal-footer py-2 px-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm btn-primary" id="gs1-aplicar"><i class="fas fa-check me-1" aria-hidden="true"></i> Aplicar</button>
         </div>
       </div>
     </div>
@@ -5190,6 +5229,7 @@
         }).join("");
         selSimb.value = el.simbologia || simbologiaPadrao(el.tipo);
         blocoSimb.classList.remove("d-none");
+        atualizarBtnGs1Modal(); /* Pedido 1.169e */
       }
       var modalEl = document.getElementById("modal-editar-dado");
       if (!modalEl) return;
@@ -5252,6 +5292,7 @@
           if ((el.simbologia || simbologiaPadrao(el.tipo)) === this.value) return;
           el.simbologia = this.value;
           renderStudio();
+          atualizarBtnGs1Modal(); /* Pedido 1.169e */
         });
       }
       /* Pedido 1.169d: o conteúdo aplica NA HORA enquanto digita (debounce de
@@ -5282,6 +5323,184 @@
           }
         });
       }
+    })();
+
+    /* ---------------- Pedido 1.169e: Montador GS1 (dados por AI) ----------------
+       Compõe o conteúdo no formato (AI)dado que o app já processa (ZPL com
+       separador >8 e bwip-js com parênteses direto). Referência de estrutura:
+       barcodeproducer.com/articles (GS1-128 e SSCC-18). */
+    var GS1_AIS = [
+      { ai: "01", nome: "01 — GTIN (14 dígitos)", tam: 14, tipo: "num", fixo: true },
+      { ai: "02", nome: "02 — GTIN do conteúdo (com 37)", tam: 14, tipo: "num", fixo: true },
+      { ai: "00", nome: "00 — SSCC (18 dígitos)", tam: 18, tipo: "num", fixo: true },
+      { ai: "10", nome: "10 — Lote", tam: 20, tipo: "an", fixo: false },
+      { ai: "11", nome: "11 — Produção (AAMMDD)", tam: 6, tipo: "data", fixo: true },
+      { ai: "12", nome: "12 — Vencimento (AAMMDD)", tam: 6, tipo: "data", fixo: true },
+      { ai: "13", nome: "13 — Embalagem (AAMMDD)", tam: 6, tipo: "data", fixo: true },
+      { ai: "15", nome: "15 — Consumir antes de (AAMMDD)", tam: 6, tipo: "data", fixo: true },
+      { ai: "16", nome: "16 — Vender até (AAMMDD)", tam: 6, tipo: "data", fixo: true },
+      { ai: "17", nome: "17 — Validade (AAMMDD)", tam: 6, tipo: "data", fixo: true },
+      { ai: "20", nome: "20 — Variante (2 dígitos)", tam: 2, tipo: "num", fixo: true },
+      { ai: "21", nome: "21 — Nº de série", tam: 20, tipo: "an", fixo: false },
+      { ai: "22", nome: "22 — Variante do produto", tam: 20, tipo: "an", fixo: false },
+      { ai: "30", nome: "30 — Quantidade variável", tam: 8, tipo: "num", fixo: false },
+      { ai: "37", nome: "37 — Quantidade de itens (com 02)", tam: 8, tipo: "num", fixo: false },
+      { ai: "3102", nome: "3102 — Peso líquido kg (6 díg., 2 casas)", tam: 6, tipo: "num", fixo: true },
+      { ai: "3103", nome: "3103 — Peso líquido kg (6 díg., 3 casas)", tam: 6, tipo: "num", fixo: true },
+      { ai: "400", nome: "400 — Nº do pedido", tam: 30, tipo: "an", fixo: false },
+      { ai: "410", nome: "410 — GLN destinatário (13 díg.)", tam: 13, tipo: "num", fixo: true },
+      { ai: "420", nome: "420 — CEP de destino (sem país)", tam: 20, tipo: "an", fixo: false },
+      { ai: "8005", nome: "8005 — Preço por unidade (6 díg.)", tam: 6, tipo: "num", fixo: true },
+      { ai: "91", nome: "91 — Interno (uso da empresa)", tam: 20, tipo: "an", fixo: false }
+    ];
+    var GS1_AI_OUTRO = "__outro__";
+    function gs1InfoAi(ai) {
+      for (var i = 0; i < GS1_AIS.length; i++) if (GS1_AIS[i].ai === ai) return GS1_AIS[i];
+      return null;
+    }
+    function gs1AiDaLinha(linha) {
+      var sel = linha.querySelector(".gs1-ai");
+      var custom = linha.querySelector(".gs1-ai-custom");
+      if (!sel) return "";
+      return sel.value === GS1_AI_OUTRO ? ((custom && custom.value.trim()) || "") : sel.value;
+    }
+    function gs1ValidarLinha(linha) {
+      var sel = linha.querySelector(".gs1-ai");
+      var custom = linha.querySelector(".gs1-ai-custom");
+      var campo = linha.querySelector(".gs1-valor");
+      var info = gs1InfoAi(sel.value);
+      var ai = gs1AiDaLinha(linha);
+      var valor = (campo && campo.value) || "";
+      var rotulo = info ? info.ai : (ai || "AI");
+      if (sel.value === GS1_AI_OUTRO) {
+        if (!/^\d{2,4}$/.test(ai)) return { erro: "AI “" + ((custom && custom.value.trim()) || "?") + "” inválido — use de 2 a 4 dígitos.", contribui: false };
+        info = { ai: ai, nome: ai, tam: 30, tipo: "an", fixo: false };
+      }
+      if (!valor) return { erro: null, contribui: false };
+      if (info) {
+        if (info.tipo === "num" && !/^\d+$/.test(valor)) return { erro: rotulo + ": dado só pode ter dígitos.", contribui: false };
+        if (info.tipo === "data") {
+          var okData = /^\d{6}$/.test(valor) && +valor.slice(2, 4) >= 1 && +valor.slice(2, 4) <= 12 && +valor.slice(4) >= 1 && +valor.slice(4) <= 31;
+          if (!okData) return { erro: rotulo + ": use a data em AAMMDD (ex.: 261231).", contribui: false };
+        }
+        if (info.tipo === "an" && /[()]/.test(valor)) return { erro: rotulo + ": dado não pode ter parênteses.", contribui: false };
+        if (info.fixo && valor.length !== info.tam) return { erro: rotulo + ": dado deve ter exatamente " + info.tam + " caracteres.", contribui: false };
+        if (!info.fixo && valor.length > info.tam) return { erro: rotulo + ": dado pode ter até " + info.tam + " caracteres.", contribui: false };
+      }
+      return { erro: null, contribui: true, ai: ai, valor: valor };
+    }
+    function montarLinhaGs1(ai, valor) {
+      var linhas = document.getElementById("gs1-linhas");
+      if (!linhas) return null;
+      var linha = document.createElement("div");
+      linha.className = "gs1-linha";
+      var opcoes = GS1_AIS.map(function (a) {
+        return '<option value="' + a.ai + '"' + (a.ai === (ai || "01") ? " selected" : "") + ">" + a.nome + "</option>";
+      }).join("");
+      var outroSel = !ai || !!gs1InfoAi(ai) ? "" : " selected";
+      linha.innerHTML =
+        '<select class="form-select form-select-sm gs1-ai" aria-label="Identificador de aplicação (AI)">' + opcoes +
+        '<option value="' + GS1_AI_OUTRO + '"' + outroSel + ">Outro…</option></select>" +
+        '<input type="text" class="form-control form-control-sm gs1-ai-custom' + (outroSel ? "" : " d-none") + '" maxlength="4" inputmode="numeric" placeholder="AI" aria-label="AI personalizado">' +
+        '<input type="text" class="form-control form-control-sm gs1-valor" autocomplete="off" spellcheck="false" placeholder="Dado" aria-label="Dado do campo GS1">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger gs1-remover" title="Remover campo" aria-label="Remover campo"><i class="fas fa-xmark" aria-hidden="true"></i></button>';
+      var sel = linha.querySelector(".gs1-ai");
+      var custom = linha.querySelector(".gs1-ai-custom");
+      var campo = linha.querySelector(".gs1-valor");
+      if (outroSel && custom) custom.value = ai || "";
+      if (valor && campo) campo.value = valor;
+      sel.addEventListener("change", function () {
+        custom.classList.toggle("d-none", sel.value !== GS1_AI_OUTRO);
+        if (sel.value !== GS1_AI_OUTRO) custom.value = "";
+        atualizarPreviewGs1();
+      });
+      custom.addEventListener("input", atualizarPreviewGs1);
+      campo.addEventListener("input", atualizarPreviewGs1);
+      linha.querySelector(".gs1-remover").addEventListener("click", function () {
+        linha.remove();
+        if (!linhas.children.length) montarLinhaGs1("01");
+        atualizarPreviewGs1();
+      });
+      linhas.appendChild(linha);
+      return linha;
+    }
+    function atualizarPreviewGs1() {
+      var linhas = document.getElementById("gs1-linhas");
+      var prev = document.getElementById("gs1-preview");
+      var status = document.getElementById("gs1-status");
+      var btnAplicar = document.getElementById("gs1-aplicar");
+      if (!linhas || !prev || !status) return;
+      var partes = [];
+      var erros = [];
+      linhas.querySelectorAll(".gs1-linha").forEach(function (linha) {
+        var r = gs1ValidarLinha(linha);
+        if (r.erro) erros.push(r.erro);
+        if (r.contribui) partes.push("(" + r.ai + ")" + r.valor);
+      });
+      var usados = partes.map(function (p) { return p.slice(1, p.indexOf(")")); });
+      if (usados.indexOf("01") >= 0 && usados.indexOf("02") >= 0) erros.push("01 e 02 não se usam juntos no mesmo código.");
+      if ((usados.indexOf("02") >= 0 && usados.indexOf("37") < 0) || (usados.indexOf("37") >= 0 && usados.indexOf("02") < 0)) {
+        status.innerHTML = '<span class="gs1-aviso">Aviso: o 37 normalmente acompanha o 02.</span>';
+      } else if (erros.length) {
+        status.innerHTML = '<span class="gs1-erro">' + erros[0] + "</span>";
+      } else {
+        status.textContent = partes.length ? "Válido para gerar o código." : "Adicione ao menos um campo com dado.";
+      }
+      if (erros.length && status.innerHTML.indexOf("gs1-erro") < 0) {
+        status.innerHTML = '<span class="gs1-erro">' + erros[0] + "</span>";
+      }
+      prev.textContent = partes.join("");
+      if (btnAplicar) btnAplicar.disabled = !!erros.length || !partes.length;
+    }
+    function atualizarBtnGs1Modal() {
+      var btn = document.getElementById("modal-dado-btn-gs1");
+      var selSimb = document.getElementById("modal-dado-simbologia");
+      if (!btn) return;
+      var info = selSimb && selSimb.value ? simbologiaInfo(selSimb.value) : null;
+      btn.classList.toggle("d-none", !info || !info.gs1);
+    }
+    function abrirModalGs1() {
+      var linhas = document.getElementById("gs1-linhas");
+      var campo = document.getElementById("modal-dado-input");
+      if (!linhas) return;
+      linhas.innerHTML = "";
+      var atual = (campo && campo.value.trim()) || "";
+      var re = /\((\d{2,4})\)([^()]*)/g;
+      var m = null;
+      var achou = false;
+      while ((m = re.exec(atual)) !== null) {
+        montarLinhaGs1(m[1], m[2]);
+        achou = true;
+      }
+      if (!achou) montarLinhaGs1("01");
+      atualizarPreviewGs1();
+      var modalGs1El = document.getElementById("modal-gs1");
+      if (modalGs1El) bootstrap.Modal.getOrCreateInstance(modalGs1El).show();
+    }
+    (function ligarModalGs1() {
+      var btnAbrir = document.getElementById("modal-dado-btn-gs1");
+      if (btnAbrir) btnAbrir.addEventListener("click", abrirModalGs1);
+      var btnAdd = document.getElementById("gs1-add");
+      if (btnAdd) btnAdd.addEventListener("click", function () {
+        montarLinhaGs1("10");
+        atualizarPreviewGs1();
+      });
+      var btnAplicar = document.getElementById("gs1-aplicar");
+      if (btnAplicar) btnAplicar.addEventListener("click", function () {
+        var campo = document.getElementById("modal-dado-input");
+        var prev = document.getElementById("gs1-preview");
+        var modalGs1El = document.getElementById("modal-gs1");
+        if (!campo || !prev || !prev.textContent) return;
+        campo.value = prev.textContent;
+        campo.dispatchEvent(new Event("input")); /* live update (1.169d) */
+        if (modalGs1El) {
+          var inst = bootstrap.Modal.getInstance(modalGs1El);
+          if (inst) inst.hide();
+        }
+        notify("Dados GS1 aplicados ao conteúdo.", "success");
+      });
+      var modalGs1El = document.getElementById("modal-gs1");
+      if (modalGs1El) modalGs1El.addEventListener("hidden.bs.modal", atualizarBtnGs1Modal);
     })();
 
     /* ---------------- Edição de Texto In-Loco (duplo clique, estilo Canva/Figma) ---------------- */
@@ -7457,7 +7676,7 @@
         { chave: "itf14",    rotulo: "ITF-14",            jsbarcode: "ITF14",    zpl: "^B2", n: 4, demo: "1234567890123" },
         { chave: "msi",      rotulo: "MSI",               jsbarcode: "MSI",      zpl: "^BM", n: 5, demo: "12345678" },
         { chave: "codabar",  rotulo: "Codabar",           jsbarcode: "codabar",  zpl: "^BK", n: 5, demo: "A123456A" },
-        { chave: "gs1_128",  rotulo: "GS1-128",           bwip: "gs1-128", zpl: "^BC", n: 6, gs1: true, demo: "(01)09506000134306(17)010615" }
+        { chave: "gs1_128",  rotulo: "GS1-128",           bwip: "gs1-128", zpl: "^BC", n: 6, gs1: true, demo: "(01)09506000134307(17)261231" }
       ],
       "2d": [
         { chave: "qr",         rotulo: "QR Code (padrão, correção Q)", zpl: "^BQ", qec: "Q" },
@@ -7470,8 +7689,8 @@
         { chave: "aztec",      rotulo: "Aztec",         bwip: "azteccode",   zpl: "^B0" },
         { chave: "maxicode",   rotulo: "MaxiCode",      bwip: "maxicode",    zpl: "^BD" },
         { chave: "microqr",    rotulo: "Micro QR",      bwip: "microqrcode", zpl: null, demo: "MICRO-123" },
-        { chave: "gs1_qr",     rotulo: "GS1 QR Code",   bwip: "gs1qrcode",   zpl: "^BQ", gs1: true, demo: "(01)09506000134306(17)010615" },
-        { chave: "gs1_datamatrix", rotulo: "GS1 Data Matrix", bwip: "gs1datamatrix", zpl: "^BX", gs1: true, demo: "(01)09506000134306(10)ABC123" },
+        { chave: "gs1_qr",     rotulo: "GS1 QR Code",   bwip: "gs1qrcode",   zpl: "^BQ", gs1: true, demo: "(01)09506000134307(17)261231" },
+        { chave: "gs1_datamatrix", rotulo: "GS1 Data Matrix", bwip: "gs1datamatrix", zpl: "^BX", gs1: true, demo: "(01)09506000134307(10)ABC123" },
         { chave: "gs1_databar", rotulo: "GS1 DataBar",  bwip: "databaromni", zpl: "^BR", gs1: true, br: 1, demo: "(01)01234567890128" },
         { chave: "databar_trunc",  rotulo: "GS1 DataBar Truncado", bwip: "databartruncated", zpl: "^BR", gs1: true, br: 2, demo: "(01)01234567890128" },
         { chave: "databar_stack",  rotulo: "GS1 DataBar Empilhado", bwip: "databarstacked", zpl: "^BR", gs1: true, br: 3, demo: "(01)01234567890128" },
@@ -7541,7 +7760,7 @@
       if (/^9[1-9]$/.test(ai)) return null;
       return null;
     }
-    /* "(01)09506000134306(17)010615" → ["0109506000134306","17010615"]; sem parênteses → null */
+    /* "(01)09506000134307(17)261231" → ["0109506000134307","17261231"]; sem parênteses → null */
     function gs1CamposZpl(texto) {
       var t = String(texto || "");
       var re = /\((\d{2,4})\)([^()]*)/g, mC, out = [];
@@ -7567,7 +7786,7 @@
       }
       return outFd.join("");
     }
-    /* ["0109506000134306","17010615"] → "(01)09506000134306(17)010615" (reimportação) */
+    /* ["0109506000134307","17261231"] → "(01)09506000134307(17)261231" (reimportação) */
     function gs1Enrolar(campos) {
       return (campos || []).map(function (c) {
         var m4 = /^(\d{4})/.exec(c), m3 = /^(\d{3})/.exec(c), m2 = /^(\d{2})/.exec(c);
@@ -14468,7 +14687,7 @@
                     <li><i class="fas fa-font me-1"></i> <strong>Texto Livre</strong> — escreva qualquer coisa.</li>
                     <li><i class="fas fa-align-left me-1"></i> <strong>Subtítulo</strong> — texto menor para o topo.</li>
                     <li><i class="fas fa-heading me-1"></i> <strong>Nome do Produto</strong> — texto de destaque grande.</li>
-                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre. O seletor <strong>Fontes 2D</strong> (duplo clique no elemento) traz Data Matrix, PDF-417, MicroPDF, Aztec, MaxiCode, <strong>Micro QR</strong>, <strong>GS1 QR Code</strong>, <strong>GS1 Data Matrix</strong> e a família <strong>GS1 DataBar</strong> (Omni, Truncado, Empilhado, Empilhado Omni, Limited, Expandido e Expandido Empilhado — comandos nativos <code>^BR</code>). O QR tem níveis de correção de erro: <strong>QR</strong> (Q, padrão), <strong>QR alta correção</strong> (H), <strong>QR média</strong> (M) e <strong>QR baixa</strong> (L). As GS1 pedem os AIs com parênteses (ex.: <code>(01)0950…(17)010615</code>) — o app e a impressora inserem o separador FNC1 sozinhos; Micro QR sai como imagem otimizada — valide na impressora real.</li>
+                    <li><i class="fas fa-qrcode me-1"></i> <strong>QR Code</strong> — o quadrado que o celular lê; digite o conteúdo na janelinha que abre. O seletor <strong>Fontes 2D</strong> (duplo clique no elemento) traz Data Matrix, PDF-417, MicroPDF, Aztec, MaxiCode, <strong>Micro QR</strong>, <strong>GS1 QR Code</strong>, <strong>GS1 Data Matrix</strong> e a família <strong>GS1 DataBar</strong> (Omni, Truncado, Empilhado, Empilhado Omni, Limited, Expandido e Expandido Empilhado — comandos nativos <code>^BR</code>). O QR tem níveis de correção de erro: <strong>QR</strong> (Q, padrão), <strong>QR alta correção</strong> (H), <strong>QR média</strong> (M) e <strong>QR baixa</strong> (L). As GS1 pedem os AIs com parênteses (ex.: <code>(01)0950…(17)010615</code>) — o app e a impressora inserem o separador FNC1 sozinhos; o botão <strong>Montar dados GS1</strong> na janelinha monta esse conteúdo campo a campo (AI + dado, com prévia e validação) — Micro QR sai como imagem otimizada — valide na impressora real.</li>
                     <li><i class="fas fa-barcode me-1"></i> <strong>Código de Barras</strong> — código comum. O seletor <strong>Fontes 1D</strong> (duplo clique) traz Code 128 (A/B/C), Code 39, Code 93, EAN-13, EAN-8, UPC-A, ITF, MSI, Codabar, <strong>GS1-128</strong> e os suplementos <strong>EAN/UPC +2/+5</strong> (digite o código, espaço e o complemento: <code>5901234123457 12</code>). GS1-128 pede os AIs com parênteses — a impressora insere FNC1 e check digit sozinha e o app emenda o separador <code>>8</code> entre AIs de tamanho variável (regra do modo D da ZPL). Os +2/+5 saem nativos: o código principal no comando da simbologia e o complemento num <code>^BS</code> ao lado (ISBN, suplemento de balança) — valide o encaixe na impressora real.</li>
                     <li><i class="fas fa-sliders2 me-1"></i> <strong>Fonte do Código em todo lugar</strong> — além do duplo clique, a mesma lista de fontes aparece no <strong>Editor de Elemento</strong> (botão direito/toque longo) no campo “Fonte do Código”. A troca aplica <strong>na hora</strong> no desenho e no ZPL, sem esperar Salvar (funciona igual no celular e no desktop). No desktop o mini modal do duplo clique abre à esquerda, deixando a prévia livre à direita.</li>
                     <li><i class="fas fa-image me-1"></i> <strong>Importar Imagem / Logo</strong> — escolhe uma figura do seu aparelho.</li>
