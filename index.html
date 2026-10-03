@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -1564,7 +1564,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.022</span>
+      <span class="brand-ver">v1.023</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1811,6 +1811,23 @@
               </button>
             </div>
           </div>
+          <div class="dnv-submenu-wrap" id="dnv-sub-zeb-wrap">
+            <button type="button" class="dnv-dropdown-item dnv-submenu-btn" id="dnv-sub-zebra" role="menuitem" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-barcode dnv-icon text-secondary"></i> Zebra <i class="fas fa-chevron-right dnv-sub-caret" aria-hidden="true"></i>
+            </button>
+            <div class="dnv-dropdown dnv-submenu" id="dnv-dd-zebra" role="menu">
+              <span class="dnv-dropdown-header">Instaladores (cole no PowerShell)</span>
+              <button type="button" class="dnv-dropdown-item" id="dnv-adic-zq630-inst" role="menuitem" title="Clique para copiar o comando e cole no PowerShell — instala o driver ZDesigner ZQ630 pela internet">
+                <i class="fas fa-terminal dnv-icon text-primary"></i> Instalar ZQ630 <i class="fas fa-copy ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="dnv-dropdown-item" id="dnv-adic-zq630p-inst" role="menuitem" title="Clique para copiar o comando e cole no PowerShell — instala o driver ZDesigner ZQ630 Plus pela internet">
+                <i class="fas fa-terminal dnv-icon text-primary"></i> Instalar ZQ630 Plus <i class="fas fa-copy ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="dnv-dropdown-item" id="dnv-adic-zt411-inst" role="menuitem" title="Clique para copiar o comando e cole no PowerShell — instala o driver ZDesigner ZT411 pela internet">
+                <i class="fas fa-terminal dnv-icon text-primary"></i> Instalar ZT411 <i class="fas fa-copy ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </li>
 
@@ -1889,7 +1906,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.022</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.023</span>
         </div>
       </div>
 
@@ -3266,7 +3283,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.022</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.023</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3639,6 +3656,89 @@
   (function () {
     "use strict";
 
+    /* ---------------- Coordenador de modais (regra simples, v2) ----------------
+       Regra do usuário:
+       1) Modal aberto pela interface FECHA os que já estavam abertos.
+       2) Modal aberto ATRAVÉS de outro modal (Configurar impressora dentro do
+          editor, montador GS1, confirmação, log de erros) SOBREPÕE: os dois
+          ficam abertos até o usuário voltar ao anterior.
+       Por baixo disso o Bootstrap 5 não suporta 2 modais ao mesmo tempo: os
+       focus-traps disputam o foco (inputs inacessíveis) e o fechamento do de
+       cima remove body.modal-open com o de baixo ainda aberto — a tela fica
+       acinzentada e bloqueada. Aqui quem empilha ganha z-index acima, o
+       focustrap do(s) de baixo é desativado (e reativado quando o de cima
+       fecha) e o estado do body é restaurado. NUNCA cancelamos a abertura
+       (preventDefault + pendente, v1): hide() durante o fade é no-op no
+       Bootstrap, o pendente nunca abria e a maioria dos modais parou de
+       abrir. */
+    var MODAIS_EMPILHAVEIS = {
+      "modal-ip": true,        /* Configurar impressora, aberto de dentro do editor */
+      "modal-gs1": true,       /* montador GS1 sobre o modal de conteúdo */
+      "modal-confirm": true,   /* confirmação destrutiva sobre qualquer modal */
+      "modal-erros-app": true  /* log de erros pode surgir sobre qualquer um */
+    };
+
+    function modaisAbertos() {
+      var vis = [];
+      document.querySelectorAll(".modal.show").forEach(function (m) {
+        if (m.style.display !== "none" && window.getComputedStyle(m).display !== "none") vis.push(m);
+      });
+      return vis;
+    }
+    function restaurarEstadoModalBody() {
+      if (modaisAbertos().length) {
+        document.body.classList.add("modal-open");
+      } else {
+        document.body.classList.remove("modal-open");
+      }
+    }
+    /* Fecha um modal pelo caminho oficial do Bootstrap. hide() é no-op quando
+       o modal está no meio do fade (isTransitioning), então reaplica 400ms
+       depois para garantir que fechou. */
+    function fecharModalBs(el) {
+      var inst = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
+      try { inst.hide(); } catch (eHide) {}
+      setTimeout(function () {
+        if (el.classList.contains("show")) { try { inst.hide(); } catch (eHide2) {} }
+      }, 400);
+    }
+    document.addEventListener("show.bs.modal", function (ev) {
+      var el = ev.target;
+      if (!el || !el.id) return;
+      var outros = modaisAbertos().filter(function (m) { return m !== el; });
+      if (!outros.length) { el.style.zIndex = ""; return; }
+      if (MODAIS_EMPILHAVEIS[el.id]) {
+        /* regra 2: sobrepõe — acima do(s) de baixo (backdrop fica no z 1050) */
+        el.style.zIndex = String(1055 + outros.length * 10);
+        outros.forEach(function (m) {
+          try {
+            var inst = bootstrap.Modal.getInstance(m);
+            if (inst && inst._focustrap) inst._focustrap.deactivate();
+          } catch (eMod) {}
+        });
+      } else {
+        /* regra 1: quem abre fecha os que já estavam abertos */
+        outros.forEach(function (m) {
+          m.style.removeProperty("z-index");
+          fecharModalBs(m);
+        });
+      }
+    }, true);
+    document.addEventListener("hidden.bs.modal", function (ev) {
+      var el = ev.target;
+      if (el && el.classList && el.classList.contains("modal")) el.style.removeProperty("z-index");
+      var vis = modaisAbertos();
+      restaurarEstadoModalBody();
+      if (vis.length) {
+        /* o usuário voltou ao modal de baixo: foco e estado do body voltam */
+        var topo = vis[vis.length - 1];
+        try {
+          var inst = bootstrap.Modal.getInstance(topo);
+          if (inst && inst._focustrap) inst._focustrap.activate();
+        } catch (eMod) {}
+      }
+    }, true);
+
     /* ---------------- Configuração das etiquetas (203 dpi = 8 dots/mm) ---------------- */
     var SIZES = {
       "40x25":   { w: 320, h: 200, mmW: 40, mmH: 25 },
@@ -3685,7 +3785,7 @@
       history.push(snap);
       if (history.length > MAX_HISTORY) history.shift();
       historyIdx = history.length - 1;
-      saveFieldsToSession();
+      scheduleSaveToSession(); /* auditoria: debounce de 300ms — serializar o estado inteiro (com imagens) a cada ação era custo duplo */
     }
 
     function desfazer() {
@@ -3747,17 +3847,32 @@
         document.body.classList.remove("modal-open");
         document.body.style.removeProperty("overflow");
         document.body.style.removeProperty("padding-right");
+      } else {
+        if (!document.body.classList.contains("modal-open")) {
+          /* auditoria: nunca deixar um modal aberto sem o estado modal-open do body */
+          document.body.classList.add("modal-open");
+        }
+        /* bug do usuário ("<div class=modal-backdrop fade show></div>" na tela):
+           backdrop EXCEDENTE (instância duplicada/estado desincronizado) é a
+           tela cinza travada. Regra: no máximo 1 backdrop por modal aberto —
+           sobrou, o mais antigo (posição 0) sai, os últimos são do topo */
+        var bgsExcedentes = document.querySelectorAll(".modal-backdrop");
+        while (bgsExcedentes.length > abertos) {
+          var extra = bgsExcedentes[0];
+          if (extra && extra.parentNode) extra.parentNode.removeChild(extra);
+          bgsExcedentes = document.querySelectorAll(".modal-backdrop");
+        }
       }
     };
     document.addEventListener("hidden.bs.modal", function () { _sweepModalBackdrops(); }, true);
-    var _bdJanitorObs = new MutationObserver(function () { _sweepModalBackdrops(); });
-    _bdJanitorObs.observe(document.body, { childList: true });
     setInterval(_sweepModalBackdrops, 1000);
 
     /* Pedido 1.151: ESC DUPLO destrava a tela. Se um modal travou aberto
        (exceção num handler de ação antes do hide, instância perdida),
        nenhum botão fecha mais — o usuário aperta Esc 2× seguidas e o app
-       força o fechamento de TODOS os modais normais. Os dois estáticos
+       fecha TODOS os modais normais pelo caminho oficial do Bootstrap (hide
+       com retry para quem estiver no meio do fade — a cirurgia manual/dispose
+       da v1 deixava transições zumbi reexibirem o modal). Os dois estáticos
        intencionais (confirmação destrutiva e progresso de impressão) ficam
        de fora — têm os próprios botões. */
     var _escAnteriorMs = 0;
@@ -3766,20 +3881,18 @@
       var agoraMs = Date.now();
       if (agoraMs - _escAnteriorMs > 900) { _escAnteriorMs = agoraMs; return; }
       _escAnteriorMs = 0;
-      var presos = document.querySelectorAll(".modal.show");
+      var presos = modaisAbertos().filter(function (mEsc) {
+        return mEsc.id !== "modal-confirm" && mEsc.id !== "modal-print-stream";
+      });
       var fechou = 0;
       presos.forEach(function (mEsc) {
-        if (mEsc.id === "modal-confirm" || mEsc.id === "modal-print-stream") return;
-        try {
-          var instEsc = bootstrap.Modal.getInstance(mEsc);
-          if (instEsc) instEsc.hide();
-        } catch (eEsc) {}
-        mEsc.classList.remove("show");
-        mEsc.style.display = "none";
-        mEsc.setAttribute("aria-hidden", "true");
+        /* o foco sai ANTES do hide (evita o "Blocked aria-hidden" do console) */
+        var ae = document.activeElement;
+        if (ae && mEsc.contains(ae)) { try { ae.blur(); } catch (eBlur) {} }
+        fecharModalBs(mEsc);
         fechou++;
       });
-      if (fechou) { _sweepModalBackdrops(); notify("Modais travados foram fechados (Esc 2×).", "info"); }
+      if (fechou) { _sweepModalBackdrops(); notify("Modais fechados (Esc 2×).", "info"); }
     });
 
 
@@ -4071,15 +4184,6 @@
 
     var modalMargensEl = $("modal-margens");
     var bsModalMargens = new bootstrap.Modal(modalMargensEl);
-
-    function formatValorUnidade(dots, unit) {
-      unit = unit || unidadeAtual;
-      var mm = dotsToMm(dots);
-      if (unit === "cm") return (Math.round((mm / 10) * 100) / 100) + " cm";
-      if (unit === "in") return (Math.round((mm / 25.4) * 100) / 100) + " in";
-      if (unit === "dots") return Math.round(dots) + " dots";
-      return (Math.round(mm * 10) / 10) + " mm";
-    }
 
     function mmParaUnidadeAtual(valMm, unit) {
       unit = unit || unidadeAtual;
@@ -7039,12 +7143,6 @@
     }
 
     if ($("btn-palette-import-img")) $("btn-palette-import-img").addEventListener("click", abrirImportadorImagem);
-    if ($("btn-trigger-import-img")) {
-      $("btn-trigger-import-img").addEventListener("click", function (e) {
-        e.stopPropagation();
-        abrirImportadorImagem();
-      });
-    }
 
     if ($("input-import-imagem")) {
       $("input-import-imagem").addEventListener("change", function (e) {
@@ -8871,7 +8969,14 @@
         batchSpecialTree: JSON.parse(JSON.stringify(batchSpecialTree)),
         loteEspecialAtivo: loteEspecialAtivo
       };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
+      /* auditoria: quota de localStorage estoura com imagem grande no modelo —
+         sem isso o salvar crashava (QuotaExceededError não capturado) */
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
+      } catch (eSalvarTmpl) {
+        notify("Não foi possível salvar o modelo (armazenamento cheio) — exporte por .bin e remova modelos antigos.", "danger");
+        return;
+      }
       updateTemplateDropdown();
       renderTabsModelos();
       notify("Modelo '" + name + "' salvo no cache local!", "success");
@@ -8997,7 +9102,7 @@
       if (ok) {
         var tmpls = getSavedTemplates();
         delete tmpls[name];
-        localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls)); } catch (eExcluirTmpl) {}
         updateTemplateDropdown();
         renderTabsModelos();
         notify("Modelo excluído.", "dark");
@@ -9178,28 +9283,6 @@
         if (c) c.value = conex.campos[id];
       });
     }
-    /* Salvar Lote de Etiquetas (.bin): o ZPL concatenado de todas as etiquetas
-       do lote/importação — exatamente o que a impressora recebe. */
-    function salvarLoteBin() {
-      var zplLote = null;
-      if (loteZplBlocos && loteZplBlocos.length >= 2) {
-        zplLote = loteZplGerarZpl(); /* Pedido 1.140: lote vindo de ZPL */
-      } else {
-        var multi = gerarZPLTodasLinhas();
-        if (multi && multi.zpl) zplLote = multi.zpl;
-        else if (loteEspecialAtivo && $("zpl") && $("zpl").value.indexOf("^XA") !== -1) zplLote = $("zpl").value;
-      }
-      if (!zplLote) { notify("Nada para salvar — gere o lote ou importe os dados primeiro.", "warning"); return; }
-      var fileBase = sanitizarFilename(getModelName() || "lote-etiquetas");
-      var blob = new Blob([zplLote], { type: "application/octet-stream" });
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = fileBase + "-lote.bin";
-      a.click();
-      var blocos = zplLote.split("^XA").length - 1;
-      notify("Lote salvo como '" + fileBase + "-lote.bin' (" +
-        (blocos > 1 ? blocos + " etiquetas concatenadas" : "serialização ^SN em 1 bloco") + ").", "success");
-    }
     $("btn-export-modelo-atual").addEventListener("click", function () {
       var mapaSalvo = null;
       try { mapaSalvo = JSON.parse(localStorage.getItem(IMPORT_MAP_STORAGE_KEY) || "null"); } catch (e) {}
@@ -9235,7 +9318,11 @@
         batchSpecialTree: (m.batchSpecialTree && Array.isArray(m.batchSpecialTree)) ? m.batchSpecialTree : JSON.parse(JSON.stringify(BATCH_TREE_PADRAO)),
         loteEspecialAtivo: !!m.loteEspecialAtivo
       };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(tmpls));
+      } catch (eImportarTmpl) {
+        notify("Cache local cheio ao importar o modelo — ele está carregado na tela, mas não ficou salvo.", "warning");
+      }
       updateTemplateDropdown();
       /* Restaura os dados/mapeamento/conexões do Importar Dados quando o
          modelo .bin os trouxer (modelos antigos seguem funcionando). */
@@ -10214,17 +10301,6 @@
         return { ok: false, msg: "Nenhuma coluna mapeada. Escolha ao menos um campo do sistema." };
       }
       return { ok: true, mapa: mapa };
-    }
-
-    /* Corresponde um elemento da etiqueta ao campo do sistema (mesmos critérios do "Aplicar"). */
-    function importCorrespondeCampo(el, campo) {
-      if (campo === "qr") return el.tipo === "qr";
-      if (campo === "barcode") return el.tipo === "barcode";
-      if (campo === "nome") return el.tipo === "nome" || el.classe === "nome";
-      if (campo === "sub") return el.tipo === "sub" || el.classe === "sub";
-      if (campo === "serie") return el.tipo === "serie" || el.classe === "serie";
-      if (campo === "texto") return el.tipo === "texto" && el.classe !== "nome" && el.classe !== "sub" && el.classe !== "serie";
-      return false;
     }
 
     /* Alterna Área de Arquivo ↔ Área de Link (Google Sheets) conforme a origem escolhida. */
@@ -11849,7 +11925,7 @@
     function imprimirStreaming(ip, fila, proto) {
       var total = fila.reduce(function (s, f) { return s + f.esperado; }, 0);
       var modalEl = $("modal-print-stream");
-      var bsModalStream = modalEl ? new bootstrap.Modal(modalEl) : null;
+      var bsModalStream = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
       var feitos = 0, idx = 0, falha = null, terminado = false;
       streamCancelado = false;
       streamAtivo = true;
@@ -11960,7 +12036,16 @@
       input.value = (salvo >= 1 && salvo <= 999) ? salvo : 1;
       atualizarResumoQtd();
       bsModalPrintQty.show();
-      setTimeout(function () { input.focus(); input.select(); }, 200);
+      /* auditoria: focar via shown.bs.modal (não setTimeout cru competindo com
+         o fade — o foco podia cair com aria-hidden ainda presente,
+         "Blocked aria-hidden" no console) */
+      var modalQtyEl = $("modal-print-qty");
+      function focarInputQtd() {
+        if (modalQtyEl) modalQtyEl.removeEventListener("shown.bs.modal", focarInputQtd);
+        try { input.focus(); input.select(); } catch (eFq) {}
+      }
+      if (modalQtyEl) modalQtyEl.addEventListener("shown.bs.modal", focarInputQtd);
+      setTimeout(focarInputQtd, 400); /* fallback: shown pode não disparar se o modal já estava em transição */
     }
 
     if (bsModalPrintQty) {
@@ -13665,7 +13750,8 @@
         voltar: null,
         itens: [
           { id: "adic-mob-honeywell", icone: "fa-industry", texto: "Honeywell", dest: "honeywell" },
-          { id: "adic-mob-xerox", icone: "fa-print", texto: "Xerox - Lexmark", dest: "xerox" }
+          { id: "adic-mob-xerox", icone: "fa-print", texto: "Xerox - Lexmark", dest: "xerox" },
+          { id: "adic-mob-zebra", icone: "fa-barcode", texto: "Zebra", dest: "zebra" }
         ]
       },
       honeywell: {
@@ -13689,6 +13775,15 @@
         itens: [
           { id: "adic-mob-inst-lexmark", icone: "fa-terminal", texto: "Instalar Lexmark (M3350/XM3350)", acao: "inst-lexmark" },
           { id: "adic-mob-inst-xerox", icone: "fa-terminal", texto: "Instalar Xerox C415", acao: "inst-xerox" }
+        ]
+      },
+      zebra: {
+        titulo: "Zebra — Instaladores",
+        voltar: "raiz",
+        itens: [
+          { id: "adic-mob-inst-zq630", icone: "fa-terminal", texto: "Instalar ZQ630", acao: "inst-zq630" },
+          { id: "adic-mob-inst-zq630p", icone: "fa-terminal", texto: "Instalar ZQ630 Plus", acao: "inst-zq630-plus" },
+          { id: "adic-mob-inst-zt411", icone: "fa-terminal", texto: "Instalar ZT411", acao: "inst-zt411" }
         ]
       }
     };
@@ -13736,6 +13831,15 @@
               break;
             case "inst-xerox":
               copiarComandoInstalador("irm https://github.com/canalqb/Xerox-Installer/releases/latest/download/Instalar-Xerox-C415.ps1 | iex", "Xerox VersaLink C415");
+              break;
+            case "inst-zq630":
+              copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZQ630.ps1 | iex", "Zebra ZQ630");
+              break;
+            case "inst-zq630-plus":
+              copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZQ630-Plus.ps1 | iex", "Zebra ZQ630 Plus");
+              break;
+            case "inst-zt411":
+              copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZT411.ps1 | iex", "Zebra ZT411");
               break;
           }
           /* Fechamento com retry: se o usuário tocar num item logo após abrir
@@ -13871,7 +13975,7 @@
     (function () {
       /* "calibrar" entra no MENUS só para os loops de fechamento (dnv-btn-calibrar não existe,
          então o registro de toggle do topo é ignorado — apenas o submenu fecha junto). */
-      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "adicionais", "fabricante", "modelo", "xerox", "calibrar"];
+      var MENUS = ["arquivo", "etiqueta", "impressora", "ajuda", "adicionais", "fabricante", "modelo", "xerox", "zebra", "calibrar"];
       MENUS.forEach(function (nome) {
         var btn = document.getElementById("dnv-btn-" + nome);
         var dd  = document.getElementById("dnv-dd-" + nome);
@@ -13912,7 +14016,7 @@
          (dnv-btn-fabricante não existe: só os painéis dnv-dd-* são fechados).
          Acordeão (pedido da sessão do 1.157): abrir um submenu fecha o irmão
          do mesmo nível (e os submenus aninhados que estiverem abertos dentro dele). */
-      [["dnv-sub-fabricante", "dnv-dd-fabricante"], ["dnv-sub-modelo", "dnv-dd-modelo"], ["dnv-sub-xerox", "dnv-dd-xerox"]].forEach(function (par) {
+      [["dnv-sub-fabricante", "dnv-dd-fabricante"], ["dnv-sub-modelo", "dnv-dd-modelo"], ["dnv-sub-xerox", "dnv-dd-xerox"], ["dnv-sub-zebra", "dnv-dd-zebra"]].forEach(function (par) {
         var b = document.getElementById(par[0]);
         var d = document.getElementById(par[1]);
         if (!b || !d) return;
@@ -14018,14 +14122,6 @@
          valores (staged); o envio único acontece em "Calibrar Agora" (calibrarImpressora).
          VEL_KEY/MIDIA_KEY/MODOOP_KEY/getTipoMidia/getModoOperacional/velocAtualValida
          vivem no escopo externo, junto de calibrarImpressora. */
-      function fecharMenusDnv() {
-        MENUS.forEach(function (n) {
-          var b = document.getElementById("dnv-btn-" + n);
-          var d = document.getElementById("dnv-dd-" + n);
-          if (b) { b.classList.remove("dnv-open"); b.setAttribute("aria-expanded", "false"); }
-          if (d) d.classList.remove("dnv-open");
-        });
-      }
 
       /* Tamanho do papel: listagem encenada (aplica no design, sem enviar e sem fechar) */
       function renderPapelOpcoes() {
@@ -14277,6 +14373,18 @@
       });
       dnvAcao("dnv-adic-xerox-inst", function () {
         copiarComandoInstalador("irm https://github.com/canalqb/Xerox-Installer/releases/latest/download/Instalar-Xerox-C415.ps1 | iex", "Xerox VersaLink C415");
+      });
+
+      /* Adicionais (Zebra): instaladores "copiar comando" — release do
+         github.com/canalqb/Zebra-Installer (ZQ630, ZQ630 Plus e ZT411) */
+      dnvAcao("dnv-adic-zq630-inst", function () {
+        copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZQ630.ps1 | iex", "Zebra ZQ630");
+      });
+      dnvAcao("dnv-adic-zq630p-inst", function () {
+        copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZQ630-Plus.ps1 | iex", "Zebra ZQ630 Plus");
+      });
+      dnvAcao("dnv-adic-zt411-inst", function () {
+        copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZT411.ps1 | iex", "Zebra ZT411");
       });
 
     })(); /* fim Navbar Fase A */

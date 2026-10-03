@@ -36,6 +36,28 @@ var net = require("net");
 var PORTA = 3001;            // porta do servidor HTTP local
 var FTP_PORTA = parseInt(process.env.FTP_PORT, 10) || 21; // porta FTP da Zebra (padrão 21)
 var TIMEOUT_FTP = 12000; // ms por etapa do diálogo FTP
+var TIMEOUT_TCP_ENVIO = parseInt(process.env.TCP_SEND_TIMEOUT, 10) || 10000; // ms sem progresso enviando ZPL (auditoria A7)
+
+/* ---------------- CORS (auditoria A1) ----------------
+   Só origens legítimas do app podem dirigir a ponte: file:// (null),
+   localhost, IPs de rede privada (XAMPP servindo a LAN) e o Pages do
+   projeto. Site aleatório aberto no navegador do usuário NÃO passa no
+   preflight — antes, Access-Control-Allow-Origin:* deixava qualquer
+   página imprimir/consultar pela ponte. */
+var ORIGENS_EXTRA = String(process.env.PRINT_SERVER_ORIGENS || "").split(",").map(function (o) { return o.trim(); }).filter(Boolean);
+function origemPermitida(origin) {
+  if (!origin) return true;          // mesma origem / curl (requisição sem Origin)
+  if (origin === "null") return true; // file:// (app aberto direto do disco)
+  var m = /^https?:\/\/([^:/]+)(?::\d+)?$/i.exec(origin);
+  var h = m ? m[1].toLowerCase() : "";
+  if (h === "localhost" || h === "127.0.0.1" || h === "[::1]") return true;
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+  if (/^10(\.\d{1,3}){3}$/.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2}$/.test(h)) return true;
+  if (h === "canalqb.github.io" || h === "canalqb.github.io." ) return true;
+  if (ORIGENS_EXTRA.indexOf(origin) !== -1) return true;
+  return false;
+}
 
 /* ---------------- Cliente FTP mínimo (login/senha em branco) ---------------- */
 
@@ -172,18 +194,22 @@ function enviarFTP(ip, zpl, cb) {
 /* ---------------- Envio TCP Direct (Porta 9100 Raw) ---------------- */
 function enviarTCP(ip, zpl, cb) {
   var porta = parseInt(process.env.TCP_PORT, 10) || 9100;
+  var respondido = false;
   var socket = net.connect(porta, ip, function () {
     socket.write(Buffer.from(zpl, "utf8"), function () {
       socket.end();
-      cb(null, { porta: porta });
+      if (!respondido) { respondido = true; cb(null, { porta: porta }); }
     });
   });
-  socket.setTimeout(8000, function () {
+  socket.setTimeout(TIMEOUT_TCP_ENVIO, function () {
     socket.destroy();
-    cb(new Error("TCP 9100: timeout conectando a " + ip + ":" + porta));
+    if (!respondido) {
+      respondido = true;
+      cb(new Error("TCP 9100: tempo esgotado ENVIANDO para " + ip + ":" + porta + " (sem progresso) — etiqueta pode ter saido parcial."));
+    }
   });
   socket.on("error", function (e) {
-    cb(new Error("TCP 9100: erro no socket com " + ip + ":" + porta + " (" + e.code + ")."));
+    if (!respondido) { respondido = true; cb(new Error("TCP 9100: erro no socket com " + ip + ":" + porta + " (" + e.code + ").")); }
   });
 }
 
@@ -262,6 +288,14 @@ function imprimirUmValidado(ip, zpl, esperado, proto, cb) {
         }
         if (base == null && atual == null && Date.now() - inicio > 2500) {
           return fim({ ok: true, validado: false, protocolo: "tcp" }); /* impressora sem odômetro legível: enviada sem validação física */
+        }
+        if (base == null && atual != null) {
+          /* auditoria A6: a leitura inicial falhou mas as seguintes funcionam —
+             sem baseline não há como validar; devolver ok ANTES evita os 60s
+             de espera (e o falso erro que levava o usuário a reenviar = etiqueta
+             duplicada). Enviada sem validação física, mesma semântica do caso
+             sem odômetro. */
+          return fim({ ok: true, validado: false, odometro: atual, protocolo: "tcp" });
         }
         setTimeout(function () { aguardar(base); }, 500);
       });
@@ -390,15 +424,44 @@ function responder(res, status, obj) {
   var corpo = JSON.stringify(obj);
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type"
   });
   res.end(corpo);
 }
 
+/* auditoria A5/A9: leitor de corpo único com Buffer.concat — a concatenação
+   por string (corpo += chunk) corrompia acentos quando um caractere UTF-8
+   caía entre dois chunks; e o leitor estava copiado 3×. */
+function lerCorpo(req, limite, cb) {
+  var pedacos = [];
+  var total = 0;
+  req.on("data", function (d) {
+    total += d.length;
+    if (total > limite) { req.destroy(); return; }
+    pedacos.push(d);
+  });
+  req.on("end", function () {
+    cb(Buffer.concat(pedacos).toString("utf8"));
+  });
+}
+
 var servidor = http.createServer(function (req, res) {
-  if (req.method === "OPTIONS") { responder(res, 204, {}); return; }
+  /* auditoria A1: o header CORS só sai para origens legítimas — origem de
+     site aleatório não recebe ACAO e o preflight do navegador bloqueia a
+     requisição antes de chegar aqui de fato */
+  if (origemPermitida(req.headers.origin)) {
+    res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  }
+
+  if (req.method === "OPTIONS") { /* 204 não tem corpo (auditoria A4) */
+    res.writeHead(204, {
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    });
+    res.end();
+    return;
+  }
 
   if (req.method === "GET" && req.url === "/") {
     responder(res, 200, { ok: true, servico: "print-server Zebra (FTP porta 21, TCP porta 9100, consultas /query-odbc e /query-db)" });
@@ -408,12 +471,7 @@ var servidor = http.createServer(function (req, res) {
   /* Rotas da ponte de dados: o navegador manda os parâmetros, esta ponte
      executa a consulta (ODBC/banco tradicional) e devolve {colunas, linhas}. */
   if (req.method === "POST" && (req.url === "/query-odbc" || req.url === "/query-db")) {
-    var corpoQ = "";
-    req.on("data", function (d) {
-      corpoQ += d;
-      if (corpoQ.length > 4e6) req.destroy();
-    });
-    req.on("end", function () {
+    lerCorpo(req, 4e6, function (corpoQ) {
       var dadosQ;
       try { dadosQ = JSON.parse(corpoQ || "{}"); }
       catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
@@ -431,12 +489,7 @@ var servidor = http.createServer(function (req, res) {
 
   /* Pedido 1.130: uma etiqueta por vez com validação do odômetro. */
   if (req.method === "POST" && req.url === "/print-one") {
-    var corpoP1 = "";
-    req.on("data", function (d) {
-      corpoP1 += d;
-      if (corpoP1.length > 1e6) req.destroy();
-    });
-    req.on("end", function () {
+    lerCorpo(req, 1e6, function (corpoP1) {
       var dadosP1;
       try { dadosP1 = JSON.parse(corpoP1 || "{}"); }
       catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
@@ -459,12 +512,7 @@ var servidor = http.createServer(function (req, res) {
     return;
   }
 
-  var corpo = "";
-  req.on("data", function (d) {
-    corpo += d;
-    if (corpo.length > 1e6) req.destroy();
-  });
-  req.on("end", function () {
+  lerCorpo(req, 1e6, function (corpo) {
     var dados;
     try { dados = JSON.parse(corpo || "{}"); }
     catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
@@ -491,8 +539,19 @@ var servidor = http.createServer(function (req, res) {
   });
 });
 
+servidor.on("error", function (e) {
+  /* auditoria A3: sem isto, EADDRINUSE derrubava o Node com stack ilegível */
+  if (e.code === "EADDRINUSE") {
+    console.error("ERRO: a porta " + PORTA + " ja esta em uso — provavelmente ja existe outro print-server rodando.");
+    console.error("       Feche a outra instancia (ou mude a porta com PORTA=xxxx) e tente de novo.");
+    process.exit(1);
+  }
+  console.error("ERRO no servidor HTTP: " + e.message);
+  process.exit(1);
+});
 servidor.listen(PORTA, "127.0.0.1", function () {
   console.log("print-server Zebra escutando em http://localhost:" + PORTA);
-  console.log("Suporta impressão via HTTP Direct (POST /pstprnt), FTP (Porta 21) e TCP (Porta 9100).");
-  console.log("Pedido 1.130: POST /print-one envia UMA etiqueta por vez e valida pelo odômetro (TCP).");
+  console.log("Suporta impressao via FTP (porta " + FTP_PORTA + "), TCP (porta 9100), validacao por odometro (POST /print-one)");
+  console.log("e ponte de dados (POST /query-odbc, /query-db). A impressao HTTP(S) Direct e feita pelo proprio navegador.");
+  console.log("Pedido 1.130: POST /print-one envia UMA etiqueta por vez e valida pelo odometro (TCP).");
 });
