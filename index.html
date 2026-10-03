@@ -1564,7 +1564,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.023</span>
+      <span class="brand-ver">v1.025</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1906,7 +1906,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.023</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.025</span>
         </div>
       </div>
 
@@ -2537,7 +2537,10 @@
                 </select>
               </div>
               <div class="form-text small mt-1 d-none" id="hint-cert-https">
-                Link-OS 7.6+ so atende HTTPS com certificado autoassinado:
+                Link-OS 7.6+ so atende HTTPS com certificado autoassinado. Caminho automatico:
+                com o <strong>print-server.js local rodando</strong>, o app imprime via HTTPS pela ponte
+                (fallback automatico, certificado tolerado — nao precisa aceitar nada).
+                Caminho manual, sem a ponte:
                 <a href="#" id="btn-aceitar-cert">abra https://IP da impressora e aceite o certificado</a>
                 (Avancado — Prosseguir) uma vez por sessao antes de imprimir.
               </div>
@@ -3283,7 +3286,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.023</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.025</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3675,8 +3678,18 @@
       "modal-ip": true,        /* Configurar impressora, aberto de dentro do editor */
       "modal-gs1": true,       /* montador GS1 sobre o modal de conteúdo */
       "modal-confirm": true,   /* confirmação destrutiva sobre qualquer modal */
-      "modal-erros-app": true  /* log de erros pode surgir sobre qualquer um */
+      "modal-erros-app": true /* log de erros pode surgir sobre qualquer um */
     };
+
+    /* Modais em processo de ABERTURA: no Bootstrap 5.3 o backdrop aparece
+       ANTES do .show do modal (backdrop.show -> _showElement). Nessa janela
+       (~150-450ms com fade) existem backdrop + zero .modal.show — o sweep
+       antigo interpretau como "tela travada" e DESTRUIA o backdrop/modal-open
+       de um modal que estava apenas abrindo (bug relatado: abrir a caixa de
+       quantidade travava a tela com backdrop órfão). Regra: varredura só
+       remove estado quando NÃO há nenhuma abertura em andamento E o backdrop
+       excedente PERSISTE por mais de uma varredura completa. */
+    var _modaisAbrindo = new Set();
 
     function modaisAbertos() {
       var vis = [];
@@ -3686,7 +3699,7 @@
       return vis;
     }
     function restaurarEstadoModalBody() {
-      if (modaisAbertos().length) {
+      if (modaisAbertos().length || _modaisAbrindo.size) {
         document.body.classList.add("modal-open");
       } else {
         document.body.classList.remove("modal-open");
@@ -3705,6 +3718,10 @@
     document.addEventListener("show.bs.modal", function (ev) {
       var el = ev.target;
       if (!el || !el.id) return;
+      if (el.classList && el.classList.contains("modal")) {
+        _modaisAbrindo.add(el);
+        setTimeout(function () { _modaisAbrindo.delete(el); }, 2500); /* failsafe: nunca travar o sweep por causa de uma abertura abortada */
+      }
       var outros = modaisAbertos().filter(function (m) { return m !== el; });
       if (!outros.length) { el.style.zIndex = ""; return; }
       if (MODAIS_EMPILHAVEIS[el.id]) {
@@ -3722,6 +3739,27 @@
           m.style.removeProperty("z-index");
           fecharModalBs(m);
         });
+      }
+    }, true);
+    document.addEventListener("shown.bs.modal", function (ev) {
+      var el = ev.target;
+      if (el && el.classList && el.classList.contains("modal")) _modaisAbrindo.delete(el);
+    }, true);
+    document.addEventListener("hidden.bs.modal", function (ev) {
+      var el = ev.target;
+      if (el && el.classList && el.classList.contains("modal")) {
+        el.style.removeProperty("z-index");
+        _modaisAbrindo.delete(el);
+      }
+      var vis = modaisAbertos();
+      restaurarEstadoModalBody();
+      if (vis.length) {
+        /* o usuário voltou ao modal de baixo: foco e estado do body voltam */
+        var topo = vis[vis.length - 1];
+        try {
+          var inst = bootstrap.Modal.getInstance(topo);
+          if (inst && inst._focustrap) inst._focustrap.activate();
+        } catch (eMod) {}
       }
     }, true);
     document.addEventListener("hidden.bs.modal", function (ev) {
@@ -3832,6 +3870,15 @@
         esconder QUALQUER modal e ao surgir qualquer mudança de backdrop no body —
         se nenhum modal estiver aberto, remove os backdrops restantes e o estado
         modal-open do body. */
+    /* Sweep v3: nunca destrói estado transitório. Janelas legais do Bootstrap:
+       (a) abertura — backdrop existe e o modal ainda não tem .show (150-450ms);
+       (b) fechamento — modal perde .show na hora, o backdrop sai ~300ms depois.
+       Por isso um backdrop excedente só é removido se PERSISTIR por >=1200ms
+       (duas varreduras seguidas) SEM nenhuma abertura em andamento — o
+       backdrop órfão de verdade (instância perdida/estado desincronizado)
+       dura para sempre, então 1,2s não dói; o transitório legítimo não é
+       tocado. Varreduras: a cada 1s + a cada hidden.bs.modal. */
+    var _bgSuspeitoDesde = new Map();
     var _sweepModalBackdrops = function () {
       var abertos = 0;
       document.querySelectorAll(".modal.show").forEach(function (m) {
@@ -3842,26 +3889,54 @@
           abertos++;
         }
       });
-      if (abertos === 0) {
-        document.querySelectorAll(".modal-backdrop").forEach(function (b) { if (b.parentNode) b.parentNode.removeChild(b); });
+      var vivos = abertos + _modaisAbrindo.size;
+      var bgs = Array.prototype.slice.call(document.querySelectorAll(".modal-backdrop"));
+      var agora = Date.now();
+      if (!bgs.length && vivos === 0) {
         document.body.classList.remove("modal-open");
         document.body.style.removeProperty("overflow");
         document.body.style.removeProperty("padding-right");
-      } else {
-        if (!document.body.classList.contains("modal-open")) {
-          /* auditoria: nunca deixar um modal aberto sem o estado modal-open do body */
-          document.body.classList.add("modal-open");
+        _bgSuspeitoDesde.clear();
+        return;
+      }
+      /* backdrop VIVO = o que pertence a uma instância de modal mostrada ou em
+         abertura (o Bootstrap guarda o próprio elemento em _backdrop._element).
+         Sem isso, "contar" backdrops pode eleger o backdrop VERDADEIRO como
+         excedente e órfãos como vivos. Se a API interna mudar (size 0 com
+         vivos>0), não remove nada — nunca chuta. */
+      var bgsVivos = new Set();
+      var registrarBackdropVivo = function (m) {
+        try {
+          var instBv = bootstrap.Modal.getInstance(m);
+          if (instBv && instBv._backdrop && instBv._backdrop._element) bgsVivos.add(instBv._backdrop._element);
+        } catch (eBv) {}
+      };
+      document.querySelectorAll(".modal.show").forEach(registrarBackdropVivo);
+      _modaisAbrindo.forEach(registrarBackdropVivo);
+      var excedentes = (bgsVivos.size === 0 && vivos > 0) ? [] : bgs.filter(function (b) { return !bgsVivos.has(b); });
+      var removidos = false;
+      excedentes.forEach(function (b) {
+        if (!_bgSuspeitoDesde.has(b)) {
+          _bgSuspeitoDesde.set(b, agora); /* 1a observação: apenas marca */
+          return;
         }
-        /* bug do usuário ("<div class=modal-backdrop fade show></div>" na tela):
-           backdrop EXCEDENTE (instância duplicada/estado desincronizado) é a
-           tela cinza travada. Regra: no máximo 1 backdrop por modal aberto —
-           sobrou, o mais antigo (posição 0) sai, os últimos são do topo */
-        var bgsExcedentes = document.querySelectorAll(".modal-backdrop");
-        while (bgsExcedentes.length > abertos) {
-          var extra = bgsExcedentes[0];
-          if (extra && extra.parentNode) extra.parentNode.removeChild(extra);
-          bgsExcedentes = document.querySelectorAll(".modal-backdrop");
+        if (agora - _bgSuspeitoDesde.get(b) >= 1200) {
+          if (b.parentNode) b.parentNode.removeChild(b);
+          removidos = true;
+          _bgSuspeitoDesde.delete(b);
         }
+      });
+      /* deixou de ser excedente (virou vivo/saiu do DOM): esquece a marca */
+      _bgSuspeitoDesde.forEach(function (ts, b) {
+        if (excedentes.indexOf(b) === -1) _bgSuspeitoDesde.delete(b);
+      });
+      if (vivos > 0 && !document.body.classList.contains("modal-open")) {
+        document.body.classList.add("modal-open");
+      }
+      if (vivos === 0 && removidos) {
+        document.body.classList.remove("modal-open");
+        document.body.style.removeProperty("overflow");
+        document.body.style.removeProperty("padding-right");
       }
     };
     document.addEventListener("hidden.bs.modal", function () { _sweepModalBackdrops(); }, true);
@@ -4154,9 +4229,31 @@
             notify("✅ Requisição " + schemeT.toUpperCase() + " Direct enviada para " + testIp + "! Impressora pronta.", "success");
           })
           .catch(function () {
-            notify(schemeT === "https"
-              ? "⚠️ HTTPS não alcançou " + testIp + ". Link-OS 7.6+ usa certificado autoassinado: clique no link de aceitar o certificado acima, aceite em https://" + testIp + " e teste de novo."
-              : "⚠️ Requisição HTTP enviada. Verifique se o IP " + testIp + " está acessível na rede local.", "info");
+            if (schemeT === "https") {
+              /* Pedido 1.169g: certificado autoassinado não aceito → testa pela
+                 ponte local (print-server tolera o certificado próprio). O
+                 handshake recusado significa que NADA foi enviado — sem efeito
+                 colateral na impressora. */
+              notify("HTTPS direto não alcançou " + testIp + " (certificado autoassinado?) — testando pela ponte local...", "info");
+              fetch("http://localhost:3001/print-https", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ip: testIp, zpl: "^XA^XZ" })
+              })
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                if (j.ok) {
+                  notify("✅ Impressora respondeu HTTPS via ponte local — certificado tolerado, sem aceitar nada no navegador!", "success");
+                } else {
+                  notify("⚠️ HTTPS falhou também pela ponte: " + (j.error || "erro") + ". Confira o firmware (Link-OS 7.6+) e o IP " + testIp + ".", "danger");
+                }
+              })
+              .catch(function () {
+                notify("❌ HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando — rode: node print-server.js — ou aceite o certificado em https://" + testIp + " (Avançado → Prosseguir).", "danger");
+              });
+            } else {
+              notify("⚠️ Requisição HTTP enviada. Verifique se o IP " + testIp + " está acessível na rede local.", "info");
+            }
           });
       } else {
         notify("Testando servidor local de suporte (localhost:3001)...", "info");
@@ -11869,15 +11966,48 @@
           notify("✅ Comando ZPL transmitido com sucesso para " + ip + "!", "success");
         })
         .catch(function () {
-          notify(isExtensionDetected
-            ? "⚠️ Comando ZPL transmitido via Extensão Chrome para " + ip + "."
-            : (schemeZ === "https"
-              ? "⚠️ HTTPS não alcançou " + ip + " — Link-OS 7.6+ exige aceitar o certificado autoassinado (duplo clique no chip de IP — protocolo HTTPS — e clique no link de aceitar)."
-              : "⚠️ ZPL enviado via HTTP direto para " + ip + " — sem confirmação da impressora (confira a etiqueta impressa)."), "info");
+          if (schemeZ === "https") {
+            /* Pedido 1.169g: certificado autoassinado ainda não aceito — o
+               navegador recusa o handshake ANTES de enviar o POST (nada foi
+               impresso, sem risco de duplicata). Fallback: a ponte local
+               (print-server.js) imprime em HTTPS tolerando o certificado
+               próprio da impressora. */
+            notify("HTTPS direto não alcançou " + ip + " (certificado autoassinado) — tentando pela ponte local...", "info");
+            enviarHttpsViaServidorLocal(ip, zpl);
+          } else {
+            notify(isExtensionDetected
+              ? "⚠️ Comando ZPL transmitido via Extensão Chrome para " + ip + "."
+              : "⚠️ ZPL enviado via HTTP direto para " + ip + " — sem confirmação da impressora (confira a etiqueta impressa).", "info");
+          }
         });
       } else {
         enviarViaServidorLocal(ip, zpl, proto);
       }
+    }
+
+    /* Pedido 1.169g: HTTPS pela ponte local — o print-server envia o POST
+       /pstprnt com rejectUnauthorized:false (tolera o certificado
+       autoassinado da impressora), dispensando aceitar "Avançado →
+       Prosseguir" no navegador. Fallback do HTTPS direto: o navegador só
+       rejeita o fetch ANTES de enviar (handshake), então a etiqueta nunca
+       saiu — chamar depois não duplica. */
+    function enviarHttpsViaServidorLocal(ip, zpl) {
+      fetch("http://localhost:3001/print-https", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ip: ip, zpl: zpl })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.ok) {
+          notify("✅ Etiqueta enviada via HTTPS pela ponte local — sem precisar aceitar o certificado!", "success");
+        } else {
+          notify("HTTPS pela ponte local falhou: " + (j.error || "erro") + ". Alternativa manual: aceitar o certificado em https://" + ip + " (Avançado → Prosseguir).", "danger");
+        }
+      })
+      .catch(function () {
+        notify("HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando. Rode: node print-server.js — ou aceite o certificado em https://" + ip + " (Avançado → Prosseguir).", "danger");
+      });
     }
 
     function enviarViaServidorLocal(ip, zpl, proto) {
@@ -12028,9 +12158,11 @@
     }
 
     /* Abre o modal perguntando a quantidade; o callback recebe (qtd) ao confirmar. */
+    var printQtyGeracao = 0;
     function abrirModalQuantidadeImpressao(callback) {
       if (!bsModalPrintQty) { if (typeof callback === "function") callback(1); return; }
       printQtyCallback = callback;
+      printQtyGeracao++;
       var input = $("print-qty-input");
       var salvo = parseInt(localStorage.getItem(CHAVE_ULTIMA_QTD), 10);
       input.value = (salvo >= 1 && salvo <= 999) ? salvo : 1;
@@ -12066,11 +12198,29 @@
         localStorage.setItem(CHAVE_ULTIMA_QTD, String(qtd));
         var cb = printQtyCallback;
         printQtyCallback = null;
-        bsModalPrintQty.hide();
+        /* hide() e no-op se o modal ainda esta no fade de abertura (isTransitioning)
+           — confirm clicado rapido deixava a caixa aberta para sempre. Retry garante,
+           mas so ate a proxima abertura (token de geracao): retry antigo nao pode
+           fechar um modal reaberto pelo usuario (reabrir rapido matava o novo). */
+        var ger = printQtyGeracao;
+        try { bsModalPrintQty.hide(); } catch (eHideQ) {}
+        setTimeout(function () {
+          if (printQtyGeracao !== ger) return;
+          if (modalPrintQtyEl && modalPrintQtyEl.classList.contains("show")) {
+            try { bsModalPrintQty.hide(); } catch (eHideQ2) {}
+          }
+        }, 400);
         atualizarBarraStatusLote();
         if (typeof cb === "function") cb(qtd);
       });
+      /* hidden chega ATRASADO (~300ms, fade-out do backdrop). Se o usuario
+         reimprimir nesse intervalo, o hidden tardio nao pode anular o callback
+         da caixa recem-aberta (reimpressao rapida nao imprimia nada). So limpa
+         se nao houve nova abertura desde o inicio deste hide. */
+      var printQtyGeracaoEscondendo = 0;
+      modalPrintQtyEl.addEventListener("hide.bs.modal", function () { printQtyGeracaoEscondendo = printQtyGeracao; });
       modalPrintQtyEl.addEventListener("hidden.bs.modal", function () {
+        if (printQtyGeracao !== printQtyGeracaoEscondendo) return;
         printQtyCallback = null;
       });
     }
@@ -14974,7 +15124,7 @@
               <div class="col-md-4">
                 <div class="card p-3 h-100 border-0 shadow-sm">
                   <h6 class="fw-bold text-primary mb-2"><i class="fas fa-network-wired me-1"></i>Rede (IP)</h6>
-                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.6 ou mais novo?</strong> O /pstprnt só funciona em <strong>HTTPS</strong>: escolha o protocolo <strong>HTTPS Direct</strong> e clique no link de aceitar o certificado autoassinado (Avançado — Prosseguir) uma vez por sessão — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
+                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.6 ou mais novo?</strong> O /pstprnt só funciona em <strong>HTTPS</strong>: com o <strong>print-server.js local rodando</strong> o app imprime via HTTPS pela ponte automaticamente (certificado autoassinado tolerado — nada para aceitar); sem a ponte, aceite o certificado uma vez por sessão (Avançado — Prosseguir) — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
                 </div>
               </div>
               <div class="col-md-4">

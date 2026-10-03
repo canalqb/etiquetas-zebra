@@ -31,6 +31,7 @@
 "use strict";
 
 var http = require("http");
+var https = require("https");
 var net = require("net");
 
 var PORTA = 3001;            // porta do servidor HTTP local
@@ -446,6 +447,54 @@ function lerCorpo(req, limite, cb) {
   });
 }
 
+/* ---------------- HTTPS Direct (Pedido 1.169g) ----------------
+   Impressoras Link-OS 7.6+ atendem /pstprnt só em HTTPS, com certificado
+   AUTOASSINADO — o navegador recusa o handshake a menos que o usuário
+   aceite manualmente "Avançado → Prosseguir". A ponte envia o POST
+   tolerando o certificado próprio (rejectUnauthorized:false), então o app
+   usa esta rota como fallback automático do HTTPS direto: se o fetch do
+   navegador falhou, o handshake caiu ANTES do POST (nada foi impresso) —
+   sem risco de etiqueta duplicada. */
+function enviarHTTPS(ip, zpl, cb) {
+  var porta = parseInt(process.env.HTTPS_PORT, 10) || 443;
+  var respondido = false;
+  var req = https.request({
+    host: ip,
+    port: porta,
+    path: "/pstprnt",
+    method: "POST",
+    rejectUnauthorized: false,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Length": Buffer.byteLength(zpl, "utf8")
+    }
+  }, function (res) {
+    var pedacos = [];
+    res.on("data", function (d) { pedacos.push(d); });
+    res.on("end", function () {
+      if (respondido) return;
+      respondido = true;
+      var corpo = Buffer.concat(pedacos).toString("utf8").slice(0, 300);
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        cb(null, { porta: porta, status: res.statusCode, corpo: corpo });
+      } else {
+        cb(new Error("HTTPS " + porta + ": a impressora respondeu " + res.statusCode + (corpo ? " (" + corpo.slice(0, 120) + ")" : "")));
+      }
+    });
+  });
+  req.setTimeout(parseInt(process.env.HTTPS_SEND_TIMEOUT, 10) || 15000, function () {
+    req.destroy();
+    if (!respondido) { respondido = true; cb(new Error("HTTPS " + porta + ": tempo esgotado enviando para " + ip + " (sem resposta).")); }
+  });
+  req.on("error", function (e) {
+    if (!respondido) {
+      respondido = true;
+      cb(new Error("HTTPS " + porta + ": " + (e.code || e.message) + " — impressora sem HTTPS (firmware < 7.6?) ou porta " + porta + " fechada."));
+    }
+  });
+  req.end(zpl);
+}
+
 var servidor = http.createServer(function (req, res) {
   /* auditoria A1: o header CORS só sai para origens legítimas — origem de
      site aleatório não recebe ACAO e o preflight do navegador bloqueia a
@@ -507,6 +556,26 @@ var servidor = http.createServer(function (req, res) {
     return;
   }
 
+  /* Pedido 1.169g: HTTPS Direct com certificado próprio da impressora —
+     fallback automático do HTTPS direto do navegador. */
+  if (req.method === "POST" && req.url === "/print-https") {
+    lerCorpo(req, 1e6, function (corpoH) {
+      var dadosH;
+      try { dadosH = JSON.parse(corpoH || "{}"); }
+      catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
+      var ipH = String(dadosH.ip || "").trim();
+      var zplH = String(dadosH.zpl || "").trim();
+      var ipValidoH = /^(\d{1,3}\.){3}\d{1,3}$/.test(ipH) || /^[\w.-]+$/.test(ipH);
+      if (!ipH || !ipValidoH) { responder(res, 400, { ok: false, error: "IP da impressora inválido ou ausente" }); return; }
+      if (!zplH) { responder(res, 400, { ok: false, error: "ZPL vazio" }); return; }
+      enviarHTTPS(ipH, zplH, function (err, info) {
+        if (err) responder(res, 200, { ok: false, error: err.message });
+        else responder(res, 200, { ok: true, protocolo: "https", porta: info.porta, status: info.status, corpo: info.corpo });
+      });
+    });
+    return;
+  }
+
   if (req.method !== "POST" || req.url !== "/print") {
     responder(res, 404, { ok: false, error: "Use POST /print ou /print-one com {ip, zpl, protocol} ou POST /query-odbc|/query-db com {sql}" });
     return;
@@ -551,7 +620,7 @@ servidor.on("error", function (e) {
 });
 servidor.listen(PORTA, "127.0.0.1", function () {
   console.log("print-server Zebra escutando em http://localhost:" + PORTA);
-  console.log("Suporta impressao via FTP (porta " + FTP_PORTA + "), TCP (porta 9100), validacao por odometro (POST /print-one)");
+  console.log("Suporta impressao via FTP (porta " + FTP_PORTA + "), TCP (porta 9100), HTTPS Direct com certificado proprio (POST /print-https, 1.169g), validacao por odometro (POST /print-one)");
   console.log("e ponte de dados (POST /query-odbc, /query-db). A impressao HTTP(S) Direct e feita pelo proprio navegador.");
   console.log("Pedido 1.130: POST /print-one envia UMA etiqueta por vez e valida pelo odometro (TCP).");
 });
