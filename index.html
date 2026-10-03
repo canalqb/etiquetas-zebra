@@ -888,16 +888,15 @@
     .ribbon-elementos  { --rb-accent:#3b82f6; --rb-bg:rgba(59,130,246,.055); --rb-border:rgba(59,130,246,.18); }
  .ribbon-modelos    { --rb-accent:#5f97f8; --rb-bg:rgba(95,151,248,.085); --rb-border:rgba(95,151,248,.24); }
     .ribbon-exibicao  { --rb-accent:#98b5fb; --rb-bg:rgba(152,181,251,.13);  --rb-border:rgba(152,181,251,.33); }
-    /* Pedido 1.165: o ribbon Sistema (ribbon-reset) não tinha tema — as vars
-       indefinidas invalidavam borda/fundo no desktop e o grip/toggle/label
-       caíam em currentColor no drawer mobile. Vermelho danger, coerente com o
-       ícone "Nova Etiqueta + Limpar Armazenamento" do grupo. */
-    .ribbon-reset      { --rb-accent:#ef4444; --rb-bg:rgba(239,68,68,.05);   --rb-border:rgba(239,68,68,.20); }
+    /* Pedido 1.169b: o ribbon Sistema (ribbon-reset) segue as MESMAS cores
+       do ribbon-modelos (padrão azul único do projeto) — antes da 1.165 era
+       vermelho danger, destoando dos demais grupos. */
+    .ribbon-reset      { --rb-accent:#5f97f8; --rb-bg:rgba(95,151,248,.085); --rb-border:rgba(95,151,248,.24); }
     [data-bs-theme="dark"] .ribbon-elementos  { --rb-bg:rgba(59,130,246,.10);  --rb-border:rgba(96,165,250,.30); }
  [data-bs-theme="dark"] .ribbon-modelos    { --rb-bg:rgba(95,151,248,.14);  --rb-border:rgba(116,175,250,.36); }
 
     [data-bs-theme="dark"] .ribbon-exibicao  { --rb-bg:rgba(152,181,251,.20);  --rb-border:rgba(160,190,252,.45); }
-    [data-bs-theme="dark"] .ribbon-reset    { --rb-bg:rgba(239,68,68,.10);   --rb-border:rgba(248,113,113,.32); }
+    [data-bs-theme="dark"] .ribbon-reset    { --rb-bg:rgba(95,151,248,.14);  --rb-border:rgba(116,175,250,.36); }
 
     /* Ribbon Exibição: toggles de Régua/Grade/Grade Etiqueta/Snap — ícones on/off
        (regra universal: OFF em preto e branco, ON colorido no tom do ribbon) */
@@ -1058,6 +1057,8 @@
         flex-wrap: wrap; row-gap: 8px;
         justify-content: flex-start;
       }
+      /* Pedido 1.169c: rótulos dos grupos de alinhamento (Etiqueta / Entre si) */
+      .sel-toolbar-grupo-label { font-size: .62rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--zebra-muted); margin-right: .1rem; white-space: nowrap; align-self: center; }
       #editor-elemento-card .vr { display: none; }
       #form-inspector .row { row-gap: .5rem; }
 
@@ -1556,7 +1557,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.020</span>
+      <span class="brand-ver">v1.021</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1778,8 +1779,8 @@
                 </button>
               <div class="dnv-dropdown dnv-submenu" id="dnv-dd-modelo" role="menu">
                 <span class="dnv-dropdown-header">Páginas</span>
-                <button type="button" class="dnv-dropdown-item" id="dnv-adic-8675i-barcodes" role="menuitem" title="Honeywell 8675i — Códigos de Barras (Configuração do Scanner)">
-                  <i class="fas fa-file-code dnv-icon text-success"></i> Codigos-de-Barras-8675i.html
+                 <button type="button" class="dnv-dropdown-item" id="dnv-adic-8675i-barcodes" role="menuitem" title="Honeywell 8675i — Códigos de Barras">
+                   <i class="fas fa-file-code dnv-icon text-success"></i> Códigos de Barras — 8675i.html
                 </button>
               </div>
             </div>
@@ -1881,7 +1882,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.020</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.021</span>
         </div>
       </div>
 
@@ -2221,16 +2222,33 @@
                       <button type="button" class="icon-btn icon-btn-info icon-btn-sm" id="sel-btn-paste" title="Colar (Ctrl+V)"><i class="fas fa-paste"></i></button>
                       <button type="button" class="icon-btn icon-btn-danger icon-btn-sm" id="sel-btn-del" title="Deletar selecionados (Delete)"><i class="fas fa-trash"></i></button>
                       <div class="vr mx-1" style="height:16px;"></div>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top" title="Alinhar ao topo da etiqueta" aria-label="Alinhar ao topo"><i class="bi bi-align-top"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom" title="Alinhar à parte inferior da etiqueta" aria-label="Alinhar à parte inferior"><i class="bi bi-align-bottom"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left" title="Alinhar à esquerda da etiqueta" aria-label="Alinhar à esquerda"><i class="bi bi-align-start"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right" title="Alinhar à direita da etiqueta" aria-label="Alinhar à direita"><i class="bi bi-align-end"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-center" title="Centralizar na etiqueta" aria-label="Centralizar na etiqueta"><i class="fas fa-arrows-to-dot"></i></button>
-                      <!-- Pedido 1.135: borda + centrado no outro eixo (9 posições completas) -->
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top-center" title="Topo ao centro — encosta no topo e centraliza na horizontal" aria-label="Topo centralizado"><i class="bi bi-arrow-up-circle"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom-center" title="Inferior ao centro — encosta embaixo e centraliza na horizontal" aria-label="Inferior centralizado"><i class="bi bi-arrow-down-circle"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left-center" title="Esquerda ao centro — encosta à esquerda e centraliza na vertical" aria-label="Esquerda centralizada"><i class="bi bi-arrow-left-circle"></i></button>
-                      <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right-center" title="Direita ao centro — encosta à direita e centraliza na vertical" aria-label="Direita centralizada"><i class="bi bi-arrow-right-circle"></i></button>
+                      <!-- Pedido 1.169c: alinhamentos em 2 grupos bem definidos.
+                           ETIQUETA: encaixa o(s) elemento(s) nos padrões da etiqueta —
+                           com vários selecionados, o grupo inteiro se move junto
+                           preservando as posições relativas. ENTRE SI: alinha os
+                           elementos entre eles — só aparece com 2+ selecionados. -->
+                      <div class="d-flex align-items-center gap-1" id="sel-align-grupo-etiqueta" role="group" aria-label="Alinhar em relação à etiqueta" title="Alinhamento em relação à etiqueta">
+                        <span class="sel-toolbar-grupo-label">Etiqueta</span>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top" title="Alinhar ao topo da etiqueta" aria-label="Alinhar ao topo"><i class="bi bi-align-top"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom" title="Alinhar à parte inferior da etiqueta" aria-label="Alinhar à parte inferior"><i class="bi bi-align-bottom"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left" title="Alinhar à esquerda da etiqueta" aria-label="Alinhar à esquerda"><i class="bi bi-align-start"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right" title="Alinhar à direita da etiqueta" aria-label="Alinhar à direita"><i class="bi bi-align-end"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-center" title="Centralizar na etiqueta" aria-label="Centralizar na etiqueta"><i class="fas fa-arrows-to-dot"></i></button>
+                        <!-- Pedido 1.135: borda + centrado no outro eixo (9 posições completas) -->
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-top-center" title="Topo ao centro — encosta no topo e centraliza na horizontal" aria-label="Topo centralizado"><i class="bi bi-arrow-up-circle"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-bottom-center" title="Inferior ao centro — encosta embaixo e centraliza na horizontal" aria-label="Inferior centralizado"><i class="bi bi-arrow-down-circle"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-left-center" title="Esquerda ao centro — encosta à esquerda e centraliza na vertical" aria-label="Esquerda centralizada"><i class="bi bi-arrow-left-circle"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-align-right-center" title="Direita ao centro — encosta à direita e centraliza na vertical" aria-label="Direita centralizada"><i class="bi bi-arrow-right-circle"></i></button>
+                      </div>
+                      <div class="d-flex align-items-center gap-1 d-none" id="sel-align-grupo-entre-si" role="group" aria-label="Alinhar elementos selecionados entre si" title="Alinhamento entre os elementos selecionados">
+                        <span class="sel-toolbar-grupo-label">Entre si</span>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-entre-esq" title="Entre si — bordas esquerdas" aria-label="Alinhar bordas esquerdas entre si"><i class="bi bi-align-start"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-entre-centro-h" title="Entre si — centros na horizontal" aria-label="Centros na horizontal entre si"><i class="bi bi-align-center"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-entre-dir" title="Entre si — bordas direitas" aria-label="Alinhar bordas direitas entre si"><i class="bi bi-align-end"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-entre-topo" title="Entre si — topos" aria-label="Alinhar topos entre si"><i class="bi bi-align-top"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-entre-centro-v" title="Entre si — centros na vertical" aria-label="Centros na vertical entre si"><i class="bi bi-align-middle"></i></button>
+                        <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="sel-btn-entre-baixo" title="Entre si — bases" aria-label="Alinhar bases entre si"><i class="bi bi-align-bottom"></i></button>
+                      </div>
                       <div class="vr mx-1" style="height:16px;"></div>
                       <button type="button" class="icon-btn icon-btn-dark icon-btn-sm" id="btn-style-bold" title="Negrito (Simulado)"><i class="fas fa-bold"></i></button>
                       <button type="button" class="icon-btn icon-btn-dark icon-btn-sm" id="btn-style-italic" title="Itálico (Apenas Visual)"><i class="fas fa-italic"></i></button>
@@ -3241,7 +3259,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.020</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.021</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -5138,14 +5156,20 @@
           toolbar.classList.add("d-none");
           toolbar.style.display = "none";
         }
+        /* Pedido 1.169c: o grupo "Entre si" só aparece com 2+ selecionados —
+           vale para qualquer estado da toolbar (inclusive ao limpar seleção) */
+        var gEntre = document.getElementById("sel-align-grupo-entre-si");
+        if (gEntre) gEntre.classList.toggle("d-none", selectedElIds.length < 2);
       }
       renderInspector();
     }
 
     /* ---------------- Mini Modal: editar conteúdo de QR Code/Código de Barras (duplo clique) ---------------- */
     var editandoDadoId = null;
+    var editandoDadoTextoOriginal = ""; /* Pedido 1.169d: base p/ desfazer no Cancelar */
     function abrirModalEditarDado(el) {
       editandoDadoId = el.id;
+      editandoDadoTextoOriginal = el.texto || "";
       var titulo = document.getElementById("modal-dado-label");
       var campo = document.getElementById("modal-dado-input");
       if (titulo) {
@@ -5228,6 +5252,34 @@
           if ((el.simbologia || simbologiaPadrao(el.tipo)) === this.value) return;
           el.simbologia = this.value;
           renderStudio();
+        });
+      }
+      /* Pedido 1.169d: o conteúdo aplica NA HORA enquanto digita (debounce de
+         250ms) — a prévia segue a digitação sem esperar Salvar. Cancelar/X/ESC
+         desfaz: o texto original é restaurado no hidden do modal. */
+      var tDadoLive = null;
+      campo.addEventListener("input", function () {
+        if (!editandoDadoId) return;
+        var val = this.value;
+        if (tDadoLive) clearTimeout(tDadoLive);
+        tDadoLive = setTimeout(function () {
+          tDadoLive = null;
+          var el = elements.find(function (e) { return e.id === editandoDadoId; });
+          if (!el || (el.texto || "") === val) return;
+          el.texto = val;
+          renderStudio();
+        }, 250);
+      });
+      var modalElDado = document.getElementById("modal-editar-dado");
+      if (modalElDado) {
+        modalElDado.addEventListener("hidden.bs.modal", function () {
+          if (!editandoDadoId) return; /* Salvar já confirmou e consumiu o id */
+          var el = elements.find(function (e) { return e.id === editandoDadoId; });
+          editandoDadoId = null;
+          if (el && (el.texto || "") !== editandoDadoTextoOriginal) {
+            el.texto = editandoDadoTextoOriginal;
+            renderStudio();
+          }
         });
       }
     })();
@@ -5918,47 +5970,10 @@
       });
       var gW = maxX - minX, gH = maxY - minY;
 
-      /* Pedido 1.135: com 2+ elementos selecionados o alinhamento é ENTRE ELES
-         (bordas/centros do próprio grupo, estilo editores profissionais); com
-         1 elemento continua relativo à etiqueta. */
-      if (alvos.length >= 2) {
-        var cxGrupo = (minX + maxX) / 2;
-        var cyGrupo = (minY + maxY) / 2;
-        alvos.forEach(function (el, i) {
-          var b = caixas[i];
-          var dx = 0, dy = 0;
-          if (direcao === "esquerda")       dx = minX - b.x;
-          else if (direcao === "direita")   dx = maxX - (b.x + b.w);
-          else if (direcao === "topo")      dy = minY - b.y;
-          else if (direcao === "baixo")     dy = maxY - (b.y + b.h);
-          else if (direcao === "centro") {
-            dx = cxGrupo - (b.x + b.w / 2);
-            dy = cyGrupo - (b.y + b.h / 2);
-          } else if (direcao === "topo-centro") {
-            dy = minY - b.y;
-            dx = cxGrupo - (b.x + b.w / 2);
-          } else if (direcao === "baixo-centro") {
-            dy = maxY - (b.y + b.h);
-            dx = cxGrupo - (b.x + b.w / 2);
-          } else if (direcao === "esquerda-centro") {
-            dx = minX - b.x;
-            dy = cyGrupo - (b.y + b.h / 2);
-          } else if (direcao === "direita-centro") {
-            dx = maxX - (b.x + b.w);
-            dy = cyGrupo - (b.y + b.h / 2);
-          }
-          el.x += dx;
-          el.y += dy;
-          restringirLimitesElemento(el, dW, dH);
-        });
-        salvarHistorico();
-        renderStudio();
-        var rotGrupo = { topo: "topo entre si", baixo: "base entre si", esquerda: "esquerda entre si", direita: "direita entre si",
-                         centro: "centro entre si", "topo-centro": "topo (centrados entre si)", "baixo-centro": "base (centrados entre si)",
-                         "esquerda-centro": "esquerda (centrados entre si)", "direita-centro": "direita (centrados entre si)" };
-        notify(alvos.length + " elementos alinhados ao " + (rotGrupo[direcao] || direcao) + ".", "success");
-        return;
-      }
+      /* Pedido 1.169c: o alinhamento ENTRE elementos virou grupo próprio na
+         toolbar (alinharEntreSi). Este aqui alinha sempre em relação à
+         ETIQUETA — com 1 elemento ou com vários: a caixa comum do grupo se
+         move inteira, preservando as posições relativas entre eles. */
 
       /* 1 elemento: as 9 posições da etiqueta (Pedido 1.135 completa o grid) */
       var dx = 0, dy = 0;
@@ -5984,7 +5999,48 @@
       var rotulos = { topo: "topo", baixo: "parte inferior", esquerda: "esquerda", direita: "direita", centro: "centro",
                       "topo-centro": "topo (centrado)", "baixo-centro": "parte inferior (centrado)",
                       "esquerda-centro": "esquerda (centrado)", "direita-centro": "direita (centrado)" };
-      notify("Elemento alinhado ao " + rotulos[direcao] + " da etiqueta.", "success");
+      notify((alvos.length > 1 ? alvos.length + " elementos alinhados ao " : "Elemento alinhado ao ") + rotulos[direcao] + " da etiqueta.", "success");
+    }
+    /* Pedido 1.169c: alinhamento ENTRE OS ELEMENTOS selecionados — o grupo
+       "Entre si" da toolbar só aparece com 2+, e a função também se protege. */
+    function alinharEntreSi(direcao) {
+      var ids = selectedElIds.length ? selectedElIds : (selectedElId ? [selectedElId] : []);
+      if (ids.length < 2) { notify("Selecione 2 ou mais elementos para alinhar entre si.", "warning"); return; }
+
+      var sz = SIZES[tamAtualKey] || SIZES["100x50"];
+      var dW = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
+      var dH = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
+      var alvos = elements.filter(function (el) { return ids.indexOf(el.id) !== -1; });
+      if (alvos.length < 2) { notify("Selecione 2 ou mais elementos para alinhar entre si.", "warning"); return; }
+
+      var caixas = alvos.map(function (el) { return bboxVisualElemento(el, dW, dH); });
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      caixas.forEach(function (b) {
+        if (b.x < minX) minX = b.x;
+        if (b.y < minY) minY = b.y;
+        if (b.x + b.w > maxX) maxX = b.x + b.w;
+        if (b.y + b.h > maxY) maxY = b.y + b.h;
+      });
+      var cxGrupo = (minX + maxX) / 2;
+      var cyGrupo = (minY + maxY) / 2;
+      alvos.forEach(function (el, i) {
+        var b = caixas[i];
+        var dx = 0, dy = 0;
+        if (direcao === "esquerda")       dx = minX - b.x;
+        else if (direcao === "direita")   dx = maxX - (b.x + b.w);
+        else if (direcao === "topo")      dy = minY - b.y;
+        else if (direcao === "baixo")     dy = maxY - (b.y + b.h);
+        else if (direcao === "centro-h")  dx = cxGrupo - (b.x + b.w / 2);
+        else if (direcao === "centro-v")  dy = cyGrupo - (b.y + b.h / 2);
+        el.x += dx;
+        el.y += dy;
+        restringirLimitesElemento(el, dW, dH);
+      });
+      salvarHistorico();
+      renderStudio();
+      var rotEntre = { esquerda: "bordas esquerdas", "centro-h": "centros na horizontal", direita: "bordas direitas",
+                       topo: "topos", "centro-v": "centros na vertical", baixo: "bases" };
+      notify(alvos.length + " elementos alinhados entre si — " + (rotEntre[direcao] || direcao) + ".", "success");
     }
     if ($("sel-btn-align-top"))     $("sel-btn-align-top").addEventListener("click", function () { alinharSelecionados("topo"); });
     if ($("sel-btn-align-bottom"))  $("sel-btn-align-bottom").addEventListener("click", function () { alinharSelecionados("baixo"); });
@@ -5995,6 +6051,13 @@
     if ($("sel-btn-align-bottom-center")) $("sel-btn-align-bottom-center").addEventListener("click", function () { alinharSelecionados("baixo-centro"); });
     if ($("sel-btn-align-left-center"))   $("sel-btn-align-left-center").addEventListener("click", function () { alinharSelecionados("esquerda-centro"); });
     if ($("sel-btn-align-right-center"))  $("sel-btn-align-right-center").addEventListener("click", function () { alinharSelecionados("direita-centro"); });
+    /* Pedido 1.169c: grupo "Entre si" (visível só com 2+ selecionados) */
+    if ($("sel-btn-entre-esq"))      $("sel-btn-entre-esq").addEventListener("click", function () { alinharEntreSi("esquerda"); });
+    if ($("sel-btn-entre-centro-h")) $("sel-btn-entre-centro-h").addEventListener("click", function () { alinharEntreSi("centro-h"); });
+    if ($("sel-btn-entre-dir"))      $("sel-btn-entre-dir").addEventListener("click", function () { alinharEntreSi("direita"); });
+    if ($("sel-btn-entre-topo"))     $("sel-btn-entre-topo").addEventListener("click", function () { alinharEntreSi("topo"); });
+    if ($("sel-btn-entre-centro-v")) $("sel-btn-entre-centro-v").addEventListener("click", function () { alinharEntreSi("centro-v"); });
+    if ($("sel-btn-entre-baixo"))    $("sel-btn-entre-baixo").addEventListener("click", function () { alinharEntreSi("baixo"); });
 
     // Atalhos de teclado globais (Ctrl no PC, ⌘ Cmd no Mac)
     function ehDispositivoToque() {
@@ -13398,7 +13461,7 @@
         titulo: "8675i — Páginas",
         voltar: "honeywell",
         itens: [
-          { id: "adic-mob-codigos", icone: "fa-file-code", texto: "Codigos-de-Barras-8675i.html", acao: "codigos" }
+          { id: "adic-mob-codigos", icone: "fa-file-code", texto: "Códigos de Barras — 8675i.html", acao: "codigos" }
         ]
       },
       xerox: {
@@ -14296,7 +14359,7 @@
                 <li><strong>Várias etiquetas diferentes</strong> no mesmo projeto — ao imprimir, todas saem juntas.</li>
                 <li><strong>Modelos prontos</strong> de um clique, e os seus próprios modelos salvos no navegador.</li>
                 <li><strong>Pré-visualização</strong> fiel do papel e <strong>salvar a etiqueta como imagem</strong> (PNG).</li>
-                <li><strong>Alinhamento profissional</strong>: encaixe o elemento em 9 posições da etiqueta, ou alinhe <strong>vários elementos entre si</strong> (bordas e centros do próprio grupo).</li>
+                <li><strong>Alinhamento profissional</strong>: dois grupos bem separados na barra — <strong>Etiqueta</strong> (encaixa em 9 posições; com vários selecionados o grupo inteiro se move junto) e <strong>Entre si</strong> (bordas e centros dos próprios elementos; aparece só com 2+).</li>
                 <li><strong>Impressão</strong> por cabo USB, rede (IP) ou Bluetooth, com quantidade de cópias.</li>
                 <li><strong>Impressão em tempo real</strong>: o envio mostra o progresso e, se a impressora avisar falta de papel ou outro erro, o aviso aparece na hora.</li>
                 <li><strong>Para Empresas</strong>, Sobre, Contato e as páginas de segurança/termos abrem <strong>dentro do próprio aplicativo</strong>, em janela — nada sai da página.</li>
@@ -14504,7 +14567,7 @@
                   <ul class="small text-muted mb-0 ps-3">
                     <li>Com um ou mais elementos marcados, a barra oferece <strong>Copiar, Recortar, Colar e Excluir</strong>.</li>
                     <li><strong>Negrito</strong>, <strong>Itálico</strong> e <strong>Sublinhado</strong> para textos.</li>
-                    <li><strong>Alinhamento</strong> — com 1 elemento selecionado, encaixa em <strong>9 posições da etiqueta</strong> (topo, base, esquerda, direita, centro e as quatro combinações de borda + centro). Com <strong>2 ou mais</strong> selecionados, os elementos são alinhados <strong>entre si</strong> — bordas e centros do próprio grupo, como em editores profissionais.</li>
+                    <li><strong>Alinhamento</strong> — a barra separa em dois grupos: <strong>Etiqueta</strong> encaixa o(s) elemento(s) em <strong>9 posições</strong> (topo, base, esquerda, direita, centro e as quatro combinações de borda + centro; com vários selecionados, o grupo inteiro se move junto, preservando as posições relativas). <strong>Entre si</strong> — só aparece com <strong>2 ou mais</strong> selecionados — alinha bordas esquerdas/direitas, topos/bases e centros na horizontal/vertical, como em editores profissionais.</li>
                     <li>A aba <strong>Elementos</strong> lista tudo que existe na etiqueta com contagem ao vivo — clique num item para localizá-lo e editá-lo.</li>
                   </ul>
                 </div>
