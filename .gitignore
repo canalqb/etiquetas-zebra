@@ -12,10 +12,11 @@ inline_0.js
 analisegenerica.txt
 projeto_implementacao.md
 plano-*.md
+dados.csv
+pdf/
 
 # Dados de teste do usuário e material de referência — NÃO publicar
 Lexmark.xlsx
-zpl-zbi2-pg-en.pdf
 modelo-*.zpl
 adicionais/**/catalogo-original.*
 
@@ -25,4 +26,3 @@ instalador lexmark.txt
 honeywell.txt
 Lexmark/
 Xerox_C415/
-Link-OS-7.6.2-Release-Notes.pdf
