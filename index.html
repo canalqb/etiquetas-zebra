@@ -1565,7 +1565,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.027</span>
+      <span class="brand-ver">v1.028</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1907,7 +1907,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.027</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.028</span>
         </div>
       </div>
 
@@ -2481,7 +2481,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.027</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.028</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -5109,7 +5109,22 @@
           if (!el.texto || el.texto.trim() === "") return;
           var _qSimb = el.simbologia || "qr";
           if (_qSimb !== "qr") {
-            /* Pedido 1.120 (fase inicial): 2D sem QR (Data Matrix, PDF-417 etc.) via bwip-js */
+            /* Pedido 1.120 (fase inicial): 2D sem QR (Data Matrix, PDF-417 etc.) via bwip-js.
+               Pedido 1.164: simbologias com magnificação controlável no ZPL (^BQ GS1,
+               ^BR DataBar) fazem snap da caixa nos módulos reais do bwip-js — preview
+               e impressão idênticos; as demais (Data Matrix, PDF-417…) seguem a caixa
+               (comando nativo com defaults). */
+            var _q2dInfo = simbologiaInfo(_qSimb) || {};
+            if (_qSimb === "gs1_qr" || _q2dInfo.br) {
+              var _cv2d = bwipCanvas(_qSimb, el.texto);
+              if (_cv2d) {
+                var _mw2d = Math.max(1, Math.round(_cv2d.width / 3));
+                var _mh2d = Math.max(1, Math.round(_cv2d.height / 3));
+                var _mag2d = Math.max(1, Math.min(10, Math.floor(Math.min((el.w || 200) / _mw2d, (el.h || 200) / _mh2d))));
+                el.w = _mag2d * _mw2d;
+                el.h = _mag2d * _mh2d;
+              }
+            }
             div.style.width = dotsToMm(el.w || 200) + "mm";
             div.style.height = dotsToMm(el.h || 200) + "mm";
             var _q2dHtml = bwipImgHtml(_qSimb, el.texto);
@@ -5120,7 +5135,11 @@
             var _cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia));
             var _qMods = _cachedQr ? _cachedQr.count : 33;
             var _qMag = Math.max(1, Math.floor(_qSide / _qMods));
-            var szMm = dotsToMm(Math.round(_qMag * _qMods));
+            /* Pedido 1.164 — snap da caixa no MODELO (não só no estilo): preview,
+               canvas de exportação e ^BQ do ZPL passam a ver o mesmo tamanho */
+            el.w = _qMag * _qMods;
+            el.h = _qMag * _qMods;
+            var szMm = dotsToMm(el.w);
             div.style.width = szMm + "mm";
             div.style.height = szMm + "mm";
             if (_cachedQr) {
@@ -5132,13 +5151,17 @@
             }
           }
         } else if (el.tipo === "barcode") {
-          var modW = Math.max(1, Math.min(10, Math.round((el.w || 300) / 120)));
-          el.w = modW * 120;
+          /* Pedido 1.164 — WYSIWYG por módulos reais: modW = floor(caixa/módulos da
+             simbologia+dados) e caixa snapada para múltiplo exato — preview e
+             impressão (^BY) idênticos; floor = impresso nunca estoura o vizinho. */
+          var medBc = barcodeMedidas(el.texto, el.simbologia);
+          var modW = Math.max(1, Math.min(10, Math.floor((el.w || 300) / medBc.mods)));
+          el.w = modW * medBc.mods;
           var bcW = dotsToMm(el.w);
           var bcH = dotsToMm(el.h || 100);
           div.style.width = bcW + "mm";
           div.style.height = bcH + "mm";
-          var bcHtml = barcodeObter(el.texto, el.simbologia);
+          var bcHtml = barcodeObter(el.texto, el.simbologia, el.h || 100);
           if (bcHtml) {
             div.innerHTML = bcHtml;
             var svgBc = div.querySelector("svg");
@@ -7769,7 +7792,9 @@
             var _qSide = Math.min(it.w || 200, it.h || 200);
             var _cachedQrZ = qrObter(it.texto, qrNivelDe(_qSimbZ));
             var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
-            var mag = Math.max(1, Math.round(_qSide / _qMods));
+            /* Pedido 1.164: floor — impresso nunca estoura a caixa (com o snap
+               do preview, floor × módulos é exatamente a caixa) */
+            var mag = Math.max(1, Math.floor(_qSide / _qMods));
             if (mag <= 10) {
               /* Faixa nativa: ^BQ aceita magnificação 1–10 */
               p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + "," + qrNivelDe(_qSimbZ) + "^FDLA," + sanitizar(it.texto) + "^FS");
@@ -7805,7 +7830,15 @@
               } else {
                 dadosGs1Z = sanitizar(it.texto);
               }
-              var parsQGs1 = _qSimbZ === "gs1_qr" ? ",2," + Math.max(1, Math.min(10, Math.round(Math.min(it.w || 200, it.h || 200) / 33))) + ",Q" : "";
+              /* Pedido 1.164: magnificação pelos módulos REAIS do QR GS1 (era o
+                 chute /33) — floor + snap do preview = caixa idêntica à impressão */
+              var magQGs1 = 2;
+              if (_qSimbZ === "gs1_qr") {
+                var cvQGs1 = bwipCanvas("gs1_qr", it.texto);
+                var modsQGs1 = cvQGs1 ? Math.max(1, Math.round(cvQGs1.width / 3)) : 33;
+                magQGs1 = Math.max(1, Math.min(10, Math.floor(Math.min(it.w || 200, it.h || 200) / modsQGs1)));
+              }
+              var parsQGs1 = _qSimbZ === "gs1_qr" ? ",2," + magQGs1 + ",Q" : "";
               p.push("^FO" + px + "," + py + _infoQ2dZ.zpl + rC + parsQGs1 + "^FH^FD_1D" + dadosGs1Z + "^FS");
             } else if (_infoQ2dZ.br) {
               /* Pedido 1.149 — família ^BR completa (ZPL II Guide): b = tipo
@@ -7816,10 +7849,17 @@
                  (formato 1.141). VERIFICAR na impressora real. */
               var camposBr = gs1CamposZpl(it.texto);
               var dadosBr = camposBr ? camposBr.join("") : sanitizar(it.texto);
-              var cBr = Math.max(1, Math.min(10, Math.round((it.w || 200) / 96)));
+              /* Pedido 1.164: magnificação c pelos módulos REAIS do bwip-js (eram
+                 chutes /96 no ^BR e /100 no ^BY) — floor da razão menor (largura e
+                 altura: DataBar empilhado cresce nos dois eixos) + snap do preview */
+              var cvBr = bwipCanvas(_qSimbZ, it.texto);
+              var modsBr = cvBr ? Math.max(1, Math.round(cvBr.width / 3)) : 96;
+              var altoBr = cvBr ? Math.max(1, Math.round(cvBr.height / 3)) : 0;
+              var razaoBr = altoBr ? Math.min((it.w || 200) / modsBr, (it.h || 200) / altoBr) : (it.w || 200) / modsBr;
+              var cBr = Math.max(1, Math.min(10, Math.floor(razaoBr)));
               var cmdBr = "^BR" + rC + "," + _infoQ2dZ.br + "," + cBr + ",1";
               if (_infoQ2dZ.fSeg) cmdBr += ",," + _infoQ2dZ.fSeg;
-              p.push("^FO" + px + "," + py + "^BY" + Math.max(2, Math.min(10, Math.round((it.w || 200) / 100))) + cmdBr + "^FD" + dadosBr + "^FS");
+              p.push("^FO" + px + "," + py + "^BY" + cBr + cmdBr + "^FD" + dadosBr + "^FS");
             } else if (!_infoQ2dZ.zpl) {
               /* Pedido 1.141 — Micro QR: sem comando nativo (^BQ só tem modelos
                  1/2) → fallback gráfico ^GFA no tamanho da caixa. */
@@ -7831,9 +7871,19 @@
             }
           }
         } else if (it.tipo === "barcode") {
-          var bcH = Math.round(it.h || 80);
-          var modW = Math.max(1, Math.min(10, Math.round((it.w || 300) / 120)));
+          /* Pedido 1.164 — WYSIWYG: modW pelos módulos REAIS da simbologia+dados
+             (mesma conta do preview), caixa el.h = footprint TOTAL (barras +
+             linha de interpretação com altura determinística via ^A0N antes do
+             barcode — a linha não invade mais o elemento de baixo). Formatos
+             previewizados por bwip-js (Code 93, add-ons, GS1-128) saem SEM linha
+             no ZPL (= preview, barras na caixa inteira) — exceto GS1-128, que
+             mantém a linha (AIs legíveis: exigência GS1). */
           var info1dZ = simbologiaInfo(it.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
+          var med1dZ = barcodeMedidas(it.texto, it.simbologia || "code128");
+          var modW = Math.max(1, Math.min(10, Math.floor((it.w || 300) / med1dZ.mods)));
+          var temLinha1d = !info1dZ.bwip || !!info1dZ.gs1;
+          var bcH = barcodeBarrasH(it.h || 80, temLinha1d);
+          var pre1d = (temLinha1d ? "^A0N" + barcodeLinhaH(it.h || 80) + ",0" : "") + "^BY" + modW;
           if (info1dZ.chave === "gs1_128") {
             /* Pedido 1.141 — ^BC modo D (UCC/EAN, GS1-128): a impressora insere
                o FNC1, calcula o check digit, tira os parênteses da codificação
@@ -7841,7 +7891,7 @@
                Pedido 1.149: o ^FD sai pelo gs1FdModoD — ">8" (FNC1) entre
                AIs de comprimento variável e o próximo (exemplo oficial do
                guia: (91)0005886>8(10)0000410549>8(99)05). */
-            p.push("^FO" + px + "," + py + "^BY" + modW + "^BC" + rC + "," + bcH + ",Y,N,N,D^FD" + gs1FdModoD(it.texto) + "^FS");
+            p.push("^FO" + px + "," + py + pre1d + "^BC" + rC + "," + bcH + ",Y,N,N,D^FD" + gs1FdModoD(it.texto) + "^FS");
           } else if (info1dZ.addon) {
             /* Pedido 1.149 — add-on +2/+5 NATIVO via ^BS (ZPL II Guide,
                "UPC/EAN Extensions", feito p/ ISBN/UPC-E): o principal sai no
@@ -7855,15 +7905,15 @@
             var mainAd = (partesAd[0] || "").slice(0, 14);
             var compAd = (partesAd[1] || "").slice(0, 5);
             if (mainAd) {
-              var parsAd = "," + bcH + ",Y,N" + (info1dZ.n !== 4 ? ",N" : "");
-              p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + parsAd + "^FD" + sanitizar(mainAd) + "^FS");
+              var parsAd = "," + bcH + ",N,N" + (info1dZ.n !== 4 ? ",N" : "");
+              p.push("^FO" + px + "," + py + pre1d + info1dZ.zpl + rC + parsAd + "^FD" + sanitizar(mainAd) + "^FS");
               if (compAd) {
                 var gapAd = 4 * modW;
                 var extAd = (info1dZ.mods || 95) * modW + gapAd;
                 var dxAd = rC === "R" ? 0 : (rC === "I" ? -extAd : extAd);
                 var dyAd = rC === "R" ? extAd : (rC === "B" ? -extAd : 0);
                 var hAd = Math.max(1, bcH - 27);
-                p.push("^FO" + (px + dxAd) + "," + (py + dyAd) + "^BS" + rC + "," + hAd + ",Y,Y^FD" + sanitizar(compAd) + "^FS");
+                p.push("^FO" + (px + dxAd) + "," + (py + dyAd) + "^BY" + modW + "^BS" + rC + "," + hAd + ",N,N^FD" + sanitizar(compAd) + "^FS");
               }
             }
           } else if (!info1dZ.zpl) {
@@ -7874,8 +7924,8 @@
           } else {
             /* nº de parâmetros após a orientação: ^BC/^B3/^BA/^BU/^BM/^BK levam
                altura,linha,acima,check; ^BE/^B8/^B2 levam altura,linha,acima */
-            var pars1dZ = "," + bcH + ",Y,N" + (info1dZ.n !== 4 ? ",N" : "");
-            p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + pars1dZ + "^FD" + sanitizar(it.texto) + "^FS");
+            var pars1dZ = "," + bcH + (temLinha1d ? ",Y,N" : ",N,N") + (info1dZ.n !== 4 ? ",N" : "");
+            p.push("^FO" + px + "," + py + pre1d + info1dZ.zpl + rC + pars1dZ + "^FD" + sanitizar(it.texto) + "^FS");
           }
         } else if (it.tipo === "linha") {
           var esp = Math.round(it.espessura || it.h || 3);
@@ -8197,17 +8247,63 @@
       return out;
     }
 
+    /* Pedido 1.164 — medidas REAIS da simbologia+dados: nº de módulos de largura
+       (e de altura, para os 2D via bwip). JsBarcode: render com width:1 e
+       displayValue:false → largura natural do SVG = módulos. bwip-js: canvas
+       é renderizado a scale:3 → módulos = dimensão/3 (com add-on: footprint
+       total, exatamente como o ZPL imprime main+separador+add-on). Cache por
+       simbologia+texto; fallback no chute antigo (120) só se a lib faltar. */
+    var _bcMedidas = {}, _bcMedidasKeys = [];
+    function barcodeMedidas(texto, simbologia) {
+      var infoMd = simbologiaInfo(simbologia) || CATALOGO_SIMBOLOGIAS["1d"][0];
+      var keyMd = infoMd.chave + "|" + ("" + texto);
+      if (_bcMedidas[keyMd]) return _bcMedidas[keyMd];
+      var med = { mods: infoMd.mods || 120, alto: 0 };
+      try {
+        if (infoMd.bwip) {
+          var cvMd = bwipCanvas(infoMd.chave, texto);
+          if (cvMd) {
+            med.mods = Math.max(1, Math.round(cvMd.width / 3));
+            med.alto = Math.max(1, Math.round(cvMd.height / 3));
+          }
+        } else if (typeof JsBarcode === "function") {
+          var svgMd = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          JsBarcode(svgMd, String(("" + texto) || infoMd.demo), { format: infoMd.jsbarcode || "CODE128", displayValue: false, margin: 0, width: 1, height: 1, valid: function () { return true; } });
+          var wMd = parseInt(svgMd.getAttribute("width"), 10) || 0;
+          if (wMd > 0) med.mods = wMd;
+        }
+      } catch (eMd) {}
+      if (_bcMedidasKeys.length > 40) delete _bcMedidas[_bcMedidasKeys.shift()];
+      _bcMedidas[keyMd] = med; _bcMedidasKeys.push(keyMd);
+      return med;
+    }
+    /* Pedido 1.164 — linha de interpretação com altura DETERMINÍSTICA (dots):
+       a mesma conta no preview (JsBarcode fontSize), no canvas de exportação e
+       no ^A0N explícito antes do barcode no ZPL. A caixa el.h vira o footprint
+       TOTAL (barras + linha) — a linha não invade mais o elemento de baixo. */
+    function barcodeLinhaH(elH) {
+      return Math.max(10, Math.min(40, Math.round((elH || 100) * 0.22)));
+    }
+    function barcodeBarrasH(elH, temLinha) {
+      var hB = Math.round(elH || 100);
+      return temLinha ? Math.max(12, hB - barcodeLinhaH(hB)) : hB;
+    }
+
     var _bcCache = {}, _bcCacheKeys = [];
-    function barcodeObter(texto, simbologia) {
+    function barcodeObter(texto, simbologia, elH) {
       var infoBc = simbologiaInfo(simbologia) || CATALOGO_SIMBOLOGIAS["1d"][0];
-      if (infoBc.bwip) return bwipImgHtml(infoBc.chave, texto); /* Code 93 e cia via bwip-js */
+      if (infoBc.bwip) return bwipImgHtml(infoBc.chave, texto); /* Code 93 e cia via bwip-js (barras na caixa inteira — ZPL sai sem linha) */
       var fmtBc = infoBc.jsbarcode || "CODE128";
-      var keyBc = infoBc.chave + "|" + ("" + texto);
+      /* 1.164: barras : linha na proporção correta — o SVG é esticado na caixa
+         (el.h = total), então só a proporção precisa casar com o ZPL */
+      var linhaBc = barcodeLinhaH(elH || 100);
+      var barrasBc = Math.max(12, Math.round(elH || 100) - linhaBc);
+      var keyBc = infoBc.chave + "|" + ("" + texto) + "|" + barrasBc;
       if (_bcCache[keyBc]) return _bcCache[keyBc];
       if (typeof JsBarcode !== "function") return null;
       function renderJsBc(txt) {
         var svgBc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: true, margin: 0, height: 40 }); }
+        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: true, margin: 0, height: barrasBc, fontSize: linhaBc, textMargin: 0 }); }
         catch (eJs) { return ""; }
         var htmlBc = svgBc.outerHTML;
         /* svg vazio = conteúdo inválido para o formato (JsBarcode não desenha) */
@@ -8340,15 +8436,20 @@
           }
         }
       } else if (el.tipo === "barcode") {
-        var modWb = Math.max(1, Math.min(10, Math.round(vw / 120)));
+        /* Pedido 1.164: módulos reais (mesma conta do preview/ZPL) e linha de
+           interpretação na proporção correta (barras : linha = barrasH : linhaH) */
+        var medBcCv = barcodeMedidas(el.texto, el.simbologia || "code128");
+        var modWb = Math.max(1, Math.min(10, Math.floor(vw / medBcCv.mods)));
         var infoBcPv = simbologiaInfo(el.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
         if (infoBcPv.bwip) {
           var cvBcBw = bwipCanvas(infoBcPv.chave, el.texto);
           if (cvBcBw) ctx.drawImage(cvBcBw, 0, 0, vw, vh);
         } else {
+          var linhaBcCv = barcodeLinhaH(vh);
+          var barrasBcCv = Math.max(12, Math.round(vh) - linhaBcCv);
           function desenharJsBc(txt) {
             var tcvBc = document.createElement("canvas");
-            JsBarcode(tcvBc, txt, { format: infoBcPv.jsbarcode || "CODE128", displayValue: true, margin: 0, height: 40, width: modWb, valid: function (okV) { if (!okV) throw new Error("conteudo invalido"); } });
+            JsBarcode(tcvBc, txt, { format: infoBcPv.jsbarcode || "CODE128", displayValue: true, margin: 0, height: barrasBcCv, fontSize: linhaBcCv, textMargin: 0, width: modWb, valid: function (okV) { if (!okV) throw new Error("conteudo invalido"); } });
             ctx.drawImage(tcvBc, 0, 0, vw, vh);
           }
           try { desenharJsBc(el.texto || infoBcPv.demo); }
