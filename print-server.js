@@ -26,6 +26,12 @@
  *   Resposta: { ok: true, validado: true|false, odometro? } ou { ok: false, error }.
  *   Env PRINT_ONE_TIMEOUT ajusta o tempo máximo por etiqueta (padrão 60s).
  *
+ * Descoberta de impressoras na rede (análise https.txt — GET /descobrir):
+ *   mDNS/Bonjour pelos serviços Zebra (_pdl-datastream._tcp e _printer._tcp,
+ *   RFC 6762/6763) e, se nada responder, varredura da porta 9100 na sub-rede
+ *   local. Resposta: { ok: true, metodo: "mdns"|"varredura", impressoras: [{nome, ip, porta}] }.
+ *   Cache de 30s — cliques repetidos não bombardeiam a rede.
+ *
  * Uso: node print-server.js   (escuta na porta 3001)
  */
 "use strict";
@@ -33,6 +39,8 @@
 var http = require("http");
 var https = require("https");
 var net = require("net");
+var os = require("os");
+var dgram = require("dgram");
 
 var PORTA = 3001;            // porta do servidor HTTP local
 var FTP_PORTA = parseInt(process.env.FTP_PORT, 10) || 21; // porta FTP da Zebra (padrão 21)
@@ -495,6 +503,227 @@ function enviarHTTPS(ip, zpl, cb) {
   req.end(zpl);
 }
 
+/* ---------- Descoberta de impressoras na rede (análise https.txt) ----------
+   O navegador não fala UDP multicast nem socket cru — quem procura é a ponte:
+   1) mDNS/Bonjour pelos serviços Zebra (porta 9100 via _pdl-datastream._tcp);
+   2) se nenhum responder, varredura da porta 9100 no /24 de cada interface. */
+
+var MCAST_ENDERECO = "224.0.0.251";
+var MCAST_PORTA = 5353;
+var SERVICOS_MDNS = ["_pdl-datastream._tcp.local", "_printer._tcp.local"];
+var MDNS_JANELA_MS = 4000;       /* janela coletando respostas mDNS */
+var MDNS_REENVIO_MS = 1200;      /* 2ª rodada de consultas p/ pacote perdido */
+var VARREDURA_TIMEOUT_MS = 400;  /* tempo máximo por host na varredura */
+var DESCOBERTA_CACHE_MS = 30000;  /* repetição do clique não refaz a busca */
+
+function montarConsultaMDNS(servico) {
+  /* Consulta DNS padrão (RFC 1035): header + QNAME + QTYPE=PTR(12) + QCLASS=IN(1). */
+  var rotulos = servico.split(".").filter(Boolean);
+  var corpo = [];
+  rotulos.forEach(function (r) {
+    corpo.push(r.length);
+    for (var i = 0; i < r.length; i++) corpo.push(r.charCodeAt(i));
+  });
+  corpo.push(0);
+  var buf = Buffer.alloc(12 + corpo.length + 4);
+  buf.writeUInt16BE(0, 0);  /* ID 0 (mDNS aceita) */
+  buf.writeUInt16BE(0, 2);  /* flags: consulta */
+  buf.writeUInt16BE(1, 4);  /* QDCOUNT 1 */
+  buf.writeUInt16BE(0, 6);
+  buf.writeUInt16BE(0, 8);
+  buf.writeUInt16BE(0, 10);
+  corpo.forEach(function (b, i) { buf[12 + i] = b; });
+  buf.writeUInt16BE(12, 12 + corpo.length);    /* QTYPE PTR */
+  buf.writeUInt16BE(1, 12 + corpo.length + 2); /* QCLASS IN */
+  return buf;
+}
+
+function lerNomeMDNS(buf, off) {
+  /* Lê um nome DNS seguindo ponteiros de compressão (0xC0, RFC 1035 §4.1.4).
+     Retorna { nome, prox } — prox é onde o registro continua no fluxo original. */
+  var rotulos = [];
+  var saltos = 0;
+  var pos = off;
+  var fim = -1;
+  while (true) {
+    if (pos < 0 || pos >= buf.length) return null;
+    var n = buf[pos];
+    if (n === 0) { pos += 1; if (fim < 0) fim = pos; break; }
+    if ((n & 0xC0) === 0xC0) {
+      if (pos + 1 >= buf.length) return null;
+      var alvo = ((n & 0x3F) << 8) | buf[pos + 1];
+      if (fim < 0) fim = pos + 2;
+      pos = alvo;
+      saltos += 1;
+      if (saltos > 10) return null; /* laço de ponteiro: desiste */
+      continue;
+    }
+    if (n > 63 || pos + 1 + n > buf.length) return null;
+    rotulos.push(buf.toString("utf8", pos + 1, pos + 1 + n));
+    pos += 1 + n;
+  }
+  return { nome: rotulos.join("."), prox: fim };
+}
+
+function parseMDNSResposta(buf) {
+  /* Interpreta uma resposta DNS-SD (RFC 1035 + 6763): junta SRV (porta + alvo)
+     e A (IPv4) de cada instância de serviço em {nome, ip, porta}. Pula a
+     seção de perguntas (respostas legadas ecoam a consulta). */
+  if (!buf || buf.length < 12) return [];
+  var qd = buf.readUInt16BE(4);
+  var off = 12;
+  var i;
+  for (i = 0; i < qd; i++) {
+    var q = lerNomeMDNS(buf, off);
+    if (!q) return [];
+    off = q.prox + 4; /* QTYPE + QCLASS */
+  }
+  var srvPorNome = {}; /* instância -> {alvo, porta} */
+  var ipPorNome = {};  /* hostname -> IPv4 */
+  var total = buf.readUInt16BE(6) + buf.readUInt16BE(8) + buf.readUInt16BE(10);
+  for (i = 0; i < total; i++) {
+    if (off + 10 > buf.length) break;
+    var lido = lerNomeMDNS(buf, off);
+    if (!lido) break;
+    var dono = lido.nome.toLowerCase();
+    off = lido.prox;
+    var tipo = buf.readUInt16BE(off);
+    var rdlen = buf.readUInt16BE(off + 8);
+    var rdata = off + 10;
+    if (rdata + rdlen > buf.length) break;
+    if (tipo === 33 && rdlen >= 7) { /* SRV: prioridade(2) peso(2) porta(2) alvo */
+      var alvoL = lerNomeMDNS(buf, rdata + 6);
+      if (alvoL) srvPorNome[dono] = { alvo: alvoL.nome.toLowerCase(), porta: buf.readUInt16BE(rdata + 4), exibe: lido.nome.split(".")[0] };
+    } else if (tipo === 1 && rdlen === 4) { /* A: IPv4 */
+      ipPorNome[dono] = buf[rdata] + "." + buf[rdata + 1] + "." + buf[rdata + 2] + "." + buf[rdata + 3];
+    }
+    off = rdata + rdlen;
+  }
+  var achadas = {};
+  var lista = [];
+  Object.keys(srvPorNome).forEach(function (inst) {
+    var srv = srvPorNome[inst];
+    var ip = ipPorNome[srv.alvo] || ipPorNome[inst];
+    if (!ip) return;
+    var chave = ip + ":" + srv.porta;
+    if (achadas[chave]) return;
+    achadas[chave] = true;
+    lista.push({ nome: srv.exibe || inst.split(".")[0], ip: ip, porta: srv.porta });
+  });
+  return lista;
+}
+
+function consultarMDNS(cb) {
+  /* Envia as consultas por multicast da porta 224.0.0.251:5353 a partir de uma
+     porta efêmera — respostas chegam unicast (RFC 6762 §5.1) e não briga com
+     o serviço Bonjour que já ocupa a 5353 no Windows. */
+  var achadas = {};
+  var soquete = null;
+  var reenvio = null;
+  var cronometro = null;
+  var encerrado = false;
+  function encerrar() {
+    if (encerrado) return;
+    encerrado = true;
+    if (reenvio) clearTimeout(reenvio);
+    if (cronometro) clearTimeout(cronometro);
+    if (soquete) { try { soquete.close(); } catch (eFe) {} }
+    cb(Object.keys(achadas).map(function (k) { return achadas[k]; }));
+  }
+  try {
+    soquete = dgram.createSocket("udp4");
+    soquete.on("message", function (msg) {
+      parseMDNSResposta(msg).forEach(function (imp) {
+        achadas[imp.ip + ":" + imp.porta] = imp;
+      });
+    });
+    soquete.on("error", function () { /* sem multicast (firewall?) — cai na varredura */
+      encerrar();
+    });
+    soquete.bind(0, function () {
+      try { soquete.setMulticastTTL(255); } catch (eTtl) {}
+      function enviarConsultas() {
+        SERVICOS_MDNS.forEach(function (s) {
+          var pacote = montarConsultaMDNS(s);
+          try { soquete.send(pacote, 0, pacote.length, MCAST_PORTA, MCAST_ENDERECO); } catch (eS) {}
+        });
+      }
+      enviarConsultas();
+      reenvio = setTimeout(enviarConsultas, MDNS_REENVIO_MS);
+      cronometro = setTimeout(encerrar, MDNS_JANELA_MS);
+    });
+  } catch (e) {
+    encerrar();
+  }
+}
+
+function subredesLocais() {
+  /* Prefixos /24 das interfaces IPv4 não-internas desta máquina. */
+  var saida = [];
+  var vistos = {};
+  var ifaces = os.networkInterfaces();
+  Object.keys(ifaces).forEach(function (nomeIf) {
+    (ifaces[nomeIf] || []).forEach(function (inf) {
+      if (inf.family !== "IPv4" || inf.internal) return;
+      var pref = inf.address.split(".").slice(0, 3).join(".");
+      if (pref && !vistos[pref]) { vistos[pref] = true; saida.push(pref); }
+    });
+  });
+  return saida;
+}
+
+function varrerPorta(porta, cb) {
+  /* Varre a porta nas sub-redes locais (reserva quando o mDNS não acha). */
+  var candidatos = [];
+  subredesLocais().forEach(function (pref) {
+    for (var f = 1; f <= 254; f++) candidatos.push(pref + "." + f);
+  });
+  var achados = [];
+  var pendentes = candidatos.length;
+  if (!pendentes) { cb(achados); return; }
+  candidatos.forEach(function (ipC) {
+    var s = new net.Socket();
+    var fechou = false;
+    function fim(abriu) {
+      if (fechou) return;
+      fechou = true;
+      s.destroy();
+      if (abriu) achados.push(ipC);
+      pendentes -= 1;
+      if (pendentes === 0) cb(achados);
+    }
+    s.setTimeout(VARREDURA_TIMEOUT_MS, function () { fim(false); });
+    s.once("connect", function () { fim(true); });
+    s.once("error", function () { fim(false); });
+    s.connect(porta, ipC);
+  });
+}
+
+var descobertaCache = { quando: 0, resposta: null };
+
+function descobrirImpressoras(cb) {
+  /* Orquestra: mDNS primeiro (nomes de verdade); se nada, varre a 9100.
+     Cache curto para o clique repetido não refazer a varredura. */
+  if (descobertaCache.resposta && Date.now() - descobertaCache.quando < DESCOBERTA_CACHE_MS) {
+    cb(null, descobertaCache.resposta.impressoras, descobertaCache.resposta.metodo + " (cache)");
+    return;
+  }
+  consultarMDNS(function (viaMdns) {
+    if (viaMdns.length) {
+      descobertaCache = { quando: Date.now(), resposta: { impressoras: viaMdns, metodo: "mdns" } };
+      cb(null, viaMdns, "mdns");
+      return;
+    }
+    varrerPorta(9100, function (ipsVarredura) {
+      var achadas = ipsVarredura.map(function (ipV) {
+        return { nome: "Impressora (porta 9100)", ip: ipV, porta: 9100 };
+      });
+      descobertaCache = { quando: Date.now(), resposta: { impressoras: achadas, metodo: "varredura" } };
+      cb(null, achadas, "varredura");
+    });
+  });
+}
+
 var servidor = http.createServer(function (req, res) {
   /* auditoria A1: o header CORS só sai para origens legítimas — origem de
      site aleatório não recebe ACAO e o preflight do navegador bloqueia a
@@ -514,6 +743,15 @@ var servidor = http.createServer(function (req, res) {
 
   if (req.method === "GET" && req.url === "/") {
     responder(res, 200, { ok: true, servico: "print-server Zebra (FTP porta 21, TCP porta 9100, consultas /query-odbc e /query-db)" });
+    return;
+  }
+
+  /* Descoberta de impressoras na rede (análise https.txt): mDNS + varredura */
+  if (req.method === "GET" && req.url === "/descobrir") {
+    descobrirImpressoras(function (errD, achadas, metodoD) {
+      if (errD) responder(res, 200, { ok: false, error: errD.message });
+      else responder(res, 200, { ok: true, metodo: metodoD, impressoras: achadas });
+    });
     return;
   }
 
@@ -608,19 +846,29 @@ var servidor = http.createServer(function (req, res) {
   });
 });
 
-servidor.on("error", function (e) {
-  /* auditoria A3: sem isto, EADDRINUSE derrubava o Node com stack ilegível */
-  if (e.code === "EADDRINUSE") {
-    console.error("ERRO: a porta " + PORTA + " ja esta em uso — provavelmente ja existe outro print-server rodando.");
-    console.error("       Feche a outra instancia (ou mude a porta com PORTA=xxxx) e tente de novo.");
+/* Exportado p/ o teste do parser (chk-mdns): rodar como módulo não sobe o
+   servidor — só `node print-server.js` escuta. */
+module.exports = {
+  montarConsultaMDNS: montarConsultaMDNS,
+  parseMDNSResposta: parseMDNSResposta,
+  subredesLocais: subredesLocais
+};
+
+if (require.main === module) {
+  servidor.on("error", function (e) {
+    /* auditoria A3: sem isto, EADDRINUSE derrubava o Node com stack ilegível */
+    if (e.code === "EADDRINUSE") {
+      console.error("ERRO: a porta " + PORTA + " ja esta em uso — provavelmente ja existe outro print-server rodando.");
+      console.error("       Feche a outra instancia (ou mude a porta com PORTA=xxxx) e tente de novo.");
+      process.exit(1);
+    }
+    console.error("ERRO no servidor HTTP: " + e.message);
     process.exit(1);
-  }
-  console.error("ERRO no servidor HTTP: " + e.message);
-  process.exit(1);
-});
-servidor.listen(PORTA, "127.0.0.1", function () {
-  console.log("print-server Zebra escutando em http://localhost:" + PORTA);
-  console.log("Suporta impressao via FTP (porta " + FTP_PORTA + "), TCP (porta 9100), HTTPS Direct com certificado proprio (POST /print-https, 1.169g), validacao por odometro (POST /print-one)");
-  console.log("e ponte de dados (POST /query-odbc, /query-db). A impressao HTTP(S) Direct e feita pelo proprio navegador.");
-  console.log("Pedido 1.130: POST /print-one envia UMA etiqueta por vez e valida pelo odometro (TCP).");
-});
+  });
+  servidor.listen(PORTA, "127.0.0.1", function () {
+    console.log("print-server Zebra escutando em http://localhost:" + PORTA);
+    console.log("Suporta impressao via FTP (porta " + FTP_PORTA + "), TCP (porta 9100), HTTPS Direct com certificado proprio (POST /print-https, 1.169g), validacao por odometro (POST /print-one)");
+    console.log("e ponte de dados (POST /query-odbc, /query-db). Descoberta de impressoras: GET /descobrir (mDNS + varredura).");
+    console.log("A impressao HTTP(S) Direct e feita pelo proprio navegador. Pedido 1.130: uma etiqueta por vez, validada pelo odometro (TCP).");
+  });
+}

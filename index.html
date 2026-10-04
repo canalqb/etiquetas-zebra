@@ -857,8 +857,9 @@
     .hero-header .badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(15, 23, 42, 0.25); cursor: pointer; }
     .card-custom:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }
 
-    /* Performance 2026: renderização sob demanda dos modais ocultos (INP) */
-    .modal { content-visibility: auto; contain-intrinsic-size: auto 480px; }
+    /* Modais Bootstrap: garantir z-index correto e evitar containment que quebre empilhamento */
+    .modal { z-index: 1055; }
+    .modal-backdrop { z-index: 1050; }
 
     /* ===== RIBBONS — grupos separados com toggle e tonalidade única sutil (Master Rules v9.0) ===== */
     .ribbons-bar { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -1564,7 +1565,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.026</span>
+      <span class="brand-ver">v1.027</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1906,7 +1907,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.026</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.027</span>
         </div>
       </div>
 
@@ -2476,6 +2477,44 @@
 
   </main>
 
+  <!-- Footer (aligned to container) -->
+  <footer class="container mt-auto mb-0">
+    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
+      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.027</span></span>
+        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
+        <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
+        <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Footer 2: páginas legais/institucionais (abrem em modal, mesmo padrão da Ajuda) -->
+  <footer class="container mt-0 mb-3" id="footer-legal" aria-label="Páginas legais e institucionais">
+    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small position-relative">
+      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2" role="group" aria-label="Links para as páginas legais">
+        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-pagina-legal" data-pagina="analise-sistema" data-titulo="Análise do Sistema — Para Empresas"><i class="fas fa-briefcase me-1"></i> Para Empresas</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="sobre" data-titulo="Sobre o CanalQb Impressão em Zebras">Sobre</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="contato" data-titulo="Fale com o CanalQb — Contato Direto">Contato</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-privacidade" data-titulo="Política de Privacidade">Privacidade</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-cookies" data-titulo="Política de Cookies">Cookies</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="termos-de-servico" data-titulo="Termos de Serviço">Termos</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="protecao-menores" data-titulo="Proteção de Menores — Lei Felca nº 15.211/2025">Menores (Felca)</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="seus-direitos-lgpd-dsa" data-titulo="Seus Direitos — LGPD e DSA">Seus Direitos</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="solicitacao-exclusao-dados" data-titulo="Solicitação de Exclusão de Dados">Excluir Dados</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="declaracao-acessibilidade" data-titulo="Declaração de Acessibilidade">Acessibilidade</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="disclaimer" data-titulo="Disclaimer / Isenção de Responsabilidade">Disclaimer</button>
+      </div>
+      <!-- Pedido 1.148: mini botão isolado à direita — abre o modal de erros capturados -->
+      <button type="button" class="btn-erros-app" id="btn-erros-app" data-bs-toggle="modal" data-bs-target="#modal-erros-app" title="Erros capturados nesta página — exceções, promessas, console.error e recursos que falharam (útil em testes)" aria-label="Ver erros capturados nesta página">
+        <i class="fas fa-bug" aria-hidden="true"></i>
+        <span class="erros-app-badge" id="erros-app-badge" style="display:none;">0</span>
+      </button>
+    </div>
+  </footer>
+  </div><!-- /#app-scroll-wrap (Pedido 1.85: desktop rola só o conteúdo) -->
+
+  <!-- ==================== MODAIS DO SISTEMA (Fora do scroll wrap para empilhamento correto com backdrop) ==================== -->
   <!-- Modal Editor (Menu de Contexto) -->
   <div class="modal fade" id="modal-editor" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalEditorLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -2525,6 +2564,10 @@
               <div class="mb-2">
                 <label class="form-label small fw-semibold mb-1" for="input-ip-modal">IP Local ou URL da Nuvem (Cloud Connect):</label>
                 <input type="text" class="form-control form-control-sm" id="input-ip-modal" placeholder="Ex: 192.168.0.50 ou https://sua-api.com/print">
+              </div>
+              <div class="mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary w-100" id="btn-descobrir-impressoras"><i class="fas fa-magnifying-glass me-1"></i>Procurar impressoras na rede</button>
+                <div id="lista-descoberta-impressoras" class="list-group mt-2 d-none" style="max-height:180px;overflow:auto;"></div>
               </div>
               <div class="mb-1">
                 <label class="form-label small fw-semibold mb-1" for="input-protocolo-modal">Protocolo de Impressao:</label>
@@ -3282,42 +3325,7 @@
     </div>
   </div>
 
-  <!-- Footer (aligned to container) -->
-  <footer class="container mt-auto mb-0">
-    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
-      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.026</span></span>
-        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
-        <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
-        <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
-      </div>
-    </div>
-  </footer>
 
-  <!-- Footer 2: páginas legais/institucionais (abrem em modal, mesmo padrão da Ajuda) -->
-  <footer class="container mt-0 mb-3" id="footer-legal" aria-label="Páginas legais e institucionais">
-    <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small position-relative">
-      <div class="d-flex flex-wrap align-items-center justify-content-center gap-2" role="group" aria-label="Links para as páginas legais">
-        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-pagina-legal" data-pagina="analise-sistema" data-titulo="Análise do Sistema — Para Empresas"><i class="fas fa-briefcase me-1"></i> Para Empresas</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="sobre" data-titulo="Sobre o CanalQb Impressão em Zebras">Sobre</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="contato" data-titulo="Fale com o CanalQb — Contato Direto">Contato</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-privacidade" data-titulo="Política de Privacidade">Privacidade</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="politica-cookies" data-titulo="Política de Cookies">Cookies</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="termos-de-servico" data-titulo="Termos de Serviço">Termos</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="protecao-menores" data-titulo="Proteção de Menores — Lei Felca nº 15.211/2025">Menores (Felca)</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="seus-direitos-lgpd-dsa" data-titulo="Seus Direitos — LGPD e DSA">Seus Direitos</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="solicitacao-exclusao-dados" data-titulo="Solicitação de Exclusão de Dados">Excluir Dados</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="declaracao-acessibilidade" data-titulo="Declaração de Acessibilidade">Acessibilidade</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="disclaimer" data-titulo="Disclaimer / Isenção de Responsabilidade">Disclaimer</button>
-      </div>
-      <!-- Pedido 1.148: mini botão isolado à direita — abre o modal de erros capturados -->
-      <button type="button" class="btn-erros-app" id="btn-erros-app" data-bs-toggle="modal" data-bs-target="#modal-erros-app" title="Erros capturados nesta página — exceções, promessas, console.error e recursos que falharam (útil em testes)" aria-label="Ver erros capturados nesta página">
-        <i class="fas fa-bug" aria-hidden="true"></i>
-        <span class="erros-app-badge" id="erros-app-badge" style="display:none;">0</span>
-      </button>
-    </div>
-  </footer>
-  </div><!-- /#app-scroll-wrap (Pedido 1.85: desktop rola só o conteúdo) -->
 
   <!-- Bottom Navigation Bar (Apenas Mobile - Ergonomia do Polegar) -->
   <nav class="mobile-bottom-nav d-lg-none" aria-label="Navegação rápida do aplicativo">
@@ -4241,6 +4249,71 @@
       window.open("https://" + ipAc + "/", "_blank");
       notify("Aceite o certificado na aba aberta (Avancado — Prosseguir) e teste a conexao de novo.", "info");
     });
+
+    /* Descoberta de impressoras na rede (análise https.txt): mDNS + varredura
+       de portas executados pela ponte local — o navegador não faz multicast
+       nem socket cru. A ponte devolve { metodo, impressoras: [{nome, ip, porta}] }. */
+    (function ligarDescobertaImpressoras() {
+      var btnD = $("btn-descobrir-impressoras");
+      var listaD = $("lista-descoberta-impressoras");
+      if (!btnD || !listaD) return;
+      var rotuloDescanso = btnD.innerHTML;
+      btnD.addEventListener("click", function () {
+        if (btnD.disabled) return;
+        btnD.disabled = true;
+        btnD.innerHTML = '<i class="fas fa-magnifying-glass me-1"></i>Procurando na rede...';
+        listaD.classList.remove("d-none");
+        listaD.innerHTML = '<button type="button" class="list-group-item small text-muted" disabled>Procurando impressoras na rede (mDNS + varredura de portas)... alguns segundos.</button>';
+        fetch("http://localhost:3001/descobrir")
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            listaD.innerHTML = "";
+            var achadas = (j && Array.isArray(j.impressoras)) ? j.impressoras : [];
+            if (!j || !j.ok || !achadas.length) {
+              var motivo = j && j.ok === false && j.error ? " (" + j.error + ")" : "";
+              var aviso = document.createElement("button");
+              aviso.type = "button";
+              aviso.className = "list-group-item small text-danger";
+              aviso.disabled = true;
+              aviso.textContent = "Nenhuma impressora encontrada" + motivo + " — informe o IP manualmente.";
+              listaD.appendChild(aviso);
+              notify("Nenhuma impressora Zebra encontrada na rede.", "warning");
+              return;
+            }
+            achadas.forEach(function (imp) {
+              var b = document.createElement("button");
+              b.type = "button";
+              b.className = "list-group-item list-group-item-action small";
+              var ic = document.createElement("i");
+              ic.className = "fas fa-print text-primary me-1";
+              var nm = document.createElement("strong");
+              nm.textContent = String(imp.nome || "Impressora") + " — " + String(imp.ip);
+              var extra = document.createElement("span");
+              extra.className = "text-muted";
+              extra.textContent = imp.porta ? " (porta " + String(imp.porta) + ")" : "";
+              b.appendChild(ic);
+              b.appendChild(nm);
+              b.appendChild(extra);
+              b.addEventListener("click", function () {
+                $("input-ip-modal").value = String(imp.ip);
+                listaD.classList.add("d-none");
+                notify("IP preenchido: " + imp.ip + " (" + (imp.nome || "impressora encontrada") + "). Teste a conexao antes de salvar.", "success");
+              });
+              listaD.appendChild(b);
+            });
+            notify(achadas.length + " impressora(s) encontrada(s) via " + (j.metodo || "ponte") + " — clique para preencher o IP.", "success");
+          })
+          .catch(function () {
+            listaD.innerHTML = "";
+            listaD.classList.add("d-none");
+            notify("A busca na rede usa a ponte local (mDNS + varredura de portas). Rode: node print-server.js", "danger");
+          })
+          .then(function () {
+            btnD.disabled = false;
+            btnD.innerHTML = rotuloDescanso;
+          });
+      });
+    })();
 
     $("btn-testar-ip-modal").addEventListener("click", function () {
       var testIp = $("input-ip-modal").value.trim() || localStorage.getItem(CHAVE_IP);
@@ -5977,11 +6050,19 @@
         modal.show();
         /* show() também é no-op do BS 5.3.3 quando um fechamento anterior ainda
            transiciona (clique direito logo após fechar não fazia nada): reaplica
-           500ms depois. Se chegou a abrir E o usuário fechou nesse intervalo, o
-           hidden devolveu o form ao card — o contains() falha e não reabre. */
+           500ms depois. Se o usuário fechou nesse intervalo, o hide cancela a
+           tentativa — confiar só no hidden (que devolve o form ao card) não
+           basta: o retry pode disparar ANTES do hidden, com o form ainda no
+           modal, e reabrir o que o usuário acabou de fechar (raça t96 run1). */
         var tent = ++abrirEditorTentativa;
+        var fechouAntesDoRetry = false;
+        function aoFecharTentativa(evFe) {
+          if (evFe.target === mEditor && tent === abrirEditorTentativa) fechouAntesDoRetry = true;
+        }
+        mEditor.addEventListener("hide.bs.modal", aoFecharTentativa, true);
         setTimeout(function () {
-          if (tent !== abrirEditorTentativa) return;
+          mEditor.removeEventListener("hide.bs.modal", aoFecharTentativa, true);
+          if (tent !== abrirEditorTentativa || fechouAntesDoRetry) return;
           if (!mEditor.classList.contains("show") && modalBody.contains(formInst)) {
             var instR = bootstrap.Modal.getInstance(mEditor);
             if (!instR || (instR._isShown === false && instR._isTransitioning === false)) {

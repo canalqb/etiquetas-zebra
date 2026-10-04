@@ -1,0 +1,241 @@
+Sim. Considerando **somente as três arquiteturas possíveis do `pstprnt`** que discutimos, eu montaria o plano assim.
+
+ ## 1\. `pstprnt` fazendo `fetch`/HTTP(S) diretamente para a Zebra
+
+ ### Arquitetura
+
+```
+Chrome
+  │
+  │ fetch()
+  ▼
+pstprnt / endpoint da Zebra
+  │
+  │ HTTP(S)
+  ▼
+Zebra ZT411
+```
+
+ ### Implementação
+
+ 1. Identificar exatamente o endpoint utilizado pelo `pstprnt`.
+2. Confirmar se a ZT411 recebe ZPL diretamente por esse endpoint.
+3. Testar comunicação usando:
+   - IP variável;
+   - HTTP;
+   - HTTPS;
+   - diferentes redes.
+4. Corrigir o certificado HTTPS da impressora, se HTTPS for obrigatório.
+5. Configurar CORS na impressora/endpoint, caso aplicável.
+6. Testar as políticas de **Local Network Access** do Chrome.
+7. Verificar o comportamento quando o usuário nunca acessou a impressora anteriormente.
+8. Testar Chrome limpo, sem histórico/cookies/permissões anteriores.
+9. Implementar tratamento de:
+   - impressora offline;
+   - timeout;
+   - certificado inválido;
+   - bloqueio do navegador;
+   - erro HTTP.
+10. Validar se essa arquitetura consegue atender **100% web + zero instalação**.
+
+ ### Risco
+
+ **Alto.**
+
+ O principal problema é que o navegador controla o acesso da página à rede local. Não devemos depender de o usuário previamente autorizar manualmente a impressora.
+
+ ### Resultado esperado
+
+```
+Clique em imprimir
+       ↓
+Chrome
+       ↓
+pstprnt
+       ↓
+ZT411
+```
+
+ sem interação adicional.
+
+ **Critério de aprovação:** funcionar em um Chrome novo, em uma rede desconhecida e com uma ZT411 cujo IP nunca tenha sido acessado pelo navegador.
+
+---
+
+ # 2\. `pstprnt://` como protocolo personalizado
+
+ ### Arquitetura
+
+```
+Chrome
+  │
+  │ pstprnt://...
+  ▼
+Manipulador do protocolo
+  │
+  ▼
+Zebra ZT411
+```
+
+ O sistema web faria algo conceitualmente semelhante a:
+
+```
+pstprnt://imprimir?printer=...&data=...
+```
+
+ ### Implementação
+
+ 1. Verificar se o `pstprnt` já possui um protocolo próprio.
+2. Identificar exatamente como o Chrome interpreta esse protocolo.
+3. Testar se o protocolo funciona **sem nenhum software previamente instalado**.
+4. Verificar se o protocolo é fornecido pelo próprio ambiente/navegador ou depende de um componente local.
+5. Determinar como o `pstprnt` descobre a impressora.
+6. Determinar como o ZPL é transmitido.
+7. Testar uma ZT411 com IP DHCP.
+8. Testar troca de IP.
+9. Testar múltiplas ZT411 na mesma rede.
+10. Testar Chrome recém-instalado.
+11. Validar as mensagens de confirmação/permissão do Chrome.
+12. Implementar fallback para:
+
+ - protocolo não registrado;
+- impressora não encontrada;
+- usuário cancelou;
+- erro de comunicação.
+
+ ### Risco
+
+ **Médio/alto**, dependendo de como o `pstprnt` está implementado.
+
+ O ponto fundamental é:
+
+ > Um protocolo `pstprnt://` não elimina magicamente a necessidade de um componente que saiba tratar esse protocolo.
+
+ Se ele já faz parte de alguma infraestrutura existente, pode ser uma excelente solução. Se depender de instalação, deixa de atender seu requisito.
+
+ ### Resultado esperado
+
+```
+Usuário
+   ↓
+[Imprimir]
+   ↓
+pstprnt://
+   ↓
+ZT411
+```
+
+ **Critério de aprovação:** clicar em imprimir deve iniciar o processo sem que o usuário precise abrir o HTTPS da impressora.
+
+---
+
+ # 3\. `pstprnt` como mecanismo intermediário de impressão
+
+ Essa é a solução em que o `pstprnt` funciona como uma camada entre o navegador e a Zebra.
+
+ ### Arquitetura
+
+```
+                 INTERNET
+                    │
+                    ▼
+             Sistema Web
+                    │
+                    ▼
+                 Chrome
+                    │
+                    ▼
+                pstprnt
+                    │
+             ┌──────┴──────┐
+             ▼             ▼
+          Descoberta    Configuração
+          da Zebra      da impressora
+             │
+             └──────┬──────┘
+                    ▼
+                Zebra
+                 ZT411
+```
+
+ ### Implementação
+
+ 1. Definir o contrato entre o sistema Web e o `pstprnt`.
+2. Definir o formato da mensagem:
+   - ZPL;
+   - identificador da impressora;
+   - quantidade;
+   - parâmetros de impressão.
+3. Fazer o `pstprnt` localizar a Zebra na rede.
+4. Não depender de IP fixo.
+5. Permitir que a impressora obtenha IP via DHCP.
+6. Fazer descoberta da impressora.
+7. Selecionar a ZT411 correta quando houver mais de uma.
+8. Enviar o ZPL diretamente para a impressora.
+9. Implementar timeout.
+10. Implementar confirmação de envio.
+11. Implementar fila de impressão.
+12. Implementar tratamento de impressora offline.
+13. Implementar logs de erro.
+14. Testar diferentes redes.
+15. Testar troca de IP da impressora.
+16. Testar múltiplas impressoras.
+17. Testar Chrome sem histórico/permissões anteriores.
+
+ ### Risco
+
+ **Baixo/médio**, caso o `pstprnt` já possua capacidade de realizar essa comunicação.
+
+ Essa é a arquitetura tecnicamente mais interessante se o requisito for realmente:
+
+ > **zero instalação + qualquer rede + IP dinâmico \+ clique em imprimir.**
+
+ Mas precisamos confirmar o que o seu `pstprnt` é capaz de fazer.
+
+---
+
+ # Comparação
+
+ | Característica | 1\. HTTP/HTTPS direto | 2\. `pstprnt://` | 3\. `pstprnt` intermediário |
+| --- | --- | --- | --- |
+| IP fixo | ❌ Não ideal | 🟡 Depende | ✅ Não precisa |
+| HTTPS da Zebra | ❌ Problema potencial | 🟡 Depende | ✅ Pode ser eliminado |
+| Certificado na Zebra | ❌ Provável | 🟡 Depende | ✅ Não necessariamente |
+| CORS | ❌ Problema potencial | ✅ Pode evitar | ✅ Pode evitar |
+| Local Network Access | ❌ Problema potencial | 🟡 Depende | 🟡 Depende do mecanismo |
+| Chrome novo | 🔴 Difícil | 🟡 Testar | 🟢 Melhor possibilidade |
+| Usuário precisa acessar IP antes | 🔴 Pode acontecer | 🟢 Idealmente não | 🟢 Não |
+| IP DHCP | 🟡 | 🟡 | 🟢 |
+| Múltiplas ZT411 | 🟡 | 🟡 | 🟢 |
+| Rede desconhecida | 🔴 | 🟡 | 🟢 |
+| Escalabilidade | 🔴 | 🟡 | 🟢 |
+| Complexidade | Baixa | Média | Média |
+| Adequado ao seu projeto | ⚠️ | ⚠️ | **⭐** |
+
+## Ordem de implementação que eu adotaria
+
+ Eu faria os três PoCs nesta ordem:
+
+ ### Fase 1 — validar solução 1
+
+ **Objetivo:** descobrir se o Chrome permite a comunicação direta nas condições reais.
+
+ Se funcionar de forma confiável em Chrome limpo \+ IP variável + redes diferentes, ótimo.
+
+ ### Fase 2 — validar solução 2
+
+ Testar o protocolo:
+
+```
+pstprnt://
+```
+
+ e verificar se ele consegue iniciar a impressão sem depender da navegação prévia para o HTTPS da Zebra.
+
+ ### Fase 3 — validar solução 3
+
+ Caso a primeira seja limitada pelo Chrome, concentrar o desenvolvimento nessa arquitetura.
+
+ **Minha aposta técnica seria a solução 3**, porque ela desacopla o problema do certificado HTTPS da Zebra e do IP variável.
+
+ O ponto decisivo agora é descobrir **qual dessas três arquiteturas corresponde ao `pstprnt` que vocês já possuem**. Com o código/chamada atual do `pstprnt`, dá para transformar esse plano em uma especificação técnica concreta.
