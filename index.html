@@ -1564,7 +1564,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.025</span>
+      <span class="brand-ver">v1.026</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1906,7 +1906,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.025</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.026</span>
         </div>
       </div>
 
@@ -3286,7 +3286,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.025</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.026</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3705,20 +3705,66 @@
         document.body.classList.remove("modal-open");
       }
     }
-    /* Fecha um modal pelo caminho oficial do Bootstrap. hide() é no-op quando
-       o modal está no meio do fade (isTransitioning), então reaplica 400ms
-       depois para garantir que fechou. */
+    /* Fecha um modal pelo caminho oficial do Bootstrap. O hide() do BS 5.3.3 é
+       NO-OP silencioso enquanto o modal transiciona (abrindo OU fechando):
+       Esc/clique no backdrop/X nos primeiros ~0,5s de abertura eram engolidos
+       e o modal "travava" aberto, com o backdrop bloqueando a página. O
+       watchdog reaplica o hide quando a transição assenta; o token (wdShow,
+       marcado a cada show) cancela a intenção se o modal foi reaberto
+       depois — nunca fecha um modal recém-reaberto (mesma guarda da caixa
+       de cópias v1.025, agora para todos os modais). */
+    var _wdSeq = 0;
+    var _wdExclusos = { "modal-confirm": 1, "modal-print-stream": 1 };
+    function reagirarFechamento(el, seqBase, tent) {
+      if (!el || !el.id || _wdExclusos[el.id]) return;
+      setTimeout(function () {
+        try {
+          if (!el.classList.contains("show")) return;
+          if (Number(el.dataset.wdShow || 0) !== seqBase) return;
+          var inst = bootstrap.Modal.getInstance(el);
+          if (inst && inst._isTransitioning === true) {
+            if ((tent || 0) < 3) reagirarFechamento(el, seqBase, (tent || 0) + 1);
+            return;
+          }
+          try { inst.hide(); } catch (eHide) {}
+        } catch (eWd) {}
+      }, tent ? 300 : 600);
+    }
+    function wdTentarFechar(el) {
+      if (!el || !el.id) return;
+      reagirarFechamento(el, Number(el.dataset.wdShow || 0), 0);
+    }
+    document.addEventListener("click", function (evWd) {
+      var btnWd = evWd.target && evWd.target.closest ? evWd.target.closest('[data-bs-dismiss="modal"]') : null;
+      if (btnWd) wdTentarFechar(btnWd.closest(".modal"));
+    }, true);
+    document.addEventListener("keydown", function (evWd) {
+      if (evWd.key !== "Escape") return;
+      var alvoWd = evWd.target && evWd.target.closest ? evWd.target.closest(".modal") : null;
+      if (!alvoWd) { var visWd = modaisAbertos(); alvoWd = visWd.length ? visWd[visWd.length - 1] : null; }
+      wdTentarFechar(alvoWd);
+    }, true);
+    (function () {
+      var wdDown = null;
+      document.addEventListener("mousedown", function (evWd) {
+        wdDown = (evWd.target && evWd.target.classList && evWd.target.classList.contains("modal")) ? evWd.target : null;
+      }, true);
+      document.addEventListener("mouseup", function (evWd) {
+        var m = wdDown;
+        wdDown = null;
+        if (m && evWd.target === m) wdTentarFechar(m);
+      }, true);
+    })();
     function fecharModalBs(el) {
       var inst = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
       try { inst.hide(); } catch (eHide) {}
-      setTimeout(function () {
-        if (el.classList.contains("show")) { try { inst.hide(); } catch (eHide2) {} }
-      }, 400);
+      reagirarFechamento(el, Number(el.dataset.wdShow || 0), 0);
     }
     document.addEventListener("show.bs.modal", function (ev) {
       var el = ev.target;
       if (!el || !el.id) return;
       if (el.classList && el.classList.contains("modal")) {
+        el.dataset.wdShow = String(++_wdSeq);
         _modaisAbrindo.add(el);
         setTimeout(function () { _modaisAbrindo.delete(el); }, 2500); /* failsafe: nunca travar o sweep por causa de uma abertura abortada */
       }
@@ -3751,20 +3797,6 @@
         el.style.removeProperty("z-index");
         _modaisAbrindo.delete(el);
       }
-      var vis = modaisAbertos();
-      restaurarEstadoModalBody();
-      if (vis.length) {
-        /* o usuário voltou ao modal de baixo: foco e estado do body voltam */
-        var topo = vis[vis.length - 1];
-        try {
-          var inst = bootstrap.Modal.getInstance(topo);
-          if (inst && inst._focustrap) inst._focustrap.activate();
-        } catch (eMod) {}
-      }
-    }, true);
-    document.addEventListener("hidden.bs.modal", function (ev) {
-      var el = ev.target;
-      if (el && el.classList && el.classList.contains("modal")) el.style.removeProperty("z-index");
       var vis = modaisAbertos();
       restaurarEstadoModalBody();
       if (vis.length) {
@@ -5929,6 +5961,7 @@
       }
     }
     /* Botão direito / toque longo: abre o Editor de Elemento (modal com o inspetor) */
+    var abrirEditorTentativa = 0;
     function abrirEditorElementoModal(el) {
       if (selectedElIds.indexOf(el.id) === -1) {
         selectedElIds = [el.id];
@@ -5939,8 +5972,23 @@
       var modalBody = document.getElementById("modal-editor-body");
       if (formInst && modalBody) {
         modalBody.appendChild(formInst);
-        var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("modal-editor"));
+        var mEditor = document.getElementById("modal-editor");
+        var modal = bootstrap.Modal.getOrCreateInstance(mEditor);
         modal.show();
+        /* show() também é no-op do BS 5.3.3 quando um fechamento anterior ainda
+           transiciona (clique direito logo após fechar não fazia nada): reaplica
+           500ms depois. Se chegou a abrir E o usuário fechou nesse intervalo, o
+           hidden devolveu o form ao card — o contains() falha e não reabre. */
+        var tent = ++abrirEditorTentativa;
+        setTimeout(function () {
+          if (tent !== abrirEditorTentativa) return;
+          if (!mEditor.classList.contains("show") && modalBody.contains(formInst)) {
+            var instR = bootstrap.Modal.getInstance(mEditor);
+            if (!instR || (instR._isShown === false && instR._isTransitioning === false)) {
+              try { (instR || bootstrap.Modal.getOrCreateInstance(mEditor)).show(); } catch (eReShow) {}
+            }
+          }
+        }, 500);
       }
     }
 
@@ -6874,12 +6922,10 @@
 
     $("insp-btn-del").addEventListener("click", function () {
       deletarSelecionados();
-      /* Fecha o modal de opções do elemento (aberto pelo botão direito) após remover */
-      var modalEditor = document.getElementById("modal-editor");
-      if (modalEditor && modalEditor.classList.contains("show")) {
-        var bsModalEditor = bootstrap.Modal.getInstance(modalEditor);
-        if (bsModalEditor) bsModalEditor.hide();
-      }
+      /* Fecha o modal de opções do elemento (aberto pelo botão direito) após
+         remover — fecharModalBs reaplica o hide se ele for engolido pela
+         janela de transição do Bootstrap 5.3.3 */
+      fecharModalBs(document.getElementById("modal-editor"));
     });
     $("insp-btn-deselect").addEventListener("click", function () {
       selectedElIds = []; selectedElId = null;
