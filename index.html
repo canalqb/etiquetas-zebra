@@ -763,27 +763,6 @@
       color: #1d4ed8;
     }
 
-    /* Element Indicators */
-    .canvas-el .el-label {
-      display: none;
-      position: absolute;
-      top: -18px;
-      left: 0;
-      background: #2563eb;
-      color: #fff;
-      font-size: 9px;
-      padding: 1px 5px;
-      border-radius: 3px;
-      white-space: nowrap;
-      pointer-events: none;
-      font-family: monospace;
-      z-index: 20;
-    }
-    .canvas-el.selected .el-label,
-    .canvas-el:hover .el-label {
-      display: block;
-    }
-
     /* ZPL Textarea & Code View */
         .zpl-code {
           font-family: 'Inter', Consolas, monospace;
@@ -1583,7 +1562,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.028</span>
+      <span class="brand-ver">v1.029</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1925,7 +1904,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.028</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.029</span>
         </div>
       </div>
 
@@ -2499,7 +2478,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.028</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.029</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -4984,13 +4963,23 @@
     }
 
     /* ---- Auxiliar: retorna dimensões e rotação de um elemento ---- */
+    /* Espaço disponível para o texto FLUIR antes de quebrar (dots), medido no
+       EIXO DA LEITURA do elemento: girado 90°/270° o texto corre na vertical
+       (a caixa cresce +y a partir da âncora) e o limite é a margem INFERIOR;
+       em 0°/180° corre na horizontal e o limite é a margem DIREITA. */
+    function disponivelQuebraTexto(el, dW, dH) {
+      if ((el.rotacao || 0) === 90 || (el.rotacao || 0) === 270) {
+        return Math.max(1, Math.round((dH || dW) - (el.y || 0) - mmToDots(margens.bottom)));
+      }
+      return Math.max(1, Math.round(dW - (el.x || 0) - mmToDots(margens.right)));
+    }
     /* Largura da caixa de quebra automática de um texto (dots): fbWidth explícito
-       ou o espaço restante até a margem direita da etiqueta. */
-    function larguraQuebraTexto(el, dW) {
-      /* ^FB nunca pode ultrapassar o limite direito da etiqueta: firmwares Zebra
-         descartam/clipam o campo inteiro quando o bloco passa do ^PW (saída em
-         branco). O clamp vale para editor e ZPL (função compartilhada). */
-      var disponivel = Math.max(1, Math.round(dW - (el.x || 0) - mmToDots(margens.right)));
+       ou o espaço restante no eixo de leitura até a margem da etiqueta. */
+    function larguraQuebraTexto(el, dW, dH) {
+      /* ^FB nunca pode ultrapassar o limite físico da etiqueta no eixo do texto:
+          firmwares Zebra descartam/clipam o campo inteiro quando o bloco passa
+          do ^PW/^LL (saída em branco). O clamp vale para editor e ZPL (compartilhado). */
+      var disponivel = disponivelQuebraTexto(el, dW, dH);
       if (el.fbWidth) return Math.max(1, Math.min(Math.round(el.fbWidth), disponivel));
       return Math.max(1, disponivel);
     }
@@ -5019,7 +5008,7 @@
         /* Quebra automática universal: a caixa é o texto ou o limite até a
            margem direita; a altura acompanha as linhas enroladas. */
         var fQ = el.fonte || 30;
-        var wQ = larguraQuebraTexto(el, dW);
+        var wQ = larguraQuebraTexto(el, dW, dH);
         w0 = Math.min(Math.ceil(larguraTexto(el.texto || "", fQ)), wQ);
         h0 = Math.round(fQ * 1.1 * contarLinhasEnroladas(el.texto || "", fQ, wQ));
       } else if (el.tipo === "linha") {
@@ -5043,9 +5032,9 @@
       var dispW = (rotAtual === 90 || rotAtual === 270) ? sz.h : sz.w;
       var dispH = (rotAtual === 90 || rotAtual === 270) ? sz.w : sz.h;
       var f = el.fonte || 30;
-      /* Limite lateral: da posição do elemento até a margem direita — calculado
-         SEM o fbWidth antigo, senão a caixa nunca cresceria a cada tecla */
-      var disponivel = Math.max(1, Math.round(dispW - (el.x || 0) - mmToDots(margens.right)));
+      /* Limite no EIXO DE LEITURA do elemento (vertical quando girado 90°/270°)
+         — calculado SEM o fbWidth antigo, senão a caixa nunca cresceria a cada tecla */
+      var disponivel = disponivelQuebraTexto(el, dispW, dispH);
       var natural = Math.max(1, Math.ceil(larguraTexto(el.texto || "M", f)));
       el.fbWidth = Math.min(natural, disponivel);
       var linhas = contarLinhasEnroladas(el.texto || "", f, el.fbWidth);
@@ -5156,7 +5145,7 @@
              manual (\n) na edição in-loco. Igual ao ^FB do ZPL. */
           div.style.whiteSpace = "pre-wrap";
           div.style.wordWrap = "break-word";
-          div.style.maxWidth = dotsToMmPreciso(larguraQuebraTexto(el, dispW)) + "mm";
+          div.style.maxWidth = dotsToMmPreciso(larguraQuebraTexto(el, dispW, dispH)) + "mm";
           div.style.textAlign = fbAlignMap[Math.min(3, Math.max(0, parseInt(el.fbAlign, 10) || 0))];
           /* WYSIWYG exacto com canvas 2D (textBaseline="top"):
              line-height:1 no div E no span -> line-box = font-size -> half-leading = 0
@@ -5430,14 +5419,6 @@
           txtForma.style.color = getCorTextoElemento(el);
           txtForma.style.fontSize = dotsToMmPreciso(el.fonte || 30) + "mm";
           div.appendChild(txtForma);
-        }
-
-        // Tag indicadora do tipo (não exibir sobre imagem carregada)
-        if (el.tipo !== "imagem" || !el.dataUrl) {
-          var tag = document.createElement("span");
-          tag.className = "el-label";
-          tag.textContent = el.tipo.toUpperCase() + " (" + dotsToMm(el.x) + "," + dotsToMm(el.y) + "mm)";
-          div.appendChild(tag);
         }
 
         // Alça de Redimensionamento (todos os elementos)
@@ -7713,7 +7694,7 @@
         if (it.tipo === "texto" || it.tipo === "sub" || it.tipo === "nome" || it.tipo === "serie") {
            /* Quebra automática universal — mesmo cálculo de obterDimensoesElemento */
            var fQz = it.fonte || 30;
-           var wQz = larguraQuebraTexto(it, dispW);
+           var wQz = larguraQuebraTexto(it, dispW, dispH);
            vw = Math.min(Math.ceil(larguraTexto(it.texto || "", fQz)), wQz);
            vh = Math.round(fQz * 1.1 * Math.max(1, contarLinhasEnroladas(it.texto || "", fQz, wQz)));
         } else if (it.tipo === "barcode") {
@@ -7784,7 +7765,7 @@
                imagem (raster). Caixa de tinta: sempre +x/+y a partir do ^FO. */
             var alignRot = Math.min(3, Math.max(0, parseInt(it.fbAlign, 10) || 0));
             __ctxFonteZPL.font = (isBold ? "700 " : "600 ") + (it.italic ? "italic " : "") + f + 'px Arial, Helvetica, sans-serif';
-            var wQzRot = larguraQuebraTexto(it, dispW);
+            var wQzRot = larguraQuebraTexto(it, dispW, dispH);
             var linhasRot = quebrarTextoMultilinha(it.texto || "", wQzRot, __ctxFonteZPL);
             var lhRot = Math.round(f * 1.1);
             var spRot = it.fbSpacing ? Math.round(it.fbSpacing) : 0;
@@ -7833,7 +7814,7 @@
               zplText = "^FD" + fdBody + "^FS";
             }
 
-            var fbWz = Math.max(1, Math.round(larguraQuebraTexto(it, dispW)));
+            var fbWz = Math.max(1, Math.round(larguraQuebraTexto(it, dispW, dispH)));
             var fbLz = Math.max(1, Math.round(it.fbLines || 99));
             var fbSpz = Math.max(0, Math.round(it.fbSpacing || Math.round(f * 0.2)));
             var fbAz = ["L", "C", "R", "J"][Math.min(3, Math.max(0, parseInt(it.fbAlign, 10) || 0))];
@@ -8450,7 +8431,7 @@
         /* Mesma família/peso do editor (Arial 600/700) — WYSIWYG editor↔preview↔^GF */
         ctx.font = (isBold0 ? "700 " : "600 ") + (el.italic ? "italic " : "") + f0 + 'px Arial, Helvetica, sans-serif';
         /* Quebra automática universal: mesma caixa do editor/^FB */
-        var wQc = larguraQuebraTexto(el, dW);
+        var wQc = larguraQuebraTexto(el, dW, dH);
         var linhasTc = quebrarTextoMultilinha(el.texto || "", wQc, ctx);
         vw = Math.max(1, Math.ceil(linhasTc.reduce(function (mx, l) { return Math.max(mx, ctx.measureText(l).width); }, 0)));
         vh = Math.round(f0 * 1.1 * Math.max(1, linhasTc.length));
