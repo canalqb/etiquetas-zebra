@@ -733,9 +733,12 @@ var servidor = http.createServer(function (req, res) {
   }
 
   if (req.method === "OPTIONS") { /* 204 não tem corpo (auditoria A4) */
+    /* Private Network Access: o site publicado (GitHub Pages) é "public" e o
+       Chrome exige este header no preflight para liberar fetch → localhost */
     res.writeHead(204, {
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Private-Network": "true"
     });
     res.end();
     return;

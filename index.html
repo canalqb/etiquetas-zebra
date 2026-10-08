@@ -1562,7 +1562,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.029</span>
+      <span class="brand-ver">v1.031</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -1904,7 +1904,7 @@
           <span class="badge bg-white bg-opacity-20 text-black border border-white border-opacity-25 px-2 py-1 small fw-semibold">
             <i class="fas fa-bolt text-warning me-1"></i> CanalQb Impressão em Zebras
           </span>
-          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.029</span>
+          <span class="badge bg-primary px-2 py-1 small" id="mobile-hero-badge-ver">v1.031</span>
         </div>
       </div>
 
@@ -2288,10 +2288,18 @@
                         </div>
 
                         <!-- Pedido 1.142: Fonte do Código no Editor de Elemento (barcode/QR) —
-                             mesma lista do duplo clique; a troca aplica na hora -->
+                              mesma lista do duplo clique; a troca aplica na hora -->
                         <div class="col-md-3 col-12 d-none" id="insp-col-simbologia">
                           <label class="form-label fw-semibold small mb-1" title="A “fonte” é o formato do código (Code 128, EAN-13, GS1-128, QR, Data Matrix…). A troca atualiza o desenho e o ZPL na hora.">Fonte do Código</label>
                           <select class="form-select form-select-sm" id="insp-simbologia" aria-label="Fonte (simbologia) do código"></select>
+                        </div>
+
+                        <!-- Pedido 1.178: vínculo elemento↔coluna da importação — o valor
+                              da linha cai SEMPRE neste elemento (sem vínculo, o preenchimento
+                              segue a ordem de inserção e os elementos antigos vêm primeiro) -->
+                        <div class="col-md-3 col-6 d-none" id="insp-col-import">
+                          <label class="form-label fw-semibold small mb-1" title="Vincula este elemento a uma coluna da importação (CSV, planilha, banco): ao gerar as etiquetas, o valor de cada linha entra SEMPRE neste elemento. Sem vínculo, o preenchimento segue a ordem de inserção dos elementos.">Coluna da importação</label>
+                          <select class="form-select form-select-sm" id="insp-import-coluna" aria-label="Coluna da importação vinculada a este elemento"></select>
                         </div>
 
                         <div class="col-md-2 col-4">
@@ -2478,7 +2486,7 @@
   <footer class="container mt-auto mb-0">
     <div class="card card-custom bg-white border py-2 px-3 text-center text-muted small">
       <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.029</span></span>
+        <span class="fw-semibold text-body">CanalQb Impressão em Zebras <span class="text-muted fw-normal" id="versao-app" title="Versão do app — confira se mudou após atualizar">· v1.031</span></span>
         <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn-footer-ajuda" title="Central de Ajuda & Manual (F1)" aria-label="Abrir Central de Ajuda"><i class="fas fa-circle-question" aria-hidden="true"></i> Ajuda</button>
         <a href="https://canalqb.com.br" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-secondary fw-semibold">Blog do dono do projeto — canalqb.com.br</a>
         <span class="text-muted">Projeto gratuito. Apoie via PIX: <strong class="text-dark">qrodrigob@gmail.com</strong></span>
@@ -3844,6 +3852,7 @@
     var selectedElId = null;        // compatibilidade legada (primeiro selecionado)
     var selectedElIds = [];         // lista de todos selecionados
     var clipboardEls = [];          // elementos copiados/recortados
+    var nudgeUltimoTs = 0;          // último nudge de seta — throttle de histórico (pedido 1.176)
     var tamAtualKey = "100x50";
 
     // Histórico Undo/Redo
@@ -4388,7 +4397,7 @@
                 }
               })
               .catch(function () {
-                notify("❌ HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando — rode: node print-server.js — ou aceite o certificado em https://" + testIp + " (Avançado → Prosseguir).", "danger");
+                notify("❌ HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando — rode: node print-server.js (ou instale para ligar sozinha: powershell -ExecutionPolicy Bypass -File instalar-ponte.ps1) — ou aceite o certificado em https://" + testIp + " (Avançado → Prosseguir).", "danger");
               });
             } else {
               notify("⚠️ Requisição HTTP enviada. Verifique se o IP " + testIp + " está acessível na rede local.", "info");
@@ -6750,6 +6759,32 @@
       }
 
       if (inField) return;
+      /* Pedido 1.176: setas direcionais movem o(s) elemento(s) selecionado(s)
+         1 ponto (dot) por tecla — ajuste fino de posição. Grupo selecionado
+         anda junto (mesma regra do arraste/alinhamento). Rajada de setas
+         (auto-repeat) empilha UM passo de histórico a cada 600ms. */
+      if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        var idsNudge = selectedElIds.length ? selectedElIds : (selectedElId ? [selectedElId] : []);
+        if (idsNudge.length) {
+          e.preventDefault();
+          var szNu = SIZES[tamAtualKey] || SIZES["100x50"];
+          var dWNu = (rotAtual === 90 || rotAtual === 270) ? szNu.h : szNu.w;
+          var dHNu = (rotAtual === 90 || rotAtual === 270) ? szNu.w : szNu.h;
+          var dxNu = (e.key === "ArrowLeft") ? -1 : (e.key === "ArrowRight") ? 1 : 0;
+          var dyNu = (e.key === "ArrowUp") ? -1 : (e.key === "ArrowDown") ? 1 : 0;
+          elements.forEach(function (elNu) {
+            if (idsNudge.indexOf(elNu.id) === -1) return;
+            elNu.x += dxNu;
+            elNu.y += dyNu;
+            if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(elNu, dWNu, dHNu);
+          });
+          var agoraNu = Date.now();
+          if (agoraNu - nudgeUltimoTs > 600) salvarHistorico();
+          nudgeUltimoTs = agoraNu;
+          renderStudio();
+        }
+        return;
+      }
       if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); deletarSelecionados(); }
       if (e.key === "Escape") { selectedElIds = []; selectedElId = null; renderStudio(); }
     });
@@ -6810,6 +6845,29 @@
       var isShape = ehForma(el.tipo);
       var isShapeTexto = ehFormaComTexto(el.tipo);
       var isLineOrDiagonal = (el.tipo === "linha" || el.tipo === "diagonal");
+
+      /* Pedido 1.178: coluna da importação vinculada a este elemento — as
+         opções são as colunas lidas na última importação; vazio = sem vínculo. */
+      var colImpInsp = $("insp-col-import");
+      var selImpInsp = $("insp-import-coluna");
+      if (colImpInsp && selImpInsp) {
+        var colsAtuais = (importDados && importDados.colunas) ? importDados.colunas : [];
+        var podeImportar = isText || el.tipo === "qr" || el.tipo === "barcode";
+        if (colsAtuais.length && podeImportar) {
+          var assinaturaCols = colsAtuais.join("\u0001");
+          if (selImpInsp.getAttribute("data-colsig") !== assinaturaCols) {
+            var escCol = function (s) { return String(s).replace(/&/g, "\u0026amp;").replace(/</g, "\u0026lt;").replace(/"/g, "\u0026quot;"); };
+            selImpInsp.innerHTML = '<option value="">(sem v\u00ednculo)</option>' + colsAtuais.map(function (c) {
+              return '<option value="' + escCol(c) + '">' + escCol(c) + "</option>";
+            }).join("");
+            selImpInsp.setAttribute("data-colsig", assinaturaCols);
+          }
+          if (selImpInsp.value !== (el.importColuna || "")) selImpInsp.value = el.importColuna || "";
+          colImpInsp.classList.remove("d-none");
+        } else {
+          colImpInsp.classList.add("d-none");
+        }
+      }
 
       var colTexto = $("insp-col-texto");
       var colFonte = $("insp-col-fonte");
@@ -7868,8 +7926,13 @@
                do preview, floor × módulos é exatamente a caixa) */
             var mag = Math.max(1, Math.floor(_qSide / _qMods));
             if (mag <= 10) {
-              /* Faixa nativa: ^BQ aceita magnificação 1–10 */
-              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + "," + qrNivelDe(_qSimbZ) + "^FDLA," + sanitizar(it.texto) + "^FS");
+              /* Faixa nativa: ^BQ aceita magnificação 1–10.
+                 Pedido 1.176: o nível de correção vai TAMBÉM no switch do
+                 ^FD (^FD<nível>A, — obrigatório no firmware). Antes era
+                 hardcoded "LA," e conflitava com o 4º parâmetro do ^BQ — a
+                 impressora real imprimia os dados entre colchetes. */
+              var _qNivZ = qrNivelDe(_qSimbZ);
+              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + "," + _qNivZ + "^FD" + _qNivZ + "A," + sanitizar(it.texto) + "^FS");
             } else {
               /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
                  mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
@@ -7920,7 +7983,19 @@
                  linha única, 4 = expandido empilhado). AIs crus no ^FD
                  (formato 1.141). VERIFICAR na impressora real. */
               var camposBr = gs1CamposZpl(it.texto);
-              var dadosBr = camposBr ? camposBr.join("") : sanitizar(it.texto);
+              var dadosBr;
+              if (_infoQ2dZ.br >= 1 && _infoQ2dZ.br <= 5) {
+                /* Pedido 1.176: tipos 1–5 (Omni/Truncado/Empilhados/Limited)
+                   codificam APENAS o AI(01), IMPLÍCITO na simbologia — o ^FD
+                   recebe os 14 dígitos do GTIN sem o "01". Com o AI embutido
+                   a impressora rejeitava e imprimia entre colchetes. */
+                var c01Br = camposBr ? camposBr.filter(function (cBr1) { return /^01/.test(cBr1); })[0] : null;
+                var s14Br = c01Br ? c01Br.slice(2) : String(it.texto || "").replace(/[^\d]/g, "");
+                if (!c01Br && /^01\d{14}$/.test(s14Br)) s14Br = s14Br.slice(2);
+                dadosBr = s14Br;
+              } else {
+                dadosBr = camposBr ? camposBr.join("") : sanitizar(it.texto);
+              }
               /* Pedido 1.164: magnificação c pelos módulos REAIS do bwip-js (eram
                  chutes /96 no ^BR e /100 no ^BY) — floor da razão menor (largura e
                  altura: DataBar empilhado cresce nos dois eixos) + snap do preview */
@@ -8827,7 +8902,7 @@
         if (multi) { zpl = multi.zpl; temLote = true; }
       }
       if (!zpl) {
-        if (paraImpressao && (localStorage.getItem("etiquetasZebra.printAsImage") === "1" || temTextoGirado())) {
+        if (paraImpressao && (localStorage.getItem("etiquetasZebra.printAsImage") !== "0" || temTextoGirado())) {
           zpl = gerarZPLImagem();
         } else {
           zpl = gerarZPLBloco(elements, tamAtualKey, rotAtual);
@@ -8921,7 +8996,7 @@
           /* Pedido 1.141: GS1 QR sai com ^FH + FNC1(_1D) — AIs voltam com parênteses.
              Pedido 1.149: 4º parâmetro = nível de correção (Q padrão, H/M/L). */
           var gs1QrImp = /\^FD_1D([^^]+)\^FS/.exec(block);
-          var qrMatch = /\^FDLA,([^^]+)\^FS/.exec(block);
+          var qrMatch = /\^FD[HQML]A,([^^]+)\^FS/.exec(block); /* pedido 1.177: qualquer nível de correção no switch do ^FD (o fix 1.176 acabou com o "LA" fixo) */
           var magMatch = /\^BQ[NRIB],2,(\d+)/.exec(block);
           var mag = magMatch ? parseInt(magMatch[1], 10) : 6;
           var ecMatchQr = /\^BQ[NRIB],2,\d+,([HQML])/.exec(block);
@@ -9000,11 +9075,16 @@
           var dadoDbImp = /\^FD(\d+)\^FS/.exec(block);
           if (dadoDbImp) {
             var magDb2 = magDbImp ? parseInt(magDbImp[1], 10) : 2;
+            var dadoDbBr = dadoDbImp[1];
+            /* Pedido 1.177: tipos 1-5 emitem o GTIN-14 cru no ^FD (AI 01
+               implícito — fix 1.176); recoloca o "01" na reimportação para o
+               gs1Enrolar reconstruir "(01)…" como antes. */
+            if (bDbImp >= 1 && bDbImp <= 5 && /^\d{14}$/.test(dadoDbBr)) dadoDbBr = "01" + dadoDbBr;
             newElements.push({
               id: "el_bin_" + idx,
               tipo: "qr",
               simbologia: simbDbImp,
-              texto: gs1Enrolar([dadoDbImp[1]]),
+              texto: gs1Enrolar([dadoDbBr]),
               x: x,
               y: y,
               w: magDb2 * 96,
@@ -10237,7 +10317,7 @@
       } else if (loteEspecialAtivo && zplAtual.indexOf("^XA") !== -1 &&
                  (zplAtual.indexOf("^SN") !== -1 || zplAtual.split("^XA").length - 1 > 1)) {
         zplBase = zplAtual; /* lote especial gerado (ainda no campo ZPL) */
-      } else if (localStorage.getItem("etiquetasZebra.printAsImage") === "1") {
+      } else if (localStorage.getItem("etiquetasZebra.printAsImage") !== "0") {
         zplBase = gerarZPLImagem();
       } else {
         zplBase = renderZPL();
@@ -10437,8 +10517,25 @@
       });
       return importGsheetsAplicar({ colunas: colunas, linhas: linhas });
     }
+    /* Pedido 1.177: ler uma nova origem de dados descarta os lotes antigos —
+       o "lote ZPL importado" (1.140) e o lote especial (1.101) continuavam
+       sequestrando a impressão e a contagem depois de ler um CSV novo: o
+       usuário via "2 etiquetas só com QR" (o lote de testes antigo, colado no
+       campo ZPL) em vez das 4 linhas do CSV recém-importado. */
+    function importDescartarLotesAntigos() {
+      var tinhaZpl = !!(loteZplBlocos && loteZplBlocos.length);
+      var tinhaEsp = !!loteEspecialAtivo;
+      loteZplBlocos = null;
+      loteEspecialAtivo = false;
+      loteEspecialBindings = null;
+      lotePaginaAtual = 0;
+      if (tinhaZpl || tinhaEsp) {
+        notify("Lote anterior (ZPL importado / especial) descartado — a nova importação assume o lugar.", "dark");
+      }
+    }
     function importAplicarResposta(res, origemMsg) {
       if (!res || !res.colunas || !res.colunas.length) { notify("A origem não retornou colunas legíveis.", "danger"); return; }
+      importDescartarLotesAntigos();
       importDados = res;
       importRenderMapeamento();
       atualizarBarraStatusLote();
@@ -10669,7 +10766,70 @@
 
       container.classList.remove("d-none");
       atualizarNavLote();
+
+      /* Pedido 1.177: o mapeamento salvo reaplica sozinho quando os nomes das
+         colunas coincidem — avisar quantas colunas ficaram vinculadas, senão
+         "li as colunas" parece "está tudo mapeado" e só o campo salvo antes
+         (ex.: só o QR Code) recebe valores na hora de gerar. */
+      var nVinc = importDados.colunas.filter(function (c) {
+        return importCamposDaColuna(mapaSalvo[c]).length > 0;
+      }).length;
+      if (nVinc) {
+        notify("Mapeamento anterior reaplicado: " + nVinc + " de " + importDados.colunas.length + " coluna(s) com campo vinculado — confira abaixo antes de gerar.", "info");
+      }
     }
+
+    /* Pedido 1.178: trocar o "Coluna da importação" no Editor de Elemento
+       vincula/desvincula o elemento selecionado (el.importColuna). */
+    (function () {
+      var selImp = $("insp-import-coluna");
+      if (!selImp) return;
+      selImp.addEventListener("change", function () {
+        var el = elements.find(function (e) { return e.id === selectedElId; });
+        if (!el) return;
+        var col = selImp.value;
+        if (col) {
+          elements.forEach(function (outro) {
+            if (outro !== el && outro.importColuna === col) delete outro.importColuna;
+          });
+          el.importColuna = col;
+          notify("Elemento vinculado à coluna \"" + col + "\" — ao gerar, o valor de cada linha cai sempre neste elemento.", "info");
+        } else if (el.importColuna) {
+          delete el.importColuna;
+          notify("Elemento desvinculado da importação.", "info");
+        }
+        renderZPL();
+      });
+    })();
+
+    /* Pedido 1.178: marcar um campo no mapeamento com UM elemento selecionado
+       no Estúdio vincula esse elemento à coluna (desmarcar desvincula) — sem
+       isso, o preenchimento segue a ordem de inserção e os elementos antigos
+       do Estúdio recebem os valores antes dos que o usuário acabou de criar. */
+    (function () {
+      var cont = $("import-mapping-container");
+      if (!cont) return;
+      cont.addEventListener("change", function (ev) {
+        var cb = ev.target;
+        if (!cb || cb.type !== "checkbox" || !cb.dataset || !cb.dataset.coluna) return;
+        if (selectedElIds.length !== 1) return;
+        var el = elements.find(function (e) { return e.id === selectedElIds[0]; });
+        if (!el) return;
+        var famCampo = (cb.dataset.campo === "qr") ? "qr" : (cb.dataset.campo === "barcode") ? "barcode" : "texto";
+        var famEl = (el.tipo === "qr") ? "qr" : (el.tipo === "barcode") ? "barcode" : "texto";
+        if (famEl !== famCampo) return;
+        if (cb.checked) {
+          elements.forEach(function (outro) {
+            if (outro !== el && outro.importColuna === cb.dataset.coluna) delete outro.importColuna;
+          });
+          el.importColuna = cb.dataset.coluna;
+          notify("Elemento selecionado vinculado à coluna \"" + cb.dataset.coluna + "\".", "info");
+        } else if (el.importColuna === cb.dataset.coluna) {
+          delete el.importColuna;
+          notify("Elemento desvinculado da coluna \"" + cb.dataset.coluna + "\".", "info");
+        }
+      });
+    })();
 
     function importObterMapeamento() {
       var mapa = {};
@@ -10756,6 +10916,7 @@
           if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error("privada"); /* resposta HTML = pedido de login */
           var res = importParseCSV(txt);
           if (!res || !res.colunas.length) throw new Error("CSV vazio");
+          importDescartarLotesAntigos(); /* Pedido 1.177 */
           importDados = importGsheetsAplicar(res);
           importRenderMapeamento();
           atualizarBarraStatusLote();
@@ -10798,6 +10959,7 @@
           return colunas.map(function (_, i) { return row[i] == null ? "" : String(row[i]); });
         });
         if (!colunas.length) { notify("A primeira linha (cabeçalhos) da planilha está vazia.", "danger"); return; }
+        importDescartarLotesAntigos(); /* Pedido 1.177 */
         importDados = importGsheetsAplicar({ colunas: colunas, linhas: linhas });
         importRenderMapeamento();
         atualizarBarraStatusLote();
@@ -10859,6 +11021,7 @@
               return (v == null) ? "" : String(v);
             });
           });
+          importDescartarLotesAntigos(); /* Pedido 1.177 */
           importDados = importGsheetsAplicar({ colunas: colunas, linhas: linhas });
           importRenderMapeamento();
           atualizarBarraStatusLote();
@@ -10932,6 +11095,7 @@
           readerArq.onload = function (evt) {
             var res = ehXlsx ? importParseXLSX(evt.target.result) : importParseCSV(evt.target.result);
             if (!res) { notify("Não foi possível ler colunas do arquivo (CSV, TXT ou Excel).", "danger"); return; }
+            importDescartarLotesAntigos(); /* Pedido 1.177 */
             importDados = res;
             importRenderMapeamento();
             atualizarBarraStatusLote();
@@ -11007,81 +11171,24 @@
         if (!importDados.colunas.length) { notify("Leia as colunas antes de aplicar.", "danger"); return; }
         var validacao = importValidarMapeamento();
         if (!validacao.ok) { notify(validacao.msg, "danger"); return; }
-        var primeira = importDados.linhas[0] || [];
+        var pares = obterParesMapeadosLote(validacao.mapa);
+        if (!pares.length) { notify("Nenhuma coluna mapeada. Escolha ao menos um campo do sistema.", "danger"); return; }
 
-        /* Coleta itens mapeados na ordem das colunas — cada coluna pode gerar
-           vários itens (pedido 1.96: ex.: série como Texto E QR Code) */
-        var idxColsAplicar = obterIdxColsLote();
-        var itens = [];
-        importDados.colunas.forEach(function (coluna) {
-          importCamposDaColuna(validacao.mapa[coluna]).forEach(function (campo) {
-            var v = primeira[idxColsAplicar[coluna]];
-            itens.push({ campo: campo, coluna: coluna, valor: (v != null) ? String(v) : "" });
-          });
+        /* Pedido 1.176: "Aplicar" agora PREENCHE os elementos existentes na
+           ordem de inserção (mesma regra do lote/"Gerar Todas as Linhas"),
+           incluindo os adicionados à mão — antes ele criava elementos novos
+           SEMPRE, e os elementos do usuário nunca recebiam os valores.
+           Apenas os alvos faltantes são criados empilhados abaixo. */
+        var alvos = aplicarLinhaLoteNoEstudio(0, pares, obterIdxColsLote());
+        pares.forEach(function (par, iAp) {
+          if (alvos && alvos[iAp]) alvos[iAp].importColuna = par.coluna;
         });
-        if (!itens.length) { notify("Nenhuma coluna mapeada. Escolha ao menos um campo do sistema.", "danger"); return; }
-
-        /* ---------- AUTOAJUSTE: sem sobreposição e cabendo na etiqueta ---------- */
-        var sz = SIZES[tamAtualKey] || SIZES["100x50"];
-        var W = sz.w, H = sz.h;
-        var m = Math.round(W * 0.035);
-        var GAP = Math.max(6, Math.round(H * 0.03));
-
-        function alturaItem(it) {
-          if (it.campo === "qr") return Math.min(200, W - 2 * m);
-          if (it.campo === "barcode") return 110;
-          return (it.campo === "nome" ? 50 : 28) * 1.4;
-        }
-
-        /* Ponto de partida: abaixo de tudo que já existe na etiqueta (evita sobrepor) */
-        var baseY = m;
-        elements.forEach(function (e) {
-          var eh = (e.tipo === "texto") ? ((e.fonte || 28) * 1.4) : (e.h || 0);
-          var fundo = (e.y || 0) + eh;
-          if (fundo > baseY) baseY = fundo;
-        });
-        if (elements.length) baseY += GAP;
-
-        /* Se o total não cabe na altura restante, reduz proporcionalmente (autoajuste de tamanho) */
-        var totalItens = itens.reduce(function (acc, it) { return acc + alturaItem(it) + GAP; }, 0);
-        var alturaDisponivel = Math.max(0, H - baseY - m);
-        var escala = 1;
-        var coubeBem = totalItens <= alturaDisponivel;
-        if (!coubeBem && totalItens > 0) {
-          escala = alturaDisponivel / totalItens;
-          if (escala < 0.45) { escala = 0.45; notify("Total de elementos reduzido ao mínimo e ainda pode não caber — considere uma etiqueta maior.", "warning"); }
-        }
-
-        /* Cria os elementos já posicionados em sequência vertical, sem sobreposição */
-        var cursorY = baseY;
-        itens.forEach(function (item) {
-          adicionarElemento(item.campo, item.valor);
-          var el = elements[elements.length - 1];
-          if (!el) return;
-          el.importColuna = item.coluna; /* liga o elemento à coluna de origem (usado por "Gerar Todas as Linhas") */
-          var x = m, y = cursorY;
-          if (el.tipo === "texto") {
-            var fontePadrao = (item.campo === "nome" ? 50 : 28);
-            el.fonte = Math.max(10, Math.round(fontePadrao * escala));
-            if (typeof ajustarFonteParaCaber === "function") el.fonte = ajustarFonteParaCaber(el.texto || "", el.fonte, W - 2 * m);
-            el.h = Math.round(el.fonte * 1.4);
-          } else if (el.tipo === "qr") {
-            var lado = Math.max(60, Math.round(Math.min(200, W - 2 * m) * escala));
-            el.w = lado; el.h = lado;
-          } else if (el.tipo === "barcode") {
-            el.h = Math.max(40, Math.round(110 * escala));
-            el.w = Math.min(300, W - 2 * m);
-          }
-          el.x = x; el.y = y;
-          if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
-          cursorY = (el.y + ((el.tipo === "texto") ? (el.fonte * 1.4) : el.h)) + GAP;
-        });
-
-        bootstrap.Modal.getInstance($("modal-import-dados")).hide();
-        renderStudio();
+        var modalAplicar = bootstrap.Modal.getInstance($("modal-import-dados"));
+        if (modalAplicar) modalAplicar.hide();
+        salvarHistorico();
         lotePaginaAtual = 0;
         atualizarNavLote();
-        notify(itens.length + " elementos criados" + (coubeBem ? " sem sobreposição." : " com tamanho reduzido para caber.") + " Ajuste-os como quiser.", "success");
+        notify(pares.length + " valor(es) da 1ª linha aplicados aos elementos da etiqueta (na ordem de inserção). O que faltava foi criado abaixo — ajuste como quiser.", "success");
       });
     }
 
@@ -11134,15 +11241,44 @@
        faltantes são criados empilhados abaixo de tudo — sem sobreposição
        (mesmo autoajuste do "Aplicar"). */
     function garantirAlvosLote(pares) {
-      var alvos = new Array(pares.length);
+      /* Pedido 1.177: denso de fábrica — new Array(n) cria array ESPARSO e
+         .filter/.map PULAM buracos: faltam não contava os pares sem alvo (a
+         criação nunca rodava) e idxAlvos ficava com buracos (k = undefined
+         passava pelos guards do gerarZPLTodasLinhas e crashava o clone). */
+      var alvos = pares.map(function () { return null; });
       var textos = obterAlvosTextoLote();
       var codigos = elements.filter(function (e) { return e.tipo === "qr" || e.tipo === "barcode"; });
+      function ehParCodigo(par) { return par.campo === "qr" || par.campo === "barcode"; }
+
+      /* Pedido 1.176: elemento LIGADO à coluna (el.importColuna, gravado a
+         cada aplicação pela aplicarLinhaLoteNoEstudio) tem PRIORIDADE —
+         reimportar preenche sempre os MESMOS elementos, mesmo que o usuário
+         tenha adicionado outros no meio do caminho. */
+      var usados = [];
+      function reclamarLigado(par) {
+        var fila = ehParCodigo(par) ? codigos : textos;
+        for (var k = 0; k < fila.length; k++) {
+          if (usados.indexOf(fila[k]) !== -1) continue;
+          if (fila[k].importColuna === par.coluna) { usados.push(fila[k]); return fila[k]; }
+        }
+        return null;
+      }
+      pares.forEach(function (par, i) {
+        var lig = alvos[i] ? null : reclamarLigado(par);
+        if (lig) alvos[i] = lig;
+      });
+
+      /* Pares restantes: elementos ainda não usados, na ordem de inserção
+         (comportamento original do lote). */
       var iT = 0, iC = 0;
       pares.forEach(function (par, i) {
-        if (par.campo === "qr" || par.campo === "barcode") {
-          if (iC < codigos.length) alvos[i] = codigos[iC++];
-        } else if (iT < textos.length) {
-          alvos[i] = textos[iT++];
+        if (alvos[i]) return;
+        if (ehParCodigo(par)) {
+          while (iC < codigos.length && usados.indexOf(codigos[iC]) !== -1) iC++;
+          if (iC < codigos.length) { alvos[i] = codigos[iC]; usados.push(codigos[iC]); iC++; }
+        } else {
+          while (iT < textos.length && usados.indexOf(textos[iT]) !== -1) iT++;
+          if (iT < textos.length) { alvos[i] = textos[iT]; usados.push(textos[iT]); iT++; }
         }
       });
       var faltam = alvos.filter(function (a) { return !a; }).length;
@@ -11193,10 +11329,14 @@
       var linha = importDados.linhas[idxLinha] || [];
       var alvos = garantirAlvosLote(pares);
       pares.forEach(function (par, i) {
-        var v = linha[idxCols[par.coluna]];
-        if (alvos[i]) alvos[i].texto = (v != null) ? String(v) : "";
+        if (alvos[i]) {
+          var v = linha[idxCols[par.coluna]];
+          alvos[i].texto = (v != null) ? String(v) : "";
+          alvos[i].importColuna = par.coluna; /* pedido 1.176: liga o elemento à coluna — reimportações estáveis */
+        }
       });
       renderStudio();
+      return alvos;
     }
 
     /* Pedido 1.93: se a etiqueta ainda não foi criada, o próprio lote cria —
@@ -11415,7 +11555,7 @@
         var clone = elements.map(function (el) { return Object.assign({}, el); });
         pares.forEach(function (par, i) {
           var k = idxAlvos[i];
-          if (k === -1 || k >= clone.length) return;
+          if (!(k >= 0) || k >= clone.length) return; /* pedido 1.177: undefined/NaN/-1 seguros */
           var v = linha[idxCols[par.coluna]];
           clone[k].texto = (v != null) ? String(v) : "";
         });
@@ -12306,7 +12446,7 @@
         }
       })
       .catch(function () {
-        notify("HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando. Rode: node print-server.js — ou aceite o certificado em https://" + ip + " (Avançado → Prosseguir).", "danger");
+        notify("HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando. Rode: node print-server.js — ou instale-a para ligar sozinha: powershell -ExecutionPolicy Bypass -File instalar-ponte.ps1 — ou aceite o certificado em https://" + ip + " (Avançado → Prosseguir).", "danger");
       });
     }
 
@@ -12953,10 +13093,11 @@
     var btnImprimirDesk = $("btn-imprimir");
     if (btnImprimirDesk) btnImprimirDesk.addEventListener("click", solicitarImpressaoComCopias);
 
-    /* Toggle: Imprimir como Imagem (^GF) — persistente */
+    /* Toggle: Imprimir como Imagem (^GF) — persistente. Pedido 1.176: padrão
+       LIGADO — só a chave "0" (gravada pelo próprio toggle) desativa. */
     var btnImgPrint = $("btn-toggle-imgprint");
     function atualizarBtnImgPrint() {
-      var ativo = localStorage.getItem("etiquetasZebra.printAsImage") === "1";
+      var ativo = localStorage.getItem("etiquetasZebra.printAsImage") !== "0";
       if (btnImgPrint) {
         btnImgPrint.classList.toggle("icon-btn-success", ativo);
         btnImgPrint.classList.toggle("icon-btn-muted", !ativo);
@@ -12966,7 +13107,7 @@
     }
     if (btnImgPrint) {
       btnImgPrint.addEventListener("click", function () {
-        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
+        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") !== "0");
         localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
         atualizarBtnImgPrint();
         notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
@@ -14147,7 +14288,7 @@
     var navImgPrint = $("nav-btn-imgprint");
     if (navImgPrint) {
       navImgPrint.addEventListener("click", function() {
-        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
+        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") !== "0");
         localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
         notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
       });
@@ -14558,7 +14699,7 @@
       dnvAcao("dnv-imp-cal-exec", function () { if (typeof calibrarImpressora === "function") calibrarImpressora(); });
       dnvAcao("dnv-imp-preview", function () { if (typeof abrirPreviewImpressao === "function") abrirPreviewImpressao(); });
       dnvAcao("dnv-imp-imgprint", function () {
-        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") === "1");
+        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") !== "0");
         localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
         notify(novo ? "Impressao como IMAGEM ativada." : "Impressao ZPL vetorial padrao reativada.", novo ? "success" : "dark");
       });
@@ -15198,7 +15339,7 @@
                       <ul class="small text-muted mb-0 ps-3">
                         <li><strong>Configurar Impressora</strong> — escolhe o jeito de conectar: Rede (IP), USB ou Bluetooth (seção 9).</li>
                         <li><strong>Pré-visualizar</strong> — mostra na tela como o papel vai sair.</li>
-                        <li><strong>Imprimir como Imagem</strong> — imprime a etiqueta exatamente como está desenhada (à prova de enrolamento de papel).</li>
+                        <li><strong>Imprimir como Imagem</strong> — imprime a etiqueta exatamente como está desenhada (à prova de enrolamento de papel). <strong>Ativado por padrão</strong> — desative no botão se preferir o ZPL vetorial nativo.</li>
                         <li><strong>Imprimir com Cópias</strong> — pergunta quantas cópias imprimir.</li>
                         <li><strong>Imprimir Agora</strong> — envia direto para a impressora configurada, com progresso em tempo real (um aviso de falta de papel, por exemplo, aparece na tela na hora).</li>
                       </ul>
@@ -15434,7 +15575,7 @@
               <div class="col-md-4">
                 <div class="card p-3 h-100 border-0 shadow-sm">
                   <h6 class="fw-bold text-primary mb-2"><i class="fas fa-network-wired me-1"></i>Rede (IP)</h6>
-                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.6 ou mais novo?</strong> O /pstprnt só funciona em <strong>HTTPS</strong>: com o <strong>print-server.js local rodando</strong> o app imprime via HTTPS pela ponte automaticamente (certificado autoassinado tolerado — nada para aceitar); sem a ponte, aceite o certificado uma vez por sessão (Avançado — Prosseguir) — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
+                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.6 ou mais novo?</strong> O /pstprnt só funciona em <strong>HTTPS</strong>: com o <strong>print-server.js local rodando</strong> o app imprime via HTTPS pela ponte automaticamente (certificado autoassinado tolerado — nada para aceitar); a ponte precisa rodar <strong>no computador que imprime</strong> — instale-a para ligar sozinha com o Windows com <code>powershell -ExecutionPolicy Bypass -File instalar-ponte.ps1</code>; usando o app publicado no GitHub, o navegador pede na primeira vez <strong>acesso à rede local</strong> — permita (é uma vez só); sem a ponte, aceite o certificado uma vez por sessão (Avançado — Prosseguir) — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
                 </div>
               </div>
               <div class="col-md-4">
@@ -15520,6 +15661,11 @@
                     <td><span class="badge bg-info text-dark">Redimensionar</span></td>
                     <td><kbd class="bg-light text-dark border shadow-sm">Ctrl</kbd> + <kbd class="bg-light text-dark border shadow-sm">Arraste</kbd></td>
                     <td>Segure Ctrl enquanto arrasta para ajustar largura, altura e fonte.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge bg-info text-dark">Mover fino</span></td>
+                    <td><kbd class="bg-light text-dark border shadow-sm">Setas</kbd> ↑ ↓ ← →</td>
+                    <td>Com elemento(s) selecionado(s), move 1 ponto (0,125 mm) por tecla — ajuste fino de posição. Vários selecionados andam juntos.</td>
                   </tr>
                   <tr>
                     <td><span class="badge bg-warning text-dark">Rotacionar</span></td>
