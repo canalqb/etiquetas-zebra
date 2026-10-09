@@ -1826,6 +1826,10 @@
               </button>
             </div>
           </div>
+          <span class="dnv-dropdown-header">Sistemas</span>
+          <button type="button" class="dnv-dropdown-item" id="dnv-adic-seriescan" role="menuitem" title="SerieScan — consulte números de série digitados ou scaneados contra uma base CSV (azul = encontrada, vermelho = fora da lista)">
+            <i class="fas fa-magnifying-glass dnv-icon text-success"></i> SerieScan — Consultar Séries (CSV)
+          </button>
         </div>
       </li>
 
@@ -12706,6 +12710,29 @@
       bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 
+    /* ---------------- Adicionais — SerieScan: consultar séries em base CSV (Pedido 1.179) ----------------
+       App standalone em adicionais/ccsv/ (index.html + app.js + storage.js —
+       migração do code.gs do Sheets; projeto absorvido em 09/10/2026), aberto
+       via IFRAME no modal de páginas: importa a base (CSV 1 coluna, 1 série
+       por linha, fica salva no navegador), abre o scanner e confere cada
+       série lida/digitada — azul + bipe quando encontrada, vermelho +
+       bipe duplo quando fora da lista; extras: contadores, histórico,
+       desfazer, exportar CSV e txt automático via pasta escolhida. */
+    function abrirAdicionaisSerieScan() {
+      var modalEl = document.getElementById("modal-pagina-legal");
+      var corpo = document.getElementById("pagina-legal-conteudo");
+      if (!modalEl || !corpo) return;
+      var titulo = document.getElementById("titulo-pagina-legal");
+      if (titulo) titulo.textContent = "SerieScan — Consultar Séries (CSV)";
+      var link = document.getElementById("link-pagina-legal");
+      if (link) link.setAttribute("href", "adicionais/ccsv/index.html");
+      corpo.innerHTML =
+        '<div class="alert alert-info py-2 mb-2" role="alert"><i class="fas fa-circle-info me-1"></i>' +
+        'Importe a base (CSV com 1 série por linha), escaneie ou digite as séries e o sistema responde na hora: azul = encontrada, vermelho = fora da lista. A lista fica salva no navegador — use "Trocar lista" dentro do app para carregar outra.</div>' +
+        '<iframe src="adicionais/ccsv/index.html" title="SerieScan — Consultar Séries (CSV)" style="width:100%;height:78vh;border:1px solid var(--zebra-border);border-radius:10px;background:#fff;" loading="lazy"></iframe>';
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+
     /* ---------------- Adicionais — Xerox: instaladores "copiar comando" (Pedido 1.161) ----------------
        Copia o comando irm ... | iex (release do github.com/canalqb/Xerox-Installer)
        para a área de transferência; o usuário cola no PowerShell. Sem admin:
@@ -14337,12 +14364,13 @@
        ================================================================ */
     var ADICIONAIS_MOBILE = {
       raiz: {
-        titulo: "Adicionais — Fabricantes",
+        titulo: "Adicionais",
         voltar: null,
         itens: [
           { id: "adic-mob-honeywell", icone: "fa-industry", texto: "Honeywell", dest: "honeywell" },
           { id: "adic-mob-xerox", icone: "fa-print", texto: "Xerox - Lexmark", dest: "xerox" },
-          { id: "adic-mob-zebra", icone: "fa-barcode", texto: "Zebra", dest: "zebra" }
+          { id: "adic-mob-zebra", icone: "fa-barcode", texto: "Zebra", dest: "zebra" },
+          { id: "adic-mob-seriescan", icone: "fa-magnifying-glass", texto: "SerieScan — Consultar Séries (CSV)", acao: "seriescan" }
         ]
       },
       honeywell: {
@@ -14431,6 +14459,9 @@
               break;
             case "inst-zt411":
               copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZT411.ps1 | iex", "Zebra ZT411");
+              break;
+            case "seriescan":
+              if (typeof abrirAdicionaisSerieScan === "function") abrirAdicionaisSerieScan();
               break;
           }
           /* Fechamento com retry: se o usuário tocar num item logo após abrir
@@ -14976,6 +15007,12 @@
       });
       dnvAcao("dnv-adic-zt411-inst", function () {
         copiarComandoInstalador("irm https://github.com/canalqb/Zebra-Installer/releases/latest/download/Instalar-ZT411.ps1 | iex", "Zebra ZT411");
+      });
+
+      /* Adicionais (Pedido 1.179): SerieScan — consultar séries digitadas ou
+         scaneadas contra uma base CSV — app absorvido em adicionais/ccsv/ */
+      dnvAcao("dnv-adic-seriescan", function () {
+        if (typeof abrirAdicionaisSerieScan === "function") abrirAdicionaisSerieScan();
       });
 
     })(); /* fim Navbar Fase A */

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="claro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{TITULO_DA_PAGINA}</title>
+<meta name="description" content="{DESCRICAO_ATE_160_CHARS}">
+<meta name="color-scheme" content="light dark">
+<!-- SEO/AEO (regra 23): descomente e preencha
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","name":"{TITULO_DA_PAGINA}","description":"{DESCRICAO_ATE_160_CHARS}","inLanguage":"pt-BR"}
+</script>
+-->
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('tema');
+      if (t === 'claro' || t === 'escuro') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) { /* localStorage indisponivel: fica no tema claro */ }
+  })();
+</script>
+<style>
+/* ---------- Tokens de tema (regra 9.9: claro + escuro, contraste WCAG AA) ---------- */
+:root {
+  --fundo: #f8fafc;
+  --superficie: #ffffff;
+  --texto: #0f172a;
+  --suave: #475569;
+  --borda: #cbd5e1;
+  --destaque: #2563eb;
+  --destaque-texto: #ffffff;
+  --ok: #166534;
+  --ok-fundo: #dcfce7;
+  --erro: #b91c1c;
+  --erro-fundo: #fee2e2;
+  --aviso: #92400e;
+  --aviso-fundo: #fef3c7;
+  --sombra: 0 1px 3px rgba(15, 23, 42, .12);
+}
+[data-theme="escuro"] {
+  --fundo: #0f172a;
+  --superficie: #1e293b;
+  --texto: #e2e8f0;
+  --suave: #94a3b8;
+  --borda: #334155;
+  --destaque: #93c5fd;
+  --destaque-texto: #0f172a;
+  --ok: #86efac;
+  --ok-fundo: #14532d;
+  --erro: #fca5a5;
+  --erro-fundo: #7f1d1d;
+  --aviso: #fcd34d;
+  --aviso-fundo: #78350f;
+  --sombra: 0 1px 3px rgba(0, 0, 0, .45);
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  line-height: 1.5;
+}
+a { color: var(--destaque); }
+:focus-visible { outline: 3px solid var(--destaque); outline-offset: 2px; }
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip {
+  position: absolute;
+  left: .5rem;
+  top: -3rem;
+  z-index: 100;
+  background: var(--superficie);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-radius: .4rem;
+  padding: .5rem .8rem;
+  text-decoration: none;
+  transition: top .15s;
+}
+.skip:focus { top: .5rem; }
+
+/* ---------- Estrutura semantica ---------- */
+.cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+  padding: .7rem 1rem;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borda);
+  box-shadow: var(--sombra);
+}
+.marca { font-weight: 700; letter-spacing: .06em; }
+.menu { display: flex; gap: .9rem; flex: 1; }
+.menu a { color: var(--suave); text-decoration: none; font-size: .95rem; }
+.menu a:hover, .menu a[aria-current="page"] { color: var(--destaque); text-decoration: underline; }
+.conteudo { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 1rem; }
+.rodape {
+  padding: .8rem 1rem;
+  background: var(--superficie);
+  border-top: 1px solid var(--borda);
+  color: var(--suave);
+  font-size: .85rem;
+  text-align: center;
+}
+.cartao {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: .75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--sombra);
+}
+.cartao h1, .cartao h2 { margin: 0 0 .6rem; line-height: 1.25; }
+.cartao h1 { font-size: 1.35rem; }
+.cartao h2 { font-size: 1.05rem; }
+p { margin: .4rem 0; }
+
+/* ---------- Controles ---------- */
+button, select, input[type="text"], input[type="search"] {
+  font: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: .5rem;
+  padding: .5rem .9rem;
+  cursor: pointer;
+}
+button:hover { border-color: var(--destaque); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.principal { background: var(--destaque); border-color: var(--destaque); color: var(--destaque-texto); }
+.check { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+.acoes { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: .8rem; }
+.status { margin-top: .7rem; font-size: .9rem; padding: .5rem .7rem; border-radius: .5rem; background: var(--fundo); border: 1px solid var(--borda); }
+.status.ok { background: var(--ok-fundo); color: var(--ok); border-color: transparent; }
+.status.erro { background: var(--erro-fundo); color: var(--erro); border-color: transparent; }
+.status.aviso { background: var(--aviso-fundo); color: var(--aviso); border-color: transparent; }
+
+/* ---------- Toast (regra 9.1: substitui alert) ---------- */
+.toasts {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  max-width: min(92vw, 380px);
+}
+.toast {
+  background: var(--superficie);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--destaque);
+  border-radius: .5rem;
+  padding: .6rem .8rem;
+  font-size: .92rem;
+  box-shadow: var(--sombra);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .25s, transform .25s;
+}
+.toast.ok { border-left-color: var(--ok); }
+.toast.erro { border-left-color: var(--erro); }
+.toast.aviso { border-left-color: var(--aviso); }
+.toast.sai { opacity: 0; transform: translateY(8px); }
+
+/* ---------- Exemplo de secao (apague ao personalizar) ---------- */
+.lista-exemplo { list-style: none; margin: .5rem 0 0; padding: 0; }
+.lista-exemplo li { padding: .45rem .3rem; border-bottom: 1px solid var(--borda); }
+@media (max-width: 640px) {
+  .cabecalho { padding: .6rem .75rem; }
+  .conteudo { padding: .75rem; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conte&uacute;do principal</a>
+
+<header class="cabecalho">
+  <span class="marca">{NOME_DO_PROJETO}</span>
+  <nav class="menu" aria-label="Navegacao principal">
+    <a href="{URL_1}" aria-current="page">{ROTULO_1}</a>
+    <a href="{URL_2}">{ROTULO_2}</a>
+  </nav>
+  <button type="button" id="btn-tema" aria-pressed="false" aria-label="Alternar entre tema claro e escuro">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+    </svg>
+  </button>
+</header>
+
+<main id="conteudo" class="conteudo" tabindex="-1">
+  <section class="cartao" aria-labelledby="titulo-principal">
+    <h1 id="titulo-principal">{TITULO_DA_PAGINA}</h1>
+    <p>{DESCRICAO_CURTA_DO_CONTEUDO}</p>
+
+    <ul class="lista-exemplo">
+      <li>{ITEM_1}</li>
+      <li>{ITEM_2}</li>
+    </ul>
+
+    <div class="acoes">
+      <button type="button" class="principal" id="btn-principal">{ROTULO_ACAO_PRINCIPAL}</button>
+      <button type="button" id="btn-secundaria">{ROTULO_ACAO_SECUNDARIA}</button>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite" hidden></p>
+  </section>
+</main>
+
+<footer class="rodape">
+  <p>{RODAPE_COPY} &mdash; constru&ccedil;&atilde;o somente HTML + JS</p>
+</footer>
+
+<div id="toasts" class="toasts" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Tema claro/escuro com persistencia (regra 9.9) ---------- */
+  var btnTema = document.getElementById('btn-tema');
+
+  function temaAtual() {
+    return document.documentElement.getAttribute('data-theme') === 'escuro' ? 'escuro' : 'claro';
+  }
+
+  function aplicarTema(tema) {
+    document.documentElement.setAttribute('data-theme', tema);
+    try { localStorage.setItem('tema', tema); } catch (e) { /* sem persistencia */ }
+    var escuro = tema === 'escuro';
+    btnTema.setAttribute('aria-pressed', escuro ? 'true' : 'false');
+    btnTema.setAttribute('aria-label', escuro ? 'Ativar tema claro' : 'Ativar tema escuro');
+  }
+
+  btnTema.addEventListener('click', function () { aplicarTema(temaAtual() === 'escuro' ? 'claro' : 'escuro'); });
+  aplicarTema(temaAtual());
+
+  /* ---------- Toasts: unica forma de aviso, nunca alert() (regra 9.1) ---------- */
+  window.showToast = function (mensagem, tipo) {
+    var cont = document.getElementById('toasts');
+    if (!cont || !mensagem) return;
+    var no = document.createElement('div');
+    no.className = 'toast' + (tipo ? ' ' + tipo : '');
+    no.textContent = mensagem;
+    cont.appendChild(no);
+    setTimeout(function () { no.classList.add('sai'); }, 3200);
+    setTimeout(function () { no.remove(); }, 3600);
+  };
+
+  /* ---------- Exemplo: acao principal mostra toast (troque pela sua logica) ---------- */
+  document.getElementById('btn-principal').addEventListener('click', function () {
+    window.showToast('{MENSAGEM_DE_SUCESSO}', 'ok');
+  });
+  document.getElementById('btn-secundaria').addEventListener('click', function () {
+    window.showToast('{MENSAGEM_DE_AVISO}', 'aviso');
+  });
+})();
+</script>
+</body>
+</html>
