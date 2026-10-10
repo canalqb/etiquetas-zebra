@@ -10638,11 +10638,14 @@
        JavaScript (republicar a nova versão da implantação). */
     var webhookEmCurso = false;
     var webhookSeq = 0;
-    function importLerWebhook() {
+    function importLerWebhook(auto) {
       var url = ($("webhook-url").value || "").trim();
       if (!/^https?:\/\//i.test(url)) { notify("Informe a URL do webhook (http/https).", "warning"); return; }
       if (webhookEmCurso) { notify("Já existe uma consulta ao webhook em andamento — aguarde ela terminar.", "warning"); return; }
-      var metodo = $("webhook-metodo").value || "GET";
+      /* Pedido 1.187: leitura automática (Enter/mudança no campo) só IMPORTA
+         dados — usa GET; o POST configurado fica para o clique explícito em
+         "Ler Colunas". Evita POST automático quando a pessoa só quer ler. */
+      var metodo = auto ? "GET" : ($("webhook-metodo").value || "GET");
       var headers = {};
       var hTxt = ($("webhook-headers").value || "").trim();
       if (hTxt) {
@@ -10651,9 +10654,17 @@
       }
       webhookEmCurso = true;
       notify("Consultando webhook...", "info");
+      var respostaLegivel = false;
       fetch(url, { method: metodo, headers: headers })
         .then(function (r) {
+          if (r.status === 401 || r.status === 403) {
+            /* Pedido 1.187: 401/403 legível = AUTENTICAÇÃO/ACESSO, não CORS.
+               Apps Script anônimo exige 'Quem tem acesso' = Qualquer pessoa
+               (POST anônimo na implantação fechada responde 401). */
+            throw new Error("HTTP " + r.status + " — o endpoint exige autenticação/acesso. Para Apps Script: 'Quem tem acesso' = 'Qualquer pessoa' (a importação do navegador é anônima).");
+          }
           if (!r.ok) throw new Error("HTTP " + r.status);
+          respostaLegivel = true;
           return r.json();
         })
         .then(function (json) {
@@ -10663,14 +10674,28 @@
           importAplicarResposta(res, "webhook");
         })
         .catch(function (err) {
+          var msg = String((err && err.message) || err);
+          webhookEmCurso = false;
+          /* Pedido 1.187: o endpoint RESPONDEU (status HTTP legível) — o
+             problema é autenticação/status, JSONP não muda nada. */
+          if (/^HTTP/.test(msg)) {
+            notify("Falha ao contatar o webhook (" + msg + ").", "danger");
+            return;
+          }
+          /* Pedido 1.187: resposta legível com corpo inválido — CORS não é
+             o problema; não queima 30s de JSONP. */
+          if (respostaLegivel) {
+            notify("O webhook respondeu, mas o corpo não é um JSON válido (" + msg + ").", "danger");
+            return;
+          }
           /* Falha de rede/CORS (ex.: Apps Script 302 sem CORS): JSONP
              contorna — mas só existe em GET (script não faz POST). */
           if (metodo !== "GET") {
-            webhookEmCurso = false;
-            notify("Falha ao contatar o webhook (" + err.message + ") — confira URL e CORS. O contorno via JSONP só funciona com método GET.", "danger");
+            notify("Falha ao contatar o webhook (" + msg + ") — confira URL e CORS. O contorno via JSONP só funciona com método GET.", "danger");
             return;
           }
-          notify("Falha direta (" + err.message + ") — tentando via JSONP (contorno do CORS)...", "info");
+          notify("Falha direta (" + msg + ") — tentando via JSONP (contorno do CORS)...", "info");
+          webhookEmCurso = true;
           importWebhookJsonp(url);
         });
     }
@@ -10684,7 +10709,7 @@
       var timer = setTimeout(function () {
         limpar();
         webhookEmCurso = false;
-        notify("O webhook não respondeu em 30 segundos via JSONP — confira a URL e se o Apps Script aceita ?callback= (republique a nova versão da implantação).", "danger");
+        notify("O webhook não respondeu em 30 segundos via JSONP — confira a URL, se o Apps Script aceita ?callback= (republicar a nova versão) e se 'Quem tem acesso' está como 'Qualquer pessoa' (acesso anônimo).", "danger");
       }, 30000);
       function limpar() {
         clearTimeout(timer);
@@ -10702,7 +10727,7 @@
       script.onerror = function () {
         limpar();
         webhookEmCurso = false;
-        notify("Falha ao carregar o webhook via JSONP — confira a URL e se o Apps Script aceita ?callback= (republicar a nova versão).", "danger");
+        notify("Falha ao carregar o webhook via JSONP — confira a URL, o parâmetro callback e o acesso anônimo da implantação ('Qualquer pessoa').", "danger");
       };
       document.head.appendChild(script);
     }
@@ -11357,7 +11382,7 @@
         }
 
         /* ---------- Webhook (100% no navegador) ---------- */
-        if (tipo === "webhook") { importLerWebhook(); return; }
+        if (tipo === "webhook") { importLerWebhook(__importLerAuto === true); return; }
 
         /* ---------- Banco via API REST (100% no navegador) ---------- */
         if (tipo === "banco-api") { importLerBancoAPI(); return; }
@@ -11401,9 +11426,16 @@
     /* Pedido 1.146: "Ler Colunas" roda sozinho — ao escolher o arquivo e ao
        "conectar" com a origem (Enter no campo ou mudança de valor válida),
        sem precisar clicar no botão. A Pasta Local já lê direto ao escolher. */
+    var __importLerAuto = false;
     function importAutoLer() {
       var btn = $("btn-import-ler");
-      if (btn) btn.click();
+      if (!btn) return;
+      /* Pedido 1.187: leitura automática (Enter/mudança no campo, arquivo
+         escolhido) só IMPORTA dados — o handler consulta esta flag para
+         usar GET no webhook; POST fica no clique explícito em Ler Colunas. */
+      __importLerAuto = true;
+      btn.click();
+      __importLerAuto = false;
     }
     (function ligarImportAutoLer() {
       function tipoAtual() {
