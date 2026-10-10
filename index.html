@@ -3231,7 +3231,7 @@
               <div class="mb-2" id="import-url-area" style="display:none;">
                 <label class="form-label small fw-bold" for="import-url">Link do Google Sheets</label>
                 <input type="url" class="form-control form-control-sm" id="import-url" placeholder="https://docs.google.com/spreadsheets/d/…" aria-label="Link do Google Sheets" autocomplete="off" spellcheck="false">
-                <p class="small text-muted mt-1 mb-1">A função reconhece automaticamente os 2 tipos: <b>planilha pública</b> ("Qualquer pessoa com o link") e <b>planilha privada da sua conta Google</b> — após conectar com o Google, o app lê com as permissões da conta. A aba indicada no link (gid) é lida.</p>
+                <p class="small text-muted mt-1 mb-1">Insira o link da planilha pública ou, se for privada, conecte sua conta para acessá-la.</p>
                 <div class="d-flex flex-wrap align-items-center gap-2 mt-1 mb-1" id="gs-conectar-area">
                   <button type="button" class="btn btn-sm btn-outline-danger" id="btn-gs-conectar" aria-label="Conectar com a conta Google para ler planilhas privadas"><i class="fab fa-google me-1" aria-hidden="true"></i>Conectar com Google</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btn-gs-desconectar" aria-label="Desconectar a conta Google"><i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i>Desconectar</button>
@@ -3246,7 +3246,6 @@
                   </div>
                   <p class="small text-muted mt-1 mb-0">O app já tem o Client ID do projeto embutido (não precisa de nada disto). Este campo substitui o Client ID pelo seu — no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre o endereço público onde o site está hospedado.</p>
                 </details>
-                <p class="small text-muted mt-1 mb-0">Planilhas privadas: clique em <b>Conectar com Google</b> e autorize a leitura (somente o necessário — <code>spreadsheets.readonly</code>). O login exige abrir o app via http(s) na origem cadastrada no OAuth — não funciona em <code>file://</code>; se abrir fora de <code>https://canalqb.github.io</code>, a conexão pode ser recusada pelo Google (origem não autorizada).</p>
               </div>
               <div class="mb-2" id="import-webhook-fields" style="display:none;">
                 <label class="form-label small fw-bold" for="webhook-url">URL do Webhook</label>
@@ -10628,10 +10627,21 @@
       notify(importDados.colunas.length + " colunas encontradas (" + origemMsg + ").", "success");
     }
 
-    /* ---------- Webhook (100% no navegador; exige CORS liberado no endpoint) ---------- */
+    /* ---------- Webhook (100% no navegador) ----------
+       Pedido 1.185 (webhook.txt): o Google Apps Script /exec responde 302
+       para script.googleusercontent.com SEM cabeçalhos CORS — o fetch do
+       navegador falha ("blocked by CORS policy") tanto em localhost quanto
+       no GitHub Pages. O fetch continua em 1º lugar (webhooks comuns com CORS
+       liberado, POST e headers continuam valendo); quando ele falha por
+       rede/CORS, cai no JSONP — tag <script> não passa pela checagem CORS.
+       Requer o Apps Script aceitando ?callback=NOME e devolvendo
+       JavaScript (republicar a nova versão da implantação). */
+    var webhookEmCurso = false;
+    var webhookSeq = 0;
     function importLerWebhook() {
       var url = ($("webhook-url").value || "").trim();
       if (!/^https?:\/\//i.test(url)) { notify("Informe a URL do webhook (http/https).", "warning"); return; }
+      if (webhookEmCurso) { notify("Já existe uma consulta ao webhook em andamento — aguarde ela terminar.", "warning"); return; }
       var metodo = $("webhook-metodo").value || "GET";
       var headers = {};
       var hTxt = ($("webhook-headers").value || "").trim();
@@ -10639,15 +10649,62 @@
         try { headers = JSON.parse(hTxt); }
         catch (e) { notify("Headers inválidos — precisa ser um JSON válido.", "danger"); return; }
       }
+      webhookEmCurso = true;
       notify("Consultando webhook...", "info");
       fetch(url, { method: metodo, headers: headers })
-        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
         .then(function (json) {
+          webhookEmCurso = false;
           var res = importNormalizarJSON(json);
           if (!res) { notify("O webhook não retornou registros reconhecíveis (esperado: array de objetos ou {colunas, linhas}).", "danger"); return; }
           importAplicarResposta(res, "webhook");
         })
-        .catch(function (err) { notify("Falha ao contatar o webhook (" + err.message + ") — confira URL e CORS.", "danger"); });
+        .catch(function (err) {
+          /* Falha de rede/CORS (ex.: Apps Script 302 sem CORS): JSONP
+             contorna — mas só existe em GET (script não faz POST). */
+          if (metodo !== "GET") {
+            webhookEmCurso = false;
+            notify("Falha ao contatar o webhook (" + err.message + ") — confira URL e CORS. O contorno via JSONP só funciona com método GET.", "danger");
+            return;
+          }
+          notify("Falha direta (" + err.message + ") — tentando via JSONP (contorno do CORS)...", "info");
+          importWebhookJsonp(url);
+        });
+    }
+    /* Pedido 1.185: carregamento JSONP do webhook — tag <script> ignora CORS;
+       callback único global, limpeza da tag e do callback no fim, timeout de
+       30s (Apps Script pode demorar na 1ª chamada/implantação fria) e
+       proteção contra consultas simultâneas duplicadas. */
+    function importWebhookJsonp(url) {
+      var cb = "__webhookJsonp" + (++webhookSeq);
+      var script = document.createElement("script");
+      var timer = setTimeout(function () {
+        limpar();
+        webhookEmCurso = false;
+        notify("O webhook não respondeu em 30 segundos via JSONP — confira a URL e se o Apps Script aceita ?callback= (republique a nova versão da implantação).", "danger");
+      }, 30000);
+      function limpar() {
+        clearTimeout(timer);
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (json) {
+        limpar();
+        webhookEmCurso = false;
+        var res = importNormalizarJSON(json);
+        if (!res) { notify("O webhook (JSONP) não retornou registros reconhecíveis (esperado: array de objetos ou {colunas, linhas}).", "danger"); return; }
+        importAplicarResposta(res, "webhook");
+      };
+      script.src = url + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + cb;
+      script.onerror = function () {
+        limpar();
+        webhookEmCurso = false;
+        notify("Falha ao carregar o webhook via JSONP — confira a URL e se o Apps Script aceita ?callback= (republicar a nova versão).", "danger");
+      };
+      document.head.appendChild(script);
     }
 
     /* ---------- Banco via API REST (Supabase/PostgREST/Firebase REST/API própria) ---------- */
@@ -11233,19 +11290,27 @@
           atualizarBarraStatusLote();
           finalizar(importDados.colunas.length + " colunas encontradas (Google Sheets).");
         } catch (err) {
-          /* Pedido 1.183: resposta sem dados com conta conectada = planilha
-             privada — lê pela Sheets API em vez de desistir com a mensagem
-             de compartilhamento público. */
+          /* Pedido 1.183: resposta sem dados COM conta conectada = planilha
+             privada — lê pela Sheets API em vez de desistir. */
           if (gsTokenValido()) {
             finalizar("Planilha privada detectada — lendo com sua conta Google...", false);
             importGsheetsPrivado(gsTokenMem.valor, idPlan, gidPlan);
             return;
           }
-          finalizar("Não foi possível ler a planilha. Confirme o compartilhamento: 'Qualquer pessoa com o link' (leitor) — ou clique em Conectar com Google para planilhas privadas.", true);
+          /* Pedido 1.184: sem conexão, o app pede a conta Google na hora
+             (popup de autorização) e lê sozinho após autorizar — em vez de
+             só instruir a pessoa a clicar em Conectar com Google. */
+          finalizar("Planilha privada detectada — conectando com sua conta Google...", false);
+          importGsheetsOAuth(idPlan, gidPlan);
         }
       };
       script.src = "https://docs.google.com/spreadsheets/d/" + idPlan + "/gviz/tq?tqx=out:json;responseHandler:" + cb + (gidPlan ? "&gid=" + gidPlan : "");
-      script.onerror = function () { finalizar("Falha ao ler o Google Sheets. Verifique o link — planilhas públicas precisam de 'Qualquer pessoa com o link'; planilhas privadas: clique em Conectar com Google antes de ler.", true); };
+      /* Pedido 1.184: falha ao carregar o script (planilha privada bloqueia
+         o JSONP) também pede a conta Google na hora. */
+      script.onerror = function () {
+        finalizar(null);
+        importGsheetsOAuth(idPlan, gidPlan);
+      };
       document.head.appendChild(script);
     }
 
@@ -11364,6 +11429,29 @@
       ligar("import-url", "gsheets", function (v) {
         return /^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test((v || "").trim());
       });
+      /* Pedido 1.184: colar o link dispara a leitura sozinha (sem Enter,
+         clique ou sair do campo) — planilha pública já mostra as colunas;
+         privada pede a conta Google na hora. A releitura só acontece
+         quando a planilha/aba (ID|gid) muda, para não reler a cada tecla. */
+      var campoGsAuto = $("import-url");
+      if (campoGsAuto) {
+        var tDbGsAuto = null;
+        var ultChaveGsAuto = "";
+        campoGsAuto.addEventListener("input", function () {
+          clearTimeout(tDbGsAuto);
+          tDbGsAuto = setTimeout(function () {
+            if (tipoAtual() !== "gsheets") return;
+            var v = String(campoGsAuto.value || "").trim();
+            var mId = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9\-_]{20,})/.exec(v);
+            if (!mId) return;
+            var mGid = /[#&?]gid=(\d+)/.exec(v);
+            var chave = mId[1] + "|" + ((mGid && mGid[1]) || "0");
+            if (chave === ultChaveGsAuto) return;
+            ultChaveGsAuto = chave;
+            importAutoLer();
+          }, 800);
+        });
+      }
       ligar("webhook-url", "webhook", function (v) { return !!(v || "").trim(); });
       ligar("banco-url", "banco-api", function (v) { return !!(v || "").trim(); });
       ligar("ponte-host", "ponte", function (v) { return !!(v || "").trim(); });
@@ -11835,6 +11923,16 @@
         if (!importDados.colunas.length) { notify("Leia as colunas antes de gerar as etiquetas.", "danger"); return; }
         if (!importDados.linhas.length) { notify("A origem não possui linhas de dados.", "danger"); return; }
 
+        /* Pedido 1.184: sem NENHUMA coluna vinculada a um campo, o modal
+           continua aberto e o usuário é orientado a vincular — antes, o
+           modal fechava primeiro (1.151) e a pessoa tinha que reabrir e
+           achar o mapeamento de novo. */
+        var validacao = importValidarMapeamento();
+        if (!validacao.ok) {
+          notify("Selecione algum elemento para algum campo antes de continuar — nenhuma coluna da planilha está vinculada.", "danger");
+          return;
+        }
+
         /* Pedido 1.151: o modal fecha PRIMEIRO — se qualquer passo do lote
            estourar depois daqui, a tela nunca fica presa no modal aberto. */
         var modalImp = bootstrap.Modal.getInstance($("modal-import-dados"));
@@ -11847,9 +11945,6 @@
         /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho
            (textos empilhados, uma coluna por elemento, sem sobreposição) */
         if (!elements.length && !garantirEtiquetaLote()) { notify("Não foi possível criar a etiqueta — verifique o mapeamento.", "danger"); return; }
-
-        var validacao = importValidarMapeamento();
-        if (!validacao.ok) { notify(validacao.msg, "danger"); return; }
 
         var r = gerarZPLTodasLinhas();
         if (!r) { notify("Não foi possível gerar as etiquetas.", "danger"); return; }
