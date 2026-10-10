@@ -1,0 +1,137 @@
+{
+  "etiquetasZebra": "modelo",
+  "versao": 1,
+  "salvoEm": "2026-10-10T00:00:00.000Z",
+  "modelo": {
+    "name": "Catálogo Completo — Vertical 40×25 mm",
+    "tamanho": "40x25",
+    "rotacao": 90,
+    "loteEspecialAtivo": false,
+    "elements": [
+      {
+        "tipo": "borda",
+        "x": 2,
+        "y": 2,
+        "w": 316,
+        "h": 196,
+        "espessura": 2,
+        "id": "el_todo_40_25_1"
+      },
+      {
+        "tipo": "texto",
+        "texto": "TÍTULO DA ETIQUETA",
+        "x": 8,
+        "y": 6,
+        "fonte": 13,
+        "classe": "sub",
+        "id": "el_todo_40_25_2"
+      },
+      {
+        "tipo": "texto",
+        "texto": "NOME DO PRODUTO",
+        "x": 8,
+        "y": 22,
+        "fonte": 15,
+        "classe": "nome",
+        "bold": true,
+        "id": "el_todo_40_25_3"
+      },
+      {
+        "tipo": "texto",
+        "texto": "Texto livre — catálogo de elementos",
+        "x": 8,
+        "y": 40,
+        "fonte": 10,
+        "id": "el_todo_40_25_4"
+      },
+      {
+        "tipo": "linha",
+        "x": 8,
+        "y": 52,
+        "w": 304,
+        "espessura": 2,
+        "id": "el_todo_40_25_5"
+      },
+      {
+        "tipo": "qr",
+        "texto": "QR-123456",
+        "simbologia": "qr",
+        "x": 8,
+        "y": 58,
+        "w": 56,
+        "h": 56,
+        "id": "el_todo_40_25_6"
+      },
+      {
+        "tipo": "barcode",
+        "texto": "123456789",
+        "simbologia": "code128",
+        "x": 72,
+        "y": 62,
+        "w": 118,
+        "h": 42,
+        "id": "el_todo_40_25_7"
+      },
+      {
+        "tipo": "imagem",
+        "x": 198,
+        "y": 58,
+        "w": 60,
+        "h": 56,
+        "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNQTX5NEmIY1TCqYfhqAAB2SXMQ7mVTQgAAAABJRU5ErkJggg==",
+        "id": "el_todo_40_25_8"
+      },
+      {
+        "tipo": "elipse",
+        "x": 8,
+        "y": 120,
+        "w": 30,
+        "h": 30,
+        "espessura": 2,
+        "cheio": false,
+        "id": "el_todo_40_25_9"
+      },
+      {
+        "tipo": "diagonal",
+        "x": 46,
+        "y": 120,
+        "w": 44,
+        "h": 30,
+        "espessura": 2,
+        "diagDir": true,
+        "id": "el_todo_40_25_10"
+      },
+      {
+        "tipo": "raio",
+        "x": 98,
+        "y": 120,
+        "w": 56,
+        "h": 30,
+        "espessura": 2,
+        "raio": 6,
+        "cheio": false,
+        "id": "el_todo_40_25_11"
+      },
+      {
+        "tipo": "retas",
+        "x": 162,
+        "y": 130,
+        "w": 46,
+        "h": 10,
+        "espessura": 2,
+        "diagDir": true,
+        "id": "el_todo_40_25_12"
+      },
+      {
+        "tipo": "curva",
+        "x": 216,
+        "y": 120,
+        "w": 60,
+        "h": 30,
+        "espessura": 2,
+        "curvatura": 40,
+        "id": "el_todo_40_25_13"
+      }
+    ]
+  }
+}

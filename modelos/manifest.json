@@ -1,134 +1,176 @@
 {
-    "versao":  1,
-    "desc":  "Modelos Prontos do CanalQb Impressão em Zebras - subpastas por tamanho, cada modelo um arquivo .bin (mesmo formato de Exportar Modelo)",
-    "tamanhos":  {
-                     "40x25":  [
-                                   {
-                                       "arquivo":  "completo.bin",
-                                       "nome":  "Completo QR",
-                                       "desc":  "Título, nome + QR Code ao lado e série no rodapé",
-                                       "preset":  "completo"
-                                   },
-                                   {
-                                       "arquivo":  "expedicao.bin",
-                                       "nome":  "Expedição",
-                                       "desc":  "Nome grande, série legível e código de barras na base",
-                                       "preset":  "expedicao"
-                                   },
-                                   {
-                                       "arquivo":  "qr-central.bin",
-                                       "nome":  "QR Central",
-                                       "desc":  "QR Code destacado no centro com nome abaixo",
-                                       "preset":  "qr-central"
-                                   },
-                                   {
-                                       "arquivo":  "produto.bin",
-                                       "nome":  "Produto",
-                                       "desc":  "Título + nome + série (sem QR Code)",
-                                       "preset":  "produto"
-                                   },
-                                   {
-                                       "arquivo":  "serial.bin",
-                                       "nome":  "Serial Grande",
-                                       "desc":  "Série em corpo grande com QR compacto no canto",
-                                       "preset":  "serial"
-                                   }
-                               ],
-                     "100x50":  [
-                                    {
-                                        "arquivo":  "completo.bin",
-                                        "nome":  "Completo QR",
-                                        "desc":  "Título, nome + QR Code ao lado e série no rodapé",
-                                        "preset":  "completo"
-                                    },
-                                    {
-                                        "arquivo":  "expedicao.bin",
-                                        "nome":  "Expedição",
-                                        "desc":  "Nome grande, série legível e código de barras na base",
-                                        "preset":  "expedicao"
-                                    },
-                                    {
-                                        "arquivo":  "qr-central.bin",
-                                        "nome":  "QR Central",
-                                        "desc":  "QR Code destacado no centro com nome abaixo",
-                                        "preset":  "qr-central"
-                                    },
-                                    {
-                                        "arquivo":  "produto.bin",
-                                        "nome":  "Produto",
-                                        "desc":  "Título + nome + série (sem QR Code)",
-                                        "preset":  "produto"
-                                    },
-                                    {
-                                        "arquivo":  "serial.bin",
-                                        "nome":  "Serial Grande",
-                                        "desc":  "Série em corpo grande com QR compacto no canto",
-                                        "preset":  "serial"
-                                    }
-                                ],
-                     "100x100":  [
-                                     {
-                                         "arquivo":  "completo.bin",
-                                         "nome":  "Completo QR",
-                                         "desc":  "Título, nome + QR Code ao lado e série no rodapé",
-                                         "preset":  "completo"
-                                     },
-                                     {
-                                         "arquivo":  "expedicao.bin",
-                                         "nome":  "Expedição",
-                                         "desc":  "Nome grande, série legível e código de barras na base",
-                                         "preset":  "expedicao"
-                                     },
-                                     {
-                                         "arquivo":  "qr-central.bin",
-                                         "nome":  "QR Central",
-                                         "desc":  "QR Code destacado no centro com nome abaixo",
-                                         "preset":  "qr-central"
-                                     },
-                                     {
-                                         "arquivo":  "produto.bin",
-                                         "nome":  "Produto",
-                                         "desc":  "Título + nome + série (sem QR Code)",
-                                         "preset":  "produto"
-                                     },
-                                     {
-                                         "arquivo":  "serial.bin",
-                                         "nome":  "Serial Grande",
-                                         "desc":  "Série em corpo grande com QR compacto no canto",
-                                         "preset":  "serial"
-                                     }
-                                 ],
-                     "100x150":  [
-                                     {
-                                         "arquivo":  "completo.bin",
-                                         "nome":  "Completo QR",
-                                         "desc":  "Título, nome + QR Code ao lado e série no rodapé",
-                                         "preset":  "completo"
-                                     },
-                                     {
-                                         "arquivo":  "expedicao.bin",
-                                         "nome":  "Expedição",
-                                         "desc":  "Nome grande, série legível e código de barras na base",
-                                         "preset":  "expedicao"
-                                     },
-                                     {
-                                         "arquivo":  "qr-central.bin",
-                                         "nome":  "QR Central",
-                                         "desc":  "QR Code destacado no centro com nome abaixo",
-                                         "preset":  "qr-central"
-                                     },
-                                     {
-                                         "arquivo":  "produto.bin",
-                                         "nome":  "Produto",
-                                         "desc":  "Título + nome + série (sem QR Code)",
-                                         "preset":  "produto"
-                                     },
-                                     {
-                                         "arquivo":  "serial.bin",
-                                         "nome":  "Serial Grande",
-                                         "desc":  "Série em corpo grande com QR compacto no canto",
-                                         "preset":  "serial"
-                                     }
-                                 ]
-                 }
+  "versao": 1,
+  "desc": "Modelos Prontos do CanalQb Impressão em Zebras - subpastas por tamanho, cada modelo um arquivo .bin (mesmo formato de Exportar Modelo)",
+  "tamanhos": {
+    "40x25": [
+      {
+        "arquivo": "todos-v.bin",
+        "nome": "Todos os Elementos — Vertical 40×25 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos-v"
+      },
+      {
+        "arquivo": "todos-h.bin",
+        "nome": "Todos os Elementos — Horizontal 40×25 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos"
+      },
+      {
+        "arquivo": "completo.bin",
+        "nome": "Completo QR",
+        "desc": "Título, nome + QR Code ao lado e série no rodapé",
+        "preset": "completo"
+      },
+      {
+        "arquivo": "expedicao.bin",
+        "nome": "Expedição",
+        "desc": "Nome grande, série legível e código de barras na base",
+        "preset": "expedicao"
+      },
+      {
+        "arquivo": "qr-central.bin",
+        "nome": "QR Central",
+        "desc": "QR Code destacado no centro com nome abaixo",
+        "preset": "qr-central"
+      },
+      {
+        "arquivo": "produto.bin",
+        "nome": "Produto",
+        "desc": "Título + nome + série (sem QR Code)",
+        "preset": "produto"
+      },
+      {
+        "arquivo": "serial.bin",
+        "nome": "Serial Grande",
+        "desc": "Série em corpo grande com QR compacto no canto",
+        "preset": "serial"
+      }
+    ],
+    "100x50": [
+      {
+        "arquivo": "todos-v.bin",
+        "nome": "Todos os Elementos — Vertical 100×50 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos-v"
+      },
+      {
+        "arquivo": "todos-h.bin",
+        "nome": "Todos os Elementos — Horizontal 100×50 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos"
+      },
+      {
+        "arquivo": "completo.bin",
+        "nome": "Completo QR",
+        "desc": "Título, nome + QR Code ao lado e série no rodapé",
+        "preset": "completo"
+      },
+      {
+        "arquivo": "expedicao.bin",
+        "nome": "Expedição",
+        "desc": "Nome grande, série legível e código de barras na base",
+        "preset": "expedicao"
+      },
+      {
+        "arquivo": "qr-central.bin",
+        "nome": "QR Central",
+        "desc": "QR Code destacado no centro com nome abaixo",
+        "preset": "qr-central"
+      },
+      {
+        "arquivo": "produto.bin",
+        "nome": "Produto",
+        "desc": "Título + nome + série (sem QR Code)",
+        "preset": "produto"
+      },
+      {
+        "arquivo": "serial.bin",
+        "nome": "Serial Grande",
+        "desc": "Série em corpo grande com QR compacto no canto",
+        "preset": "serial"
+      }
+    ],
+    "100x100": [
+      {
+        "arquivo": "todos-h.bin",
+        "nome": "Todos os Elementos 100×100 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos"
+      },
+      {
+        "arquivo": "completo.bin",
+        "nome": "Completo QR",
+        "desc": "Título, nome + QR Code ao lado e série no rodapé",
+        "preset": "completo"
+      },
+      {
+        "arquivo": "expedicao.bin",
+        "nome": "Expedição",
+        "desc": "Nome grande, série legível e código de barras na base",
+        "preset": "expedicao"
+      },
+      {
+        "arquivo": "qr-central.bin",
+        "nome": "QR Central",
+        "desc": "QR Code destacado no centro com nome abaixo",
+        "preset": "qr-central"
+      },
+      {
+        "arquivo": "produto.bin",
+        "nome": "Produto",
+        "desc": "Título + nome + série (sem QR Code)",
+        "preset": "produto"
+      },
+      {
+        "arquivo": "serial.bin",
+        "nome": "Serial Grande",
+        "desc": "Série em corpo grande com QR compacto no canto",
+        "preset": "serial"
+      }
+    ],
+    "100x150": [
+      {
+        "arquivo": "todos-v.bin",
+        "nome": "Todos os Elementos — Vertical 100×150 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos-v"
+      },
+      {
+        "arquivo": "todos-h.bin",
+        "nome": "Todos os Elementos — Horizontal 100×150 mm",
+        "desc": "Catálogo com TODOS os elementos da ribbon: 3 textos, QR Code, código de barras, imagem e 7 gráficos (linha, moldura, elipse, diagonal, cantos arredondados, reta livre e curva)",
+        "preset": "todos"
+      },
+      {
+        "arquivo": "completo.bin",
+        "nome": "Completo QR",
+        "desc": "Título, nome + QR Code ao lado e série no rodapé",
+        "preset": "completo"
+      },
+      {
+        "arquivo": "expedicao.bin",
+        "nome": "Expedição",
+        "desc": "Nome grande, série legível e código de barras na base",
+        "preset": "expedicao"
+      },
+      {
+        "arquivo": "qr-central.bin",
+        "nome": "QR Central",
+        "desc": "QR Code destacado no centro com nome abaixo",
+        "preset": "qr-central"
+      },
+      {
+        "arquivo": "produto.bin",
+        "nome": "Produto",
+        "desc": "Título + nome + série (sem QR Code)",
+        "preset": "produto"
+      },
+      {
+        "arquivo": "serial.bin",
+        "nome": "Serial Grande",
+        "desc": "Série em corpo grande com QR compacto no canto",
+        "preset": "serial"
+      }
+    ]
+  }
 }

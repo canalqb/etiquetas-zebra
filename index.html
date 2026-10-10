@@ -2448,7 +2448,7 @@
                     <button type="button" class="icon-btn icon-btn-primary" id="btn-copiar-zpl" title="Copiar ZPL para a área de transferência"><i class="fas fa-clipboard"></i></button>
                     <button type="button" class="icon-btn icon-btn-muted" id="btn-download-zpl" title="Baixar arquivo .ZPL"><i class="fas fa-file-download"></i></button>
                     <button type="button" class="icon-btn icon-btn-muted" id="btn-carregar-zpl" title="Carregar arquivo .ZPL para o campo abaixo"><i class="fas fa-file-import"></i></button>
-                    <input type="file" id="input-carregar-zpl" accept=".zpl,.txt,.prn" class="d-none">
+                    <input type="file" id="input-carregar-zpl" accept=".zpl" class="d-none">
                     <div class="vr mx-1"></div>
                     <button type="button" class="icon-btn icon-btn-success" id="btn-export-png" title="Exportar etiqueta como PNG (fiel ao desenho)"><i class="bi bi-filetype-png"></i></button>
                     <button type="button" class="icon-btn icon-btn-success" id="btn-export-svg" title="Exportar etiqueta como SVG"><i class="bi bi-filetype-svg"></i></button>
@@ -3088,13 +3088,13 @@
                 </div>
 
                 <!-- Galeria de Templates -->
+                <!-- Pedido 1.189: galeria DINÂMICA — na abertura do modal lista os modelos
+                     da pasta modelos/ (manifest do Pedido 1.98) para o tamanho configurado
+                     no Estúdio. Renderizada por renderGaleriaTemplates() no JS. -->
                 <div class="mb-2">
                   <label class="form-label fw-semibold">Galeria de Templates</label>
-                  <div class="d-flex gap-2 justify-content-center flex-wrap">
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="tpl-caixa"><i class="bi bi-box-seam me-1"></i>Envio/Caixa</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="tpl-estoque"><i class="bi bi-tags me-1"></i>Estoque</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="tpl-serie"><i class="bi bi-qr-code me-1"></i>Série/QR</button>
-                  </div>
+                  <div class="d-flex gap-2 justify-content-center flex-wrap" id="tpl-galeria-wrap"></div>
+                  <div class="small text-muted text-center mt-1" id="tpl-galeria-info"></div>
                 </div>
 
                 <div class="d-flex gap-2 justify-content-center flex-wrap">
@@ -3106,7 +3106,7 @@
                     <i class="fas fa-file-circle-plus"></i>
                     <input type="file" id="input-import-etiqueta-add" accept=".bin,.json,.vip" class="d-none">
                   </label>
-                  <button type="button" class="icon-btn icon-btn-muted" id="btn-export-bin" title="Exportar ZPL (.BIN)" aria-label="Exportar ZPL (.BIN)">
+                  <button type="button" class="icon-btn icon-btn-muted" id="btn-export-bin" title="Exportar Modelo de Etiqueta" aria-label="Exportar Modelo de Etiqueta">
                     <i class="fas fa-file-download"></i>
                   </button>
                   <button type="button" class="icon-btn icon-btn-info" id="btn-export-modelo-atual" title="Exportar Modelo atual como arquivo .bin (salva no computador, recarregável aqui)" aria-label="Exportar modelo atual como arquivo .bin">
@@ -9683,17 +9683,90 @@
       }
     };
 
-    Object.keys(TEMPLATES_GALERIA).forEach(function (tid) {
-      var btn = $(tid);
-      if (!btn) return;
-      btn.addEventListener("click", function () {
-        var tpl = TEMPLATES_GALERIA[tid];
-        aplicarModelo(tpl);
-        $("tmpl-name-input").value = tpl.nome;
-        renderTabsModelos();
-        notify("Template '" + tpl.nome + "' carregado! Edite os textos à vontade.", "success");
+    /* Pedido 1.189: a Galeria de Templates é DINÂMICA — na abertura do modal
+       Salvar/Exportar (.BIN), lê o tamanho configurado no Estúdio (preview) e
+       lista os modelos da pasta modelos/ (manifest do Pedido 1.98) para
+       AQUELE tamanho, com os novos "Todos os Elementos" (H/V) na frente.
+       Sem a pasta (file://), usa os templates internos do tamanho atual. */
+    var manifestGaleriaCache = null;
+    function galeriaManifest() {
+      if (manifestGaleriaCache) return Promise.resolve(manifestGaleriaCache);
+      return fetch("modelos/manifest.json")
+        .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+        .then(function (man) { manifestGaleriaCache = man; return man; })
+        .catch(function () { return null; });
+    }
+    function aplicarModeloGaleriaArquivo(item, tamAlvo) {
+      fetch("modelos/" + tamAlvo + "/" + item.arquivo)
+        .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+        .then(function (payload) {
+          var m = payload && payload.modelo;
+          if (!m || !Array.isArray(m.elements) || !m.elements.length) { notify("Arquivo .bin do modelo inválido.", "danger"); return; }
+          tamAtualKey = SIZES[m.tamanho] ? m.tamanho : tamAlvo;
+          $("tamanho").value = tamAtualKey;
+          rotAtual = ROT_SEQ.indexOf(m.rotacao) >= 0 ? m.rotacao : 0;
+          elements = JSON.parse(JSON.stringify(m.elements));
+          selectedElId = null;
+          selectedElIds = [];
+          autoFitCanvas();
+          renderStudio();
+          updateTamanhoLabel();
+          syncMobileState();
+          $("tmpl-name-input").value = m.name || item.nome;
+          renderTabsModelos();
+          salvarHistorico();
+          notify("Modelo '" + (m.name || item.nome) + "' carregado (" + tamAtualKey + " mm, " + (rotAtual === 90 ? "vertical" : "horizontal") + ")! Edite os textos à vontade.", "success");
+        })
+        .catch(function () { notify("Não foi possível carregar o arquivo do modelo da pasta modelos/.", "danger"); });
+    }
+    function renderGaleriaTemplates() {
+      var wrap = $("tpl-galeria-wrap");
+      var info = $("tpl-galeria-info");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+      galeriaManifest().then(function (man) {
+        var lista = man && man.tamanhos && man.tamanhos[tamAtualKey];
+        if (lista && lista.length) {
+          if (info) info.textContent = "Modelos de " + tamAtualKey + " mm — clique para carregar";
+          lista.forEach(function (item) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn btn-sm btn-outline-primary";
+            b.title = item.desc || "";
+            b.innerHTML = '<i class="bi bi-wand-magic-sparkles me-1"></i>' + (item.nome || item.arquivo);
+            b.addEventListener("click", function () { aplicarModeloGaleriaArquivo(item, tamAtualKey); });
+            wrap.appendChild(b);
+          });
+          return;
+        }
+        var internos = [];
+        Object.keys(TEMPLATES_GALERIA).forEach(function (tid) {
+          if (TEMPLATES_GALERIA[tid].tamanho === tamAtualKey) internos.push(TEMPLATES_GALERIA[tid]);
+        });
+        if (internos.length) {
+          if (info) info.textContent = "Pasta modelos/ inacessível — templates internos (" + tamAtualKey + " mm)";
+          internos.forEach(function (tpl) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn btn-sm btn-outline-primary";
+            b.innerHTML = '<i class="bi bi-wand-magic-sparkles me-1"></i>' + tpl.nome;
+            b.addEventListener("click", function () {
+              aplicarModelo(tpl);
+              $("tmpl-name-input").value = tpl.nome;
+              renderTabsModelos();
+              notify("Template '" + tpl.nome + "' carregado! Edite os textos à vontade.", "success");
+            });
+            wrap.appendChild(b);
+          });
+        } else if (info) {
+          info.textContent = "Sem modelos para " + tamAtualKey + " mm sem a pasta modelos/ (abra via http://localhost ou GitHub Pages).";
+        }
       });
-    });
+    }
+    (function () {
+      var modalGaleriaEl = $("modal-templates");
+      if (modalGaleriaEl) modalGaleriaEl.addEventListener("show.bs.modal", renderGaleriaTemplates);
+    })();
 
     /* ---------------- COMPARTILHAR MODELO POR LINK (#modelo=BASE64URL) ---------------- */
     $("btn-share-link").addEventListener("click", function () {
@@ -13968,6 +14041,13 @@
       $("input-carregar-zpl").addEventListener("change", function () {
         var arq = this.files && this.files[0];
         if (!arq) return;
+        /* Pedido 1.188: carrega somente .zpl — o filtro do seletor é .zpl,
+           mas quem digitar *.* na caixa também é barrado aqui. */
+        if (!/\.zpl$/i.test(arq.name)) {
+          notify("Somente arquivos .zpl são aceitos — \"Carregar arquivo .ZPL\" não abre .txt nem .prn.", "warning");
+          this.value = "";
+          return;
+        }
         var leitor = new FileReader();
         leitor.onload = function () {
           var conteudo = String(leitor.result || "");
@@ -15597,6 +15677,7 @@
       renderizarEtiquetaCanvas: renderizarEtiquetaCanvas,
       get activeDpmm() { return activeDpmm; },
       get tamAtualKey() { return tamAtualKey; },
+      get rotAtual() { return rotAtual; },
       set impForcarHttps(v) { _impForcarPaginaHttps = !!v; },
       verificarImpressoraIp: verificarImpressoraIp
     };

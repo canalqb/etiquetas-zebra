@@ -1,0 +1,145 @@
+{
+  "etiquetasZebra": "modelo",
+  "versao": 1,
+  "salvoEm": "2026-10-10T00:00:00.000Z",
+  "modelo": {
+    "name": "Catálogo Completo — Horizontal 100×150 mm",
+    "tamanho": "100x150",
+    "rotacao": 0,
+    "loteEspecialAtivo": false,
+    "elements": [
+      {
+        "tipo": "borda",
+        "x": 4,
+        "y": 4,
+        "w": 792,
+        "h": 1192,
+        "espessura": 4,
+        "id": "el_todo_100_150_1"
+      },
+      {
+        "tipo": "texto",
+        "texto": "TÍTULO DA ETIQUETA",
+        "x": 30,
+        "y": 24,
+        "fonte": 32,
+        "classe": "sub",
+        "id": "el_todo_100_150_2"
+      },
+      {
+        "tipo": "texto",
+        "texto": "NOME DO PRODUTO",
+        "x": 30,
+        "y": 70,
+        "fonte": 44,
+        "classe": "nome",
+        "bold": true,
+        "id": "el_todo_100_150_3"
+      },
+      {
+        "tipo": "texto",
+        "texto": "Texto livre — catálogo de todos os elementos da ribbon",
+        "x": 30,
+        "y": 135,
+        "fonte": 20,
+        "id": "el_todo_100_150_4"
+      },
+      {
+        "tipo": "linha",
+        "x": 30,
+        "y": 175,
+        "w": 740,
+        "espessura": 4,
+        "id": "el_todo_100_150_5"
+      },
+      {
+        "tipo": "qr",
+        "texto": "QR-123456",
+        "simbologia": "qr",
+        "x": 30,
+        "y": 200,
+        "w": 190,
+        "h": 190,
+        "id": "el_todo_100_150_6"
+      },
+      {
+        "tipo": "barcode",
+        "texto": "123456789",
+        "simbologia": "code128",
+        "x": 250,
+        "y": 230,
+        "w": 320,
+        "h": 130,
+        "id": "el_todo_100_150_7"
+      },
+      {
+        "tipo": "imagem",
+        "x": 600,
+        "y": 200,
+        "w": 170,
+        "h": 190,
+        "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNQTX5NEmIY1TCqYfhqAAB2SXMQ7mVTQgAAAABJRU5ErkJggg==",
+        "id": "el_todo_100_150_8"
+      },
+      {
+        "tipo": "elipse",
+        "x": 30,
+        "y": 430,
+        "w": 150,
+        "h": 150,
+        "espessura": 4,
+        "cheio": false,
+        "id": "el_todo_100_150_9"
+      },
+      {
+        "tipo": "diagonal",
+        "x": 210,
+        "y": 430,
+        "w": 200,
+        "h": 150,
+        "espessura": 4,
+        "diagDir": true,
+        "id": "el_todo_100_150_10"
+      },
+      {
+        "tipo": "raio",
+        "x": 440,
+        "y": 430,
+        "w": 250,
+        "h": 150,
+        "espessura": 4,
+        "raio": 24,
+        "cheio": false,
+        "id": "el_todo_100_150_11"
+      },
+      {
+        "tipo": "retas",
+        "x": 30,
+        "y": 640,
+        "w": 360,
+        "h": 34,
+        "espessura": 4,
+        "diagDir": true,
+        "id": "el_todo_100_150_12"
+      },
+      {
+        "tipo": "curva",
+        "x": 430,
+        "y": 630,
+        "w": 340,
+        "h": 80,
+        "espessura": 4,
+        "curvatura": 60,
+        "id": "el_todo_100_150_13"
+      },
+      {
+        "tipo": "texto",
+        "texto": "Modelo catálogo — edite os textos e remova o que não usar",
+        "x": 30,
+        "y": 1120,
+        "fonte": 16,
+        "id": "el_todo_100_150_14"
+      }
+    ]
+  }
+}
