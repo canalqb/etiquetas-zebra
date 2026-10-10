@@ -3139,14 +3139,14 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <div class="modal-header py-2">
-          <h5 class="modal-title fs-6 fw-bold" id="modalBatchLabel"><i class="bi bi-diagram-3 text-primary me-2"></i>Geração em Lote</h5>
+          <h5 class="modal-title fs-6 fw-bold" id="modalBatchLabel"><i class="fas fa-layer-group text-primary me-2"></i>Geração em Lote</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body py-3">
           <section class="accordion-item card-custom overflow-hidden">
             <h2 class="accordion-header" id="headingBatchSpecial">
               <button class="accordion-button fw-bold text-dark bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBatchSpecial" aria-expanded="true" aria-controls="collapseBatchSpecial">
-                <i class="bi bi-diagram-3 me-2 text-primary"></i> Níveis Sequenciais (Árvore Dinâmica)
+                <i class="fas fa-sitemap me-2 text-primary"></i> Níveis Sequenciais (Árvore Dinâmica)
               </button>
             </h2>
             <div id="collapseBatchSpecial" class="accordion-collapse collapse show" role="region" aria-labelledby="headingBatchSpecial">
@@ -10795,6 +10795,26 @@
       }
     }
 
+    /* Pedido 1.181: resíduo de lote. Ao perder o vínculo com a coluna (o
+       binding exclusivo desloca o antigo), o elemento costuma carregar o
+       valor que o lote gravou nele (aplicarLinhaLoteNoEstudio escreve a
+       linha no elemento REAL) — sem isso, o texto antigo saía em TODAS as
+       etiquetas do lote, duplicando os dados da 1ª linha. Se o texto é
+       exatamente o valor da coluna na linha corrente/1ª linha, é resíduo:
+       limpa. Texto próprio do usuário fica intocado. */
+    function limparResiduoLoteAoDesvincular(el, coluna) {
+      if (!el || !coluna || !importDados || !importDados.linhas || !importDados.linhas.length) return;
+      try {
+        var idxCols = obterIdxColsLote();
+        var valores = [importDados.linhas[lotePaginaAtual], importDados.linhas[0]];
+        valores.forEach(function (linha) {
+          if (!linha) return;
+          var v = linha[idxCols[coluna]];
+          if (v != null && String(v) !== "" && String(el.texto) === String(v)) el.texto = "";
+        });
+      } catch (eRes) {}
+    }
+
     /* Pedido 1.178: trocar o "Coluna da importação" no Editor de Elemento
        vincula/desvincula o elemento selecionado (el.importColuna). */
     (function () {
@@ -10806,7 +10826,10 @@
         var col = selImp.value;
         if (col) {
           elements.forEach(function (outro) {
-            if (outro !== el && outro.importColuna === col) delete outro.importColuna;
+            if (outro !== el && outro.importColuna === col) {
+              delete outro.importColuna;
+              limparResiduoLoteAoDesvincular(outro, col);
+            }
           });
           el.importColuna = col;
           notify("Elemento vinculado à coluna \"" + col + "\" — ao gerar, o valor de cada linha cai sempre neste elemento.", "info");
@@ -10836,7 +10859,10 @@
         if (famEl !== famCampo) return;
         if (cb.checked) {
           elements.forEach(function (outro) {
-            if (outro !== el && outro.importColuna === cb.dataset.coluna) delete outro.importColuna;
+            if (outro !== el && outro.importColuna === cb.dataset.coluna) {
+              delete outro.importColuna;
+              limparResiduoLoteAoDesvincular(outro, cb.dataset.coluna); /* pedido 1.181 */
+            }
           });
           el.importColuna = cb.dataset.coluna;
           notify("Elemento selecionado vinculado à coluna \"" + cb.dataset.coluna + "\".", "info");
@@ -11256,7 +11282,21 @@
        primeiro inserido) e qr/código de barras nos seus elementos; os
        faltantes são criados empilhados abaixo de tudo — sem sobreposição
        (mesmo autoajuste do "Aplicar"). */
+    /* Pedido 1.181: reentrância da construção do lote. Criar a etiqueta do
+       lote (garantirEtiquetaLote) ou um alvo faltante (garantirAlvosLote)
+       renderiza o Estúdio no meio da construção — e esse render (renderZPL →
+       comporZplSaida → gerarZPLTodasLinhas) reentrava com o Estúdio PELA
+       METADE, reentrava em garantirAlvosLote e criava CÓPIAS dos alvos: cada
+       etiqueta do lote saía com o dobro de elementos (os corretos + a cópia
+       com os dados da 1ª linha). Durante a construção, gerarZPLTodasLinhas
+       devolve null e o campo ZPL interimário mostra só o bloco do Estúdio. */
+    var loteConstruindo = 0;
     function garantirAlvosLote(pares) {
+      loteConstruindo++;
+      try { return garantirAlvosLoteInterno(pares); }
+      finally { loteConstruindo--; }
+    }
+    function garantirAlvosLoteInterno(pares) {
       /* Pedido 1.177: denso de fábrica — new Array(n) cria array ESPARSO e
          .filter/.map PULAM buracos: faltam não contava os pares sem alvo (a
          criação nunca rodava) e idxAlvos ficava com buracos (k = undefined
@@ -11331,6 +11371,7 @@
           if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
           baseY = el.y + ((el.tipo === "texto") ? (el.fonte * 1.4) : el.h) + GAP;
           alvos[i] = el;
+          el.importColuna = par.coluna; /* pedido 1.181: criado nasce vinculado à coluna — reimportações estáveis, sem recriar */
         });
         /* Pedido 1.146: render só quando CRIOU elementos — incondicional
            criava o loop renderStudio → renderZPL → comporZplSaida →
@@ -11360,6 +11401,11 @@
        empilhados a partir do topo, sem sobreposição, valores da 1ª linha e
        autoajuste de fonte para caber (mesma regra do "Aplicar"). */
     function garantirEtiquetaLote() {
+      loteConstruindo++; /* pedido 1.181: mesma reentrância de garantirAlvosLote */
+      try { return garantirEtiquetaLoteInterno(); }
+      finally { loteConstruindo--; }
+    }
+    function garantirEtiquetaLoteInterno() {
       if (elements.length) return true;
       var validacao = importValidarMapeamento();
       if (!validacao.ok) return false;
@@ -11377,6 +11423,7 @@
       var itens = pares.map(function (par) {
         return {
           campo: par.campo,
+          coluna: par.coluna, /* pedido 1.181: para vincular o criado à coluna */
           valor: (primeira[idxCols[par.coluna]] != null) ? String(primeira[idxCols[par.coluna]]) : ""
         };
       });
@@ -11414,6 +11461,7 @@
         }
         el.x = m;
         el.y = cursorY;
+        el.importColuna = it.coluna; /* pedido 1.181: criado nasce vinculado — as próximas rodadas reivindicam por vínculo, sem duplicar */
         if (typeof restringirLimitesElemento === "function") restringirLimitesElemento(el, W, H);
         cursorY = el.y + ((el.tipo === "texto") ? (el.fonte * 1.4) : el.h) + GAP;
       });
@@ -11551,6 +11599,7 @@
        Cada PAR coluna×campo (pedido 1.96: uma coluna pode gerar vários
        elementos — ex.: série como Texto E QR Code) tem seu alvo garantido. */
     function gerarZPLTodasLinhas() {
+      if (loteConstruindo > 0) return null; /* pedido 1.181: construir etiqueta/alvos não reentra no lote */
       if (!importDados.colunas.length || !importDados.linhas.length) return null;
       var validacao = importValidarMapeamento();
       if (!validacao.ok) return null;
