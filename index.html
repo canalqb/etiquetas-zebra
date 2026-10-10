@@ -4949,12 +4949,15 @@
       var elW = el.w || 100, elH = el.h || 50;
 
       if (el.tipo === "texto" || el.tipo === "sub" || el.tipo === "nome" || el.tipo === "serie") {
-        elW = larguraTexto(el.texto, el.fonte || 30);
-        elH = el.fonte || 30;
-        if (el.multiline) {
-          elW = Math.max(1, Math.round(el.fbWidth || elW));
-          elH = Math.round(elH * 1.1 * Math.max(1, String(el.texto || "").split("\n").length));
-        }
+        /* Pedido 1.180: footprint REAL do texto — com a quebra automática
+           (larguraQuebraTexto via obterDimensoesElemento), não a largura
+           natural da linha inteira. Antes, um texto grande era medido como
+           "mais largo que a etiqueta" e o clamp empurrava o elemento para a
+           margem esquerda (x=0) a cada render, em vez de deixá-lo no lugar
+           quebrando linha na margem direita. */
+        var dimsTxtClamp = obterDimensoesElemento(el, dW, dH);
+        elW = dimsTxtClamp.w0;
+        elH = dimsTxtClamp.h0;
       } else if (el.tipo === "linha") {
         elH = el.espessura || el.h || 3;
       }
@@ -4993,8 +4996,17 @@
           firmwares Zebra descartam/clipam o campo inteiro quando o bloco passa
           do ^PW/^LL (saída em branco). O clamp vale para editor e ZPL (compartilhado). */
       var disponivel = disponivelQuebraTexto(el, dW, dH);
-      if (el.fbWidth) return Math.max(1, Math.min(Math.round(el.fbWidth), disponivel));
-      return Math.max(1, disponivel);
+      /* Pedido 1.180: fbWidth é caixa REAL só quando o usuário ligou a quebra de
+         linha (el.multiline). Para o texto comum, fbWidth era um RETRATO
+         congelado da largura natural no momento da digitação (pedido 1.84) —
+         ao aumentar a fonte depois (canto de arrasto, pinça ou inspetor) a
+         quebra continuava presa nesse retrato velho: o texto quebrava ANTES do
+         limite da etiqueta, às vezes na metade. Agora o texto comum quebra pelo
+         que ele mede AGORA: min(largura natural na fonte atual, espaço até a
+         margem) — margem da etiqueta sempre como limite final. */
+      if (el.multiline) return Math.max(1, Math.min(Math.round(el.fbWidth || disponivel), disponivel));
+      var natural = Math.max(1, Math.ceil(larguraTexto(el.texto || "M", el.fonte || 30)));
+      return Math.max(1, Math.min(natural, disponivel));
     }
     /* Conta as linhas de um texto com quebra automática (dots) — mesma política
        greedy por palavras do ^FB da impressora. */
