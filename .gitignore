@@ -30,3 +30,8 @@ instalador lexmark.txt
 honeywell.txt
 Lexmark/
 Xerox_C415/
+
+# Pedido 1.182: credenciais OAuth do Google — NUNCA versionar
+# (o Client ID público do projeto já está embutido no index.html; o SECRET fica só aqui)
+GoogleSheetZebraOAuth.json
+OAtuh.txt

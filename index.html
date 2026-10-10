@@ -3156,20 +3156,24 @@
                   <!-- Container da árvore dinâmica de níveis (Inicia com Nível 1) -->
                   <div id="batch-special-tree-container" class="mb-2"></div>
 
-                  <div class="d-flex align-items-center justify-content-center gap-2 mt-2">
-                    <button type="button" class="icon-btn icon-btn-primary icon-btn-lg" id="btn-batch-special-generate" title="Gerar Lote Especial" aria-label="Gerar Lote Especial">
-                      <i class="fas fa-sitemap"></i>
-                    </button>
-                    <button type="button" class="icon-btn icon-btn-success icon-btn-lg" id="btn-batch-special-print" title="Imprimir Lote Especial" aria-label="Imprimir Lote Especial">
-                      <i class="fas fa-print"></i>
-                    </button>
-                    <button type="button" class="icon-btn icon-btn-dark icon-btn-lg" id="btn-export-vip-special" title="Exportar Modelo Especial (.VIP)" aria-label="Exportar Modelo Especial">
-                      <i class="fas fa-download"></i>
-                    </button>
-                    <label class="icon-btn icon-btn-dark icon-btn-lg mb-0 cursor-pointer" title="Importar Modelo Especial (.VIP)">
-                      <i class="fas fa-upload"></i>
-                      <input type="file" id="input-import-vip-special" accept=".vip,.json" class="d-none">
-                    </label>
+                  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-2 border-top">
+                    <div class="d-flex gap-2">
+                      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1" id="btn-export-vip-special" title="Exportar Modelo Especial (.VIP / JSON)" aria-label="Exportar Modelo Especial">
+                        <i class="fas fa-download"></i><span>Exportar .VIP</span>
+                      </button>
+                      <label class="btn btn-outline-secondary btn-sm mb-0 cursor-pointer d-inline-flex align-items-center gap-1" title="Importar Modelo Especial (.VIP / JSON)">
+                        <i class="fas fa-upload"></i><span>Importar .VIP</span>
+                        <input type="file" id="input-import-vip-special" accept=".vip,.json" class="d-none">
+                      </label>
+                    </div>
+                    <div class="d-flex gap-2 ms-auto">
+                      <button type="button" class="btn btn-primary btn-sm px-3 fw-bold d-inline-flex align-items-center gap-2 shadow-sm" id="btn-batch-special-generate" title="Gerar Lote Especial" aria-label="Gerar Lote Especial">
+                        <i class="fas fa-layer-group"></i><span>Gerar Lote</span>
+                      </button>
+                      <button type="button" class="btn btn-success btn-sm px-3 fw-bold d-inline-flex align-items-center gap-2 shadow-sm" id="btn-batch-special-print" title="Imprimir Lote Especial" aria-label="Imprimir Lote Especial">
+                        <i class="fas fa-print"></i><span>Imprimir Lote</span>
+                      </button>
+                    </div>
                   </div>
 
                 </form>
@@ -3227,13 +3231,22 @@
               <div class="mb-2" id="import-url-area" style="display:none;">
                 <label class="form-label small fw-bold" for="import-url">Link do Google Sheets</label>
                 <input type="url" class="form-control form-control-sm" id="import-url" placeholder="https://docs.google.com/spreadsheets/d/…" aria-label="Link do Google Sheets" autocomplete="off" spellcheck="false">
-                <p class="small text-muted mt-1 mb-1">A função reconhece automaticamente os 2 tipos: <b>planilha pública</b> ("Qualquer pessoa com o link") e <b>planilha privada da sua conta Google</b> logada no navegador — sem precisar expor o link. A aba indicada no link (gid) é lida.</p>
-                <label class="form-label small fw-bold" for="import-gs-clientid">Google Client ID <span class="text-muted fw-normal">(opcional — planilhas privadas da sua conta)</span></label>
-                <div class="input-group input-group-sm">
-                  <input type="text" class="form-control form-control-sm" id="import-gs-clientid" placeholder="xxxxx.apps.googleusercontent.com" aria-label="Google OAuth Client ID para planilhas privadas" autocomplete="off" spellcheck="false">
-                  <button type="button" class="btn btn-outline-secondary" id="btn-import-gs-clientid-salvar" title="Salvar Client ID neste navegador"><i class="fas fa-save" aria-hidden="true"></i>Salvar</button>
+                <p class="small text-muted mt-1 mb-1">A função reconhece automaticamente os 2 tipos: <b>planilha pública</b> ("Qualquer pessoa com o link") e <b>planilha privada da sua conta Google</b> — após conectar com o Google, o app lê com as permissões da conta. A aba indicada no link (gid) é lida.</p>
+                <div class="d-flex flex-wrap align-items-center gap-2 mt-1 mb-1" id="gs-conectar-area">
+                  <button type="button" class="btn btn-sm btn-outline-danger" id="btn-gs-conectar" aria-label="Conectar com a conta Google para ler planilhas privadas"><i class="fab fa-google me-1" aria-hidden="true"></i>Conectar com Google</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btn-gs-desconectar" aria-label="Desconectar a conta Google"><i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i>Desconectar</button>
+                  <span class="small text-muted" id="gs-status">Não conectado — planilhas privadas pedem autorização da sua conta Google.</span>
                 </div>
-                <p class="small text-muted mt-1 mb-0">Só é necessário para planilha privada: no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre o endereço público onde o site está hospedado (ex.: <code>https://www.seudominio.com.br</code>) — o passo a passo completo está na <b>Ajuda, seção 7</b> ("Planilhas privadas do Google"). Sem Client ID, apenas planilhas públicas são lidas. O login exige abrir o app via http(s) — não funciona em <code>file://</code>.</p>
+                <details class="mt-1">
+                  <summary class="small text-muted">Avançado — usar meu próprio Client ID</summary>
+                  <label class="form-label small fw-bold mt-2" for="import-gs-clientid">Google Client ID personalizado</label>
+                  <div class="input-group input-group-sm">
+                    <input type="text" class="form-control form-control-sm" id="import-gs-clientid" placeholder="xxxxx.apps.googleusercontent.com" aria-label="Google OAuth Client ID para planilhas privadas" autocomplete="off" spellcheck="false">
+                    <button type="button" class="btn btn-outline-secondary" id="btn-import-gs-clientid-salvar" title="Salvar Client ID neste navegador"><i class="fas fa-save" aria-hidden="true"></i>Salvar</button>
+                  </div>
+                  <p class="small text-muted mt-1 mb-0">O app já tem o Client ID do projeto embutido (não precisa de nada disto). Este campo substitui o Client ID pelo seu — no Google Cloud Console, ative a <b>Google Sheets API</b> e crie um OAuth Client ID (tipo "Web application"); em "Origens JavaScript autorizadas" cadastre o endereço público onde o site está hospedado.</p>
+                </details>
+                <p class="small text-muted mt-1 mb-0">Planilhas privadas: clique em <b>Conectar com Google</b> e autorize a leitura (somente o necessário — <code>spreadsheets.readonly</code>). O login exige abrir o app via http(s) na origem cadastrada no OAuth — não funciona em <code>file://</code>; se abrir fora de <code>https://canalqb.github.io</code>, a conexão pode ser recusada pelo Google (origem não autorizada).</p>
               </div>
               <div class="mb-2" id="import-webhook-fields" style="display:none;">
                 <label class="form-label small fw-bold" for="webhook-url">URL do Webhook</label>
@@ -5262,13 +5275,14 @@
           var bcH = dotsToMmPreciso(el.h || 100);
           div.style.width = bcW + "mm";
           div.style.height = bcH + "mm";
-          var bcHtml = barcodeObter(el.texto, el.simbologia, el.h || 100);
+          var bcHtml = barcodeObter(el.texto, el.simbologia, el.h || 100, modW);
           if (bcHtml) {
             div.innerHTML = bcHtml;
             var svgBc = div.querySelector("svg");
             if (svgBc) {
               svgBc.setAttribute("width", "100%");
               svgBc.setAttribute("height", "100%");
+              svgBc.setAttribute("preserveAspectRatio", "none");
               svgBc.style.display = "block";
             }
           } else {
@@ -7772,7 +7786,9 @@
            vw = Math.min(Math.ceil(larguraTexto(it.texto || "", fQz)), wQz);
            vh = Math.round(fQz * 1.1 * Math.max(1, contarLinhasEnroladas(it.texto || "", fQz, wQz)));
         } else if (it.tipo === "barcode") {
-           vw = it.w || 300;
+           var _med1dVw = barcodeMedidas(it.texto, it.simbologia || "code128");
+           var _modWvw = Math.max(1, Math.min(10, Math.floor((it.w || 300) / _med1dVw.mods)));
+           vw = _modWvw * _med1dVw.mods;
            vh = it.h || 80;
         } else if (it.tipo === "qr") {
            vw = it.w || 200;
@@ -8274,7 +8290,7 @@
     function bwipImgHtml(chave, texto) {
       var cvImg = bwipCanvas(chave, texto);
       if (!cvImg) return "";
-      return '<img alt="" src="' + cvImg.toDataURL("image/png") + '" style="width:100%; height:100%; object-fit:contain;">';
+      return '<img alt="" src="' + cvImg.toDataURL("image/png") + '" style="width:100%; height:100%; object-fit:fill; display:block;">';
     }
 
     /* Pedido 1.141: utilidades GS1 — AIs entre parênteses são o formato canônico
@@ -8453,7 +8469,7 @@
     }
 
     var _bcCache = {}, _bcCacheKeys = [];
-    function barcodeObter(texto, simbologia, elH) {
+    function barcodeObter(texto, simbologia, elH, modW) {
       var infoBc = simbologiaInfo(simbologia) || CATALOGO_SIMBOLOGIAS["1d"][0];
       if (infoBc.bwip) return bwipImgHtml(infoBc.chave, texto); /* Code 93 e cia via bwip-js (barras na caixa inteira — ZPL sai sem linha) */
       var fmtBc = infoBc.jsbarcode || "CODE128";
@@ -8461,13 +8477,15 @@
          (el.h = total), então só a proporção precisa casar com o ZPL */
       var linhaBc = barcodeLinhaH(elH || 100);
       var barrasBc = Math.max(12, Math.round(elH || 100) - linhaBc);
-      var keyBc = infoBc.chave + "|" + ("" + texto) + "|" + barrasBc;
+      var mWidth = Math.max(1, Math.min(10, parseInt(modW, 10) || 2));
+      var keyBc = infoBc.chave + "|" + ("" + texto) + "|" + barrasBc + "|" + mWidth;
       if (_bcCache[keyBc]) return _bcCache[keyBc];
       if (typeof JsBarcode !== "function") return null;
       function renderJsBc(txt) {
         var svgBc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: true, margin: 0, height: barrasBc, fontSize: linhaBc, textMargin: 0 }); }
+        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: true, margin: 0, height: barrasBc, fontSize: linhaBc, textMargin: 0, width: mWidth }); }
         catch (eJs) { return ""; }
+        svgBc.setAttribute("preserveAspectRatio", "none");
         var htmlBc = svgBc.outerHTML;
         /* svg vazio = conteúdo inválido para o formato (JsBarcode não desenha) */
         if (htmlBc.indexOf("<rect") === -1 && htmlBc.indexOf("<path") === -1 && htmlBc.indexOf("<g") === -1) return "";
@@ -8526,7 +8544,15 @@
         var linhasTc = quebrarTextoMultilinha(el.texto || "", wQc, ctx);
         vw = Math.max(1, Math.ceil(linhasTc.reduce(function (mx, l) { return Math.max(mx, ctx.measureText(l).width); }, 0)));
         vh = Math.round(f0 * 1.1 * Math.max(1, linhasTc.length));
-      } else if (el.tipo === "barcode") { vw = el.w || 300; vh = el.h || 80; }
+      } else if (el.tipo === "barcode") {
+        /* Snap de largura idêntico ao renderPreview: modW * mods garante WYSIWYG
+           editor↔canvas — especialmente crítico no lote onde o clone tem el.w do
+           texto original mas el.texto já foi trocado para o dado da linha. */
+        var _medBcDim = barcodeMedidas(el.texto, el.simbologia || "code128");
+        var _modWdim = Math.max(1, Math.min(10, Math.floor((el.w || 300) / _medBcDim.mods)));
+        vw = _modWdim * _medBcDim.mods;
+        vh = el.h || 80;
+      }
       else if (el.tipo === "qr") { vw = el.w || 200; vh = el.h || 200; }
       else if (el.tipo === "linha") { vw = el.w || dW; vh = el.espessura || el.h || 3; }
       else if (el.tipo === "borda") { vw = el.w || dW; vh = el.h || dH; }
@@ -8601,17 +8627,23 @@
       } else if (el.tipo === "barcode") {
         /* Pedido 1.164: módulos reais (mesma conta do preview/ZPL) e linha de
            interpretação na proporção correta (barras : linha = barrasH : linhaH) */
-        var medBcCv = barcodeMedidas(el.texto, el.simbologia || "code128");
-        var modWb = Math.max(1, Math.min(10, Math.floor(vw / medBcCv.mods)));
+        /* vw já está snapped (modW * mods) pelo bloco inicial — reusar _modWdim/_medBcDim
+           do mesmo cálculo para não refazer a medição. */
+        var medBcCv = _medBcDim;
+        var modWb = _modWdim;
         var infoBcPv = simbologiaInfo(el.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
         if (infoBcPv.bwip) {
           var cvBcBw = bwipCanvas(infoBcPv.chave, el.texto);
+          /* bwip: o canvas interno tem largura proporcional ao conteúdo (3px/módulo);
+             esticar só até vw (já snapped) — sem exceder. */
           if (cvBcBw) ctx.drawImage(cvBcBw, 0, 0, vw, vh);
         } else {
           var linhaBcCv = barcodeLinhaH(vh);
           var barrasBcCv = Math.max(12, Math.round(vh) - linhaBcCv);
           function desenharJsBc(txt) {
             var tcvBc = document.createElement("canvas");
+            /* width: modWb garante módulos inteiros; o canvas temporário tem exatamente
+               modWb*mods pixels — drawImage(…, vw, vh) estica para vw=modWb*mods, 1:1. */
             JsBarcode(tcvBc, txt, { format: infoBcPv.jsbarcode || "CODE128", displayValue: true, margin: 0, height: barrasBcCv, fontSize: linhaBcCv, textMargin: 0, width: modWb, valid: function (okV) { if (!okV) throw new Error("conteudo invalido"); } });
             ctx.drawImage(tcvBc, 0, 0, vw, vh);
           }
@@ -10004,33 +10036,69 @@
       return [node.targetElementId || "serie"];
     }
 
-    function getElementOptions() {
-      var opts = [
-        { value: "serie", label: "Série (...)" },
-        { value: "qr", label: "QR Code / Barcode" },
-        { value: "nome", label: "Nome do Produto" }
-      ];
+    /* Opções com todos os elementos do ribbon-group ribbon-elementos */
+    var RIBBON_ELEMENTOS_OPCOES = [
+      { value: "serie",      label: "Série / Sequencial",                icon: "fa-hashtag" },
+      { value: "texto",      label: "Texto Livre / Rótulo",             icon: "fa-font" },
+      { value: "sub",        label: "Subtítulo / Topo",                 icon: "fa-align-left" },
+      { value: "nome",       label: "Nome do Produto / Destaque",       icon: "fa-heading" },
+      { value: "qr",         label: "Código QR Code",                   icon: "fa-qrcode" },
+      { value: "barcode",    label: "Código de Barras 128",             icon: "fa-barcode" },
+      { value: "imagem",     label: "Importar Imagem / Logo",           icon: "fa-image" },
+      { value: "imagem-url", label: "Imagem por Link / Base64",         icon: "fa-link" },
+      { value: "datahora",   label: "Data e Hora",                      icon: "fa-calendar-days" },
+      { value: "linha",      label: "Linha Divisória",                  icon: "fa-minus" },
+      { value: "borda",      label: "Moldura / Retângulo",              icon: "fa-square" },
+      { value: "elipse",     label: "Círculo / Elipse",                 icon: "fa-circle" },
+      { value: "diagonal",   label: "Diagonal / Linha Cruzada",         icon: "fa-slash" },
+      { value: "raio",       label: "Retângulo com Cantos Arredondados", icon: "fa-vector-square" },
+      { value: "retas",      label: "Linha Reta Livre",                 icon: "fa-slash" },
+      { value: "curva",      label: "Linha Curva",                      icon: "fa-bezier-curve" }
+    ];
 
-      elements.forEach(function (el) {
-        if (el.id !== "el_serie" && el.id !== "el_qr" && el.id !== "el_nome") {
-          if (el.tipo === "linha" || el.tipo === "borda" || el.tipo === "imagem") return;
-          var label = el.tipo.toUpperCase() + ': "' + (el.texto || el.id).substring(0, 15) + '"';
-          opts.push({ value: el.id, label: label });
-        }
-      });
+    function getElementOptions() {
+      var opts = RIBBON_ELEMENTOS_OPCOES.slice();
+
+      if (typeof elements !== "undefined" && Array.isArray(elements) && elements.length > 0) {
+        elements.forEach(function (el) {
+          var tipoNome = (el.classe || el.tipo || "elemento").toUpperCase();
+          var txt = (el.texto || el.id || "").trim();
+          if (txt.length > 20) txt = txt.substring(0, 18) + "...";
+          var label = "[" + tipoNome + "] " + (txt ? '"' + txt + '"' : "(ID: " + el.id + ")");
+          opts.push({ value: el.id, label: label, isCanvas: true });
+        });
+      }
 
       return opts;
     }
 
     function getElementOptionsHTML(currentTargetId) {
-      return getElementOptions().map(function (o) {
+      var ribbonHTML = '<optgroup label="Elementos do Ribbon (Paleta)">';
+      var canvasHTML = '';
+      var hasCanvas = false;
+
+      var allOpts = getElementOptions();
+      allOpts.forEach(function (o) {
         var sel = (o.value === currentTargetId) ? ' selected' : '';
-        return '<option value="' + o.value + '"' + sel + '>' + o.label + '</option>';
-      }).join('');
+        var optTag = '<option value="' + o.value + '"' + sel + '>' + o.label + '</option>';
+        if (o.isCanvas) {
+          if (!hasCanvas) {
+            canvasHTML += '<optgroup label="Elementos Presentes na Etiqueta">';
+            hasCanvas = true;
+          }
+          canvasHTML += optTag;
+        } else {
+          ribbonHTML += optTag;
+        }
+      });
+      ribbonHTML += '</optgroup>';
+      if (hasCanvas) canvasHTML += '</optgroup>';
+
+      return ribbonHTML + canvasHTML;
     }
 
     function buildNodeHTML(node, depth) {
-      var indent = Math.min(depth * 14, 48);
+      var indent = Math.min(depth * 16, 48);
       var isNormal = (node.order !== "inverso");
       var targets = targetsDoNivel(node);
       if (!Array.isArray(node.targetElementIds)) node.targetElementIds = targets;
@@ -10039,51 +10107,69 @@
 
       var targetsHtml = "";
       targets.forEach(function (t, idx) {
-        targetsHtml += '<div class="d-flex gap-1 align-items-center">' +
-          '<select class="form-select form-select-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="targetElementId" data-idx="' + idx + '">' +
+        targetsHtml += '<div class="d-flex gap-1 align-items-center mb-1">' +
+          '<select class="form-select form-select-sm py-1 px-2 tree-input fw-medium" data-id="' + node.id + '" data-field="targetElementId" data-idx="' + idx + '" title="Elemento alvo da sequência">' +
             getElementOptionsHTML(t) +
           '</select>' +
-          (idx > 0 ? '<button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-del-target" data-id="' + node.id + '" data-idx="' + idx + '" title="Remover este campo"><i class="bi bi-x-lg"></i></button>' : '') +
+          (idx > 0 ? '<button type="button" class="btn btn-xs btn-outline-danger py-1 px-2 btn-del-target" data-id="' + node.id + '" data-idx="' + idx + '" title="Remover este campo vinculado"><i class="fas fa-xmark"></i></button>' : '') +
         '</div>';
       });
 
-      var html = '<div class="card card-custom p-2 mb-2 shadow-sm" style="margin-left:' + indent + 'px; border-left: 4px solid ' + (isRoot ? '#0d6efd' : '#0dcaf0') + '!important;">' +
-        '<div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1 pb-1 border-bottom">' +
-          '<span class="fw-bold small text-dark"><i class="bi bi-diagram-2 me-1 text-primary"></i>' + titleText + '</span>' +
-          '<div class="d-flex gap-1 align-items-center">' +
-            '<button type="button" class="btn btn-xs btn-primary fw-bold py-0 px-2 btn-add-sublevel" data-id="' + node.id + '" title="Adicionar Subnível"><i class="bi bi-plus-lg me-1"></i>+</button>' +
-            '<button type="button" class="btn btn-xs ' + (isNormal ? 'btn-outline-secondary' : 'btn-warning text-dark fw-bold') + ' py-0 px-2 btn-toggle-order" data-id="' + node.id + '" title="Alternar Ordem da Sequência"><i class="bi bi-arrow-down-up me-1"></i>' + (isNormal ? 'Inverso' : 'Inverso (Ativo)') + '</button>' +
-            (!isRoot ? '<button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-del-level" data-id="' + node.id + '" title="Remover Subnível"><i class="bi bi-trash"></i></button>' : '') +
+      var borderColor = isRoot ? 'var(--bs-primary, #0d6efd)' : 'var(--bs-info, #0dcaf0)';
+      var badgeClass = isRoot ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-info-subtle text-info border border-info-subtle';
+      var levelIcon = isRoot ? '<i class="fas fa-layer-group text-primary me-1"></i>' : '<i class="fas fa-sitemap text-info me-1"></i>';
+
+      var headerActionsHtml = '';
+      if (isRoot) {
+        // Nível 1: botões para Adicionar Subnível e Alternar Ordem (atendem os demais níveis)
+        headerActionsHtml =
+          '<button type="button" class="btn btn-xs btn-primary fw-semibold py-1 px-2 btn-add-sublevel d-inline-flex align-items-center gap-1 shadow-sm" data-id="' + node.id + '" title="Adicionar Subnível à árvore de sequência"><i class="fas fa-plus"></i><span>Subnível</span></button>' +
+          '<button type="button" class="btn btn-xs ' + (isNormal ? 'btn-outline-secondary' : 'btn-warning text-dark fw-bold') + ' py-1 px-2 btn-toggle-order d-inline-flex align-items-center gap-1" data-id="' + node.id + '" title="Alternar Ordem da Sequência (Crescente / Inverso)"><i class="fas fa-arrow-down-up-across-line"></i><span>' + (isNormal ? 'Inverso' : 'Inverso (Ativo)') + '</span></button>';
+      } else {
+        // Subníveis: apenas ação de remoção do subnível
+        headerActionsHtml =
+          '<button type="button" class="btn btn-xs btn-outline-danger py-1 px-2 btn-del-level d-inline-flex align-items-center gap-1" data-id="' + node.id + '" title="Remover este Subnível"><i class="fas fa-trash-can"></i><span>Remover</span></button>';
+      }
+
+      var html = '<div class="card card-custom p-3 mb-2 shadow-sm rounded-3" style="margin-left:' + indent + 'px; border-left: 5px solid ' + borderColor + '!important;">' +
+        '<div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 pb-2 border-bottom">' +
+          '<div class="d-flex align-items-center gap-2">' +
+            levelIcon +
+            '<span class="fw-bold small text-dark">' + titleText + '</span>' +
+            '<span class="badge ' + badgeClass + '" style="font-size:0.7rem; font-weight:600;">' + (isRoot ? 'Principal' : 'Encadeado') + '</span>' +
+          '</div>' +
+          '<div class="d-flex gap-1 align-items-center flex-wrap">' +
+            headerActionsHtml +
           '</div>' +
         '</div>' +
-        '<div class="row g-1 align-items-end mb-1">' +
-          '<div class="col-6">' +
-            '<label class="form-label micro-label mb-0 fw-semibold">Campo Incremental</label>' +
-            '<div class="d-flex flex-column gap-1">' + targetsHtml + '</div>' +
-            '<button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 mt-1 btn-add-target" data-id="' + node.id + '" title="Adicionar outro elemento com a mesma sequência (ex.: subtítulo e QR juntos)"><i class="bi bi-plus-lg me-1"></i>elemento</button>' +
+        '<div class="row g-2 align-items-start mb-2">' +
+          '<div class="col-md-6 col-12">' +
+            '<label class="form-label micro-label mb-1 fw-bold text-secondary d-flex align-items-center gap-1"><i class="fas fa-shapes text-primary" style="font-size:0.75rem;"></i>Campo Incremental</label>' +
+            '<div class="d-flex flex-column">' + targetsHtml + '</div>' +
+            '<button type="button" class="btn btn-xs btn-outline-primary py-1 px-2 mt-1 btn-add-target d-inline-flex align-items-center gap-1" data-id="' + node.id + '" title="Vincular mais um elemento à mesma sequência (ex.: texto e QR juntos)"><i class="fas fa-plus"></i><span>Vincular Elemento</span></button>' +
           '</div>' +
-          '<div class="col-6">' +
-            '<label class="form-label micro-label mb-0 fw-semibold">Prefixo</label>' +
-            '<input type="text" class="form-control form-control-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="prefix" value="' + (node.prefix || "") + '" placeholder="Ex: SN-">' +
+          '<div class="col-md-6 col-12">' +
+            '<label class="form-label micro-label mb-1 fw-bold text-secondary d-flex align-items-center gap-1"><i class="fas fa-tag text-muted" style="font-size:0.75rem;"></i>Prefixo / Texto Fixo</label>' +
+            '<input type="text" class="form-control form-control-sm py-1 px-2 tree-input" data-id="' + node.id + '" data-field="prefix" value="' + (node.prefix || "") + '" placeholder="Ex: SN- / LOTE- / REF- ">' +
           '</div>' +
         '</div>' +
-        '<div class="row g-1 align-items-end mb-1">' +
+        '<div class="row g-2 align-items-end mb-1 bg-light p-2 rounded-2 border">' +
           '<div class="col-4">' +
-            '<label class="form-label micro-label mb-0 fw-semibold">Início</label>' +
-            '<input type="number" class="form-control form-control-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="start" value="' + (node.start !== undefined ? node.start : 1) + '">' +
+            '<label class="form-label micro-label mb-1 fw-bold text-secondary d-flex align-items-center gap-1"><i class="fas fa-play text-muted" style="font-size:0.75rem;"></i>Início</label>' +
+            '<input type="number" class="form-control form-control-sm py-1 px-2 tree-input text-center fw-bold" data-id="' + node.id + '" data-field="start" value="' + (node.start !== undefined ? node.start : 1) + '">' +
           '</div>' +
           '<div class="col-4">' +
-            '<label class="form-label micro-label mb-0 fw-semibold">Fim</label>' +
-            '<input type="number" class="form-control form-control-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="end" value="' + (node.end !== undefined ? node.end : 10) + '">' +
+            '<label class="form-label micro-label mb-1 fw-bold text-secondary d-flex align-items-center gap-1"><i class="fas fa-flag-checkered text-muted" style="font-size:0.75rem;"></i>Fim</label>' +
+            '<input type="number" class="form-control form-control-sm py-1 px-2 tree-input text-center fw-bold" data-id="' + node.id + '" data-field="end" value="' + (node.end !== undefined ? node.end : 10) + '">' +
           '</div>' +
           '<div class="col-4">' +
-            '<label class="form-label micro-label mb-0 fw-semibold">Dígitos</label>' +
-            '<input type="number" min="1" max="10" class="form-control form-control-sm py-0 px-1 tree-input" data-id="' + node.id + '" data-field="digits" value="' + (node.digits || 2) + '">' +
+            '<label class="form-label micro-label mb-1 fw-bold text-secondary d-flex align-items-center gap-1"><i class="fas fa-hashtag text-muted" style="font-size:0.75rem;"></i>Dígitos</label>' +
+            '<input type="number" min="1" max="10" class="form-control form-control-sm py-1 px-2 tree-input text-center fw-bold" data-id="' + node.id + '" data-field="digits" value="' + (node.digits || 2) + '">' +
           '</div>' +
         '</div>';
 
       if (node.children && node.children.length > 0) {
-        html += '<div class="children-container mt-1">';
+        html += '<div class="children-container mt-2 pt-1 border-top border-light-subtle">';
         node.children.forEach(function (childNode) {
           html += buildNodeHTML(childNode, depth + 1);
         });
@@ -10420,24 +10506,8 @@
       if (!stepBindings || stepBindings.length === 0 || !stepBindings[0]) return;
 
       var stepMap = stepBindings[0];
-      var updated = false;
-
-      elements.forEach(function (el) {
-        Object.keys(stepMap).forEach(function (targetKey) {
-          var val = stepMap[targetKey];
-          if (targetKey === "serie" && (el.classe === "serie" || el.id === "el_serie")) {
-            el.texto = "" + val; updated = true;
-          } else if (targetKey === "qr" && (el.tipo === "qr" || el.tipo === "barcode" || el.id === "el_qr")) {
-            el.texto = val; updated = true;
-          } else if (targetKey === "nome" && (el.classe === "nome" || el.id === "el_nome")) {
-            el.texto = val; updated = true;
-          } else if (el.id === targetKey) {
-            el.texto = val; updated = true;
-          }
-        });
-      });
-
-      if (updated) renderStudio();
+      aplicarStepMapEmArray(elements, stepMap);
+      renderStudio();
     }
 
     /* ---------------- Importador Genérico de Fontes de Dados ---------------- */
@@ -10928,12 +10998,93 @@
     /* Google Sheets 100% client-side (projeto sem PHP): a função reconhece
        automaticamente os 2 tipos de planilha —
        1) Pública ("Qualquer pessoa com o link"): tenta o endpoint gviz CSV via
-          fetch; se o navegador bloquear, cai no JSONP via <script>.
-       2) Privada (conta Google logada no navegador): quando o gviz retorna
-          redirecionamento/login, usa o Google Identity Services (Client ID
-          configurável) + a Sheets API v4 — sem expor o link para ninguém. */
+           fetch; se o navegador bloquear, cai no JSONP via <script>.
+       2) Privada (conta Google autorizada): quando o gviz retorna
+           redirecionamento/login, conecta com a conta Google (Google Identity
+           Services com o Client ID DO PROJETO — pedido 1.182/googlesheet.txt)
+           e lê pela Sheets API v4 — cada usuário acessa com as próprias
+           permissões, sem expor o link para ninguém. */
     var importGsheetsSeq = 0;
     var GS_CID_KEY = "etiquetasZebra.gsClientId";
+    /* Pedido 1.182 (googlesheet.txt): Client ID OAuth do PRÓPRIO projeto,
+       configurado uma única vez pelo desenvolvedor — o usuário final não
+       precisa criar o dele. Client ID OAuth NÃO é segredo (é validado pelo
+       Google pela origem JavaScript autorizada); o Client Secret NUNCA vai
+       no código do navegador. Origem autorizada: https://canalqb.github.io */
+    var GS_CLIENT_ID_PROJETO = "686748375741-su504he100nrogd9u1ibgsaho6u8qv9k.apps.googleusercontent.com";
+    var GS_SCOPE_PROJETO = "https://www.googleapis.com/auth/spreadsheets.readonly";
+    /* Token de acesso: SOMENTE em memória (pedido 1.182 / googlesheet.txt §7 —
+       nada de token em localStorage/sessionStorage). Reutilizado até expirar. */
+    var gsTokenMem = { valor: null, expira: 0 };
+    function gsClientIdEfetivo() {
+      var cidUsuario = (localStorage.getItem(GS_CID_KEY) || "").trim();
+      return cidUsuario || GS_CLIENT_ID_PROJETO;
+    }
+    function gsTokenValido() {
+      return !!(gsTokenMem.valor && Date.now() < gsTokenMem.expira);
+    }
+    function gsAtualizarStatus(txt) {
+      var st = $("gs-status");
+      if (st) st.textContent = txt;
+      var btnDesc = $("btn-gs-desconectar");
+      if (btnDesc) btnDesc.classList.toggle("d-none", !gsTokenValido());
+    }
+    function gsErrouMotivo(resp) {
+      /* Mapa dos erros comuns do Google Identity Services em mensagens claras
+       (googlesheet.txt §6). */
+      var r = String((resp && (resp.error && resp.error.type)) || (resp && resp.error) || "");
+      if (/popup_closed/i.test(r)) return "Você fechou a janela de autorização antes de concluir.";
+      if (/access_blocked/i.test(r)) return "Acesso bloqueado pelo Google — a conta provavelmente não está na lista de USUÁRIOS DE TESTE da tela de consentimento do projeto (ou o administrador da conta negou o acesso).";
+      if (/invalid_client|idpiframe|origin/i.test(r)) return "Client ID/origem não autorizado pelo Google — abra o app em https://canalqb.github.io (origem cadastrada no OAuth).";
+      if (/token_failed/i.test(r)) return "Não foi possível obter o token da sua conta Google — tente de novo.";
+      return "Não foi possível conectar à sua conta Google (" + (r || "sem detalhe") + ").";
+    }
+    /* Conecta (ou reconecta) com a conta Google. quandoPronto recebe o token
+       válido; usado pelo botão e pela leitura de planilhas privadas. */
+    function gsConectar(quandoPronto) {
+      if (location.protocol === "file:") {
+        notify("O login do Google não funciona abrindo o arquivo direto do disco (file://). Abra o app via http(s): https://canalqb.github.io ou http://localhost.", "danger");
+        return;
+      }
+      if (!(window.google && window.google.accounts && window.google.accounts.oauth2)) {
+        notify("Biblioteca da Google ainda está carregando — aguarde alguns segundos e tente de novo.", "warning");
+        return;
+      }
+      if (location.origin !== "https://canalqb.github.io") {
+        notify("Atenção: esta origem (" + location.origin + ") não está cadastrada no OAuth do projeto — se o Google recusar, abra o app em https://canalqb.github.io.", "dark");
+      }
+      if (gsTokenValido()) { if (quandoPronto) quandoPronto(gsTokenMem.valor); return; }
+      var clientCfg = {
+        client_id: gsClientIdEfetivo(),
+        scope: GS_SCOPE_PROJETO,
+        callback: function (resp) {
+          if (!resp || !resp.access_token) { notify(gsErrouMotivo(resp), "danger"); return; }
+          gsTokenMem.valor = resp.access_token;
+          gsTokenMem.expira = Date.now() + Math.max(60, (resp.expires_in || 3600) - 60) * 1000;
+          gsAtualizarStatus("Conectado — planilhas privadas da sua conta podem ser lidas.");
+          notify("Conectado com Google — planilhas privadas liberadas para leitura.", "success");
+          if (quandoPronto) quandoPronto(gsTokenMem.valor);
+        },
+        error_callback: function (errResp) {
+          notify(gsErrouMotivo(errResp), "danger");
+        }
+      };
+      try {
+        var tokenClient = google.accounts.oauth2.initTokenClient(clientCfg);
+        tokenClient.requestAccessToken({ prompt: "" });
+      } catch (eGis) {
+        notify(gsErrouMotivo({ error: String(eGis && eGis.message || eGis) }), "danger");
+      }
+    }
+    function gsDesconectar() {
+      var t = gsTokenMem.valor;
+      gsTokenMem = { valor: null, expira: 0 };
+      gsAtualizarStatus("Não conectado — planilhas privadas pedem autorização da sua conta Google.");
+      try { if (t && google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) google.accounts.oauth2.revoke(t, function () {}); } catch (eRev) {}
+      notify("Conta Google desconectada.", "info");
+    }
+    if ($("btn-gs-conectar")) $("btn-gs-conectar").addEventListener("click", function () { gsConectar(null); });
+    if ($("btn-gs-desconectar")) $("btn-gs-desconectar").addEventListener("click", gsDesconectar);
     function importGsheetsAplicar(res) {
       var vistas = {};
       res.colunas = (res.colunas || []).map(function (c, i) {
@@ -10965,35 +11116,52 @@
           notify(importDados.colunas.length + " colunas encontradas (Google Sheets).", "success");
         })
         .catch(function (err) {
-          if (err && err.message === "privada") importGsheetsOAuth(idPlan, gidPlan);
-          else importGsheetsJsonp(idPlan, gidPlan);
+          if (err && err.message === "privada") { importGsheetsOAuth(idPlan, gidPlan); return; }
+          /* Pedido 1.183: o fetch do gviz pode falhar por CORS ANTES de
+             revelar o redirect de login (ex.: http://localhost) — com a conta
+             Google já conectada, lê direto pela Sheets API; sem conexão,
+             segue para o JSONP (planilhas públicas). */
+          if (gsTokenValido()) {
+            notify("Lendo a planilha com sua conta Google...", "info");
+            importGsheetsPrivado(gsTokenMem.valor, idPlan, gidPlan);
+            return;
+          }
+          importGsheetsJsonp(idPlan, gidPlan);
         });
     }
-    /* Planilha privada: pede token da conta Google logada no navegador
-       (Google Identity Services) e lê via Sheets API v4. */
+    /* Planilha privada (pedido 1.182 / googlesheet.txt): conecta com a conta
+       Google — token em memória REUTILIZADO até expirar (sem pedir login a
+       cada leitura) — e lê via Sheets API v4. */
     function importGsheetsOAuth(idPlan, gidPlan) {
-      var clientId = (localStorage.getItem(GS_CID_KEY) || "").trim();
-      if (!clientId) {
-        importGsheetsJsonp(idPlan, gidPlan);
+      var clientId = gsClientIdEfetivo();
+      if (!clientId) { importGsheetsJsonp(idPlan, gidPlan); return; }
+      if (location.protocol === "file:") {
+        notify("Planilha privada: o login do Google não funciona em file:// — abra o app via http(s) (https://canalqb.github.io ou http://localhost).", "danger");
         return;
       }
       if (!(window.google && window.google.accounts && window.google.accounts.oauth2)) {
         notify("Biblioteca da Google ainda está carregando — aguarde alguns segundos e tente de novo.", "warning");
         return;
       }
+      if (gsTokenValido()) { importGsheetsPrivado(gsTokenMem.valor, idPlan, gidPlan); return; }
       notify("Planilha privada detectada: conectando com sua conta Google...", "info");
-      var tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
-        callback: function (resp) {
-          if (!resp || !resp.access_token) { notify("Não foi possível conectar à sua conta Google.", "danger"); return; }
-          importGsheetsPrivado(resp.access_token, idPlan, gidPlan);
-        }
-      });
-      tokenClient.requestAccessToken({ prompt: "" });
+      gsConectar(function (token) { importGsheetsPrivado(token, idPlan, gidPlan); });
     }
     function importGsheetsPrivado(token, idPlan, gidPlan) {
       var headers = { "Authorization": "Bearer " + token, "Accept": "application/json" };
+      /* googlesheet.txt §6: mensagens compreensíveis por cenário (401 token,
+         403 permissão, 404 planilha, 429 limite). */
+      function checarStatus(r) {
+        if (r.status === 401) {
+          gsTokenMem = { valor: null, expira: 0 };
+          gsAtualizarStatus("Não conectado — planilhas privadas pedem autorização da sua conta Google.");
+          throw new Error("autorização expirada — clique em Conectar com Google e tente de novo");
+        }
+        if (r.status === 403) throw new Error("sua conta Google não tem permissão nesta planilha — solicite acesso ao proprietário ou conecte a conta correta (Conectar com Google)");
+        if (r.status === 404) throw new Error("planilha não encontrada — confira o link (ID inválido ou planilha apagada)");
+        if (r.status === 429) throw new Error("limite de requisições do Google excedido — aguarde um pouco e tente de novo");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+      }
       function aplicarValues(values) {
         if (!values || !values.length) { notify("A planilha está vazia.", "danger"); return; }
         var colunas = (values[0] || []).map(function (v) { return v == null ? "" : String(v); });
@@ -11009,21 +11177,14 @@
       }
       function lerRange(range) {
         fetch("https://sheets.googleapis.com/v4/spreadsheets/" + idPlan + "/values/" + range + "?majorDimension=ROWS", { headers: headers })
-          .then(function (r) {
-            if (r.status === 401) throw new Error("acesso negado — confirme o Client ID e a permissão da sua conta");
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            return r.json();
-          })
+          .then(function (r) { checarStatus(r); return r.json(); })
           .then(function (data) { aplicarValues(data.values || []); })
           .catch(function (err) { notify("Falha ao ler a planilha privada (" + err.message + ").", "danger"); });
       }
       if (gidPlan) {
         /* A API v4 usa o título da aba, não o gid — resolve o título primeiro */
         fetch("https://sheets.googleapis.com/v4/spreadsheets/" + idPlan + "?fields=sheets(properties(sheetId,title))", { headers: headers })
-          .then(function (r) {
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            return r.json();
-          })
+          .then(function (r) { checarStatus(r); return r.json(); })
           .then(function (meta) {
             var titulo = null;
             (meta.sheets || []).forEach(function (s) {
@@ -11041,7 +11202,10 @@
       var cb = "__gsJsonp" + (++importGsheetsSeq);
       var script = document.createElement("script");
       var timer = setTimeout(function () {
-        finalizar("Tempo esgotado ao ler a planilha. Confirme o compartilhamento: 'Qualquer pessoa com o link' (leitor).", true);
+        finalizar(gsTokenValido()
+          ? "Planilha privada detectada — lendo com sua conta Google..."
+          : "Tempo esgotado ao ler a planilha. Confirme o compartilhamento: 'Qualquer pessoa com o link' (leitor) — ou clique em Conectar com Google para planilhas privadas.", true);
+        if (gsTokenValido()) importGsheetsPrivado(gsTokenMem.valor, idPlan, gidPlan);
       }, 15000);
       function finalizar(msg, erro) {
         clearTimeout(timer);
@@ -11069,11 +11233,19 @@
           atualizarBarraStatusLote();
           finalizar(importDados.colunas.length + " colunas encontradas (Google Sheets).");
         } catch (err) {
-          finalizar("Não foi possível ler a planilha. Confirme o compartilhamento: 'Qualquer pessoa com o link' (leitor).", true);
+          /* Pedido 1.183: resposta sem dados com conta conectada = planilha
+             privada — lê pela Sheets API em vez de desistir com a mensagem
+             de compartilhamento público. */
+          if (gsTokenValido()) {
+            finalizar("Planilha privada detectada — lendo com sua conta Google...", false);
+            importGsheetsPrivado(gsTokenMem.valor, idPlan, gidPlan);
+            return;
+          }
+          finalizar("Não foi possível ler a planilha. Confirme o compartilhamento: 'Qualquer pessoa com o link' (leitor) — ou clique em Conectar com Google para planilhas privadas.", true);
         }
       };
       script.src = "https://docs.google.com/spreadsheets/d/" + idPlan + "/gviz/tq?tqx=out:json;responseHandler:" + cb + (gidPlan ? "&gid=" + gidPlan : "");
-      script.onerror = function () { finalizar("Falha ao ler o Google Sheets. Verifique o link — planilhas públicas precisam de 'Qualquer pessoa com o link'; planilhas privadas precisam do Google Client ID configurado abaixo do campo de link.", true); };
+      script.onerror = function () { finalizar("Falha ao ler o Google Sheets. Verifique o link — planilhas públicas precisam de 'Qualquer pessoa com o link'; planilhas privadas: clique em Conectar com Google antes de ler.", true); };
       document.head.appendChild(script);
     }
 
@@ -11087,7 +11259,7 @@
       if (btn) {
         btn.addEventListener("click", function () {
           localStorage.setItem(GS_CID_KEY, (inp.value || "").trim());
-          notify("Google Client ID salvo neste navegador.", "success");
+          notify(inp.value.trim() ? "Client ID personalizado salvo — ele substitui o Client ID do projeto neste navegador." : "Client ID personalizado limpo — voltando ao Client ID do projeto.", "success");
         });
       }
     })();
@@ -11107,6 +11279,14 @@
           var mIdGs = /\/spreadsheets\/d\/([a-zA-Z0-9\-_]+)/.exec(urlGs);
           if (!mIdGs) { notify("Não encontrei o ID da planilha no link.", "danger"); return; }
           var mGidGs = /[#&?]gid=(\d+)/.exec(urlGs);
+          /* Pedido 1.183: normaliza o link no campo para o formato limpo
+             https://docs.google.com/spreadsheets/d/<ID> — mantém #gid=N
+             apenas quando a aba indicada não é a primeira (gid=0). */
+          var urlGsLimpa = "https://docs.google.com/spreadsheets/d/" + mIdGs[1] + ((mGidGs && mGidGs[1] !== "0") ? "#gid=" + mGidGs[1] : "");
+          if (urlGs !== urlGsLimpa) {
+            $("import-url").value = urlGsLimpa;
+            notify("Link normalizado.", "dark");
+          }
           importGsheetsClientSide(mIdGs[1], mGidGs ? mGidGs[1] : "");
           return;
         }
@@ -11477,17 +11657,35 @@
       return !!(loteEspecialAtivo && loteEspecialBindings && loteEspecialBindings.length);
     }
     function aplicarStepMapEmArray(arr, stepMap) {
+      if (!arr || !stepMap) return arr;
       arr.forEach(function (el) {
         Object.keys(stepMap).forEach(function (targetKey) {
           var val = stepMap[targetKey];
-          if (targetKey === "serie" && (el.classe === "serie" || el.id === "el_serie")) {
-            el.texto = "" + val;
-          } else if (targetKey === "qr" && (el.tipo === "qr" || el.tipo === "barcode" || el.id === "el_qr")) {
-            el.texto = val;
+          var match = false;
+          if (targetKey === "serie" && (el.classe === "serie" || el.id === "el_serie" || el.tipo === "serie")) {
+            match = true;
+          } else if (targetKey === "qr" && (el.tipo === "qr" || el.id === "el_qr")) {
+            match = true;
+          } else if (targetKey === "barcode" && (el.tipo === "barcode" || el.id === "el_barcode")) {
+            match = true;
           } else if (targetKey === "nome" && (el.classe === "nome" || el.id === "el_nome")) {
-            el.texto = val;
+            match = true;
+          } else if (targetKey === "sub" && (el.classe === "sub" || el.id === "el_sub")) {
+            match = true;
+          } else if (targetKey === "texto" && (el.tipo === "texto" && !el.classe)) {
+            match = true;
+          } else if (targetKey === "datahora" && (el.datahora || el.id === "el_datahora")) {
+            match = true;
+          } else if (targetKey === "imagem" || targetKey === "imagem-url") {
+            if (el.tipo === "imagem" || el.tipo === "imagem-url" || el.id === "el_imagem") match = true;
           } else if (el.id === targetKey) {
-            el.texto = val;
+            match = true;
+          } else if (el.tipo === targetKey) {
+            match = true;
+          }
+
+          if (match) {
+            el.texto = "" + val;
           }
         });
       });
@@ -11751,7 +11949,12 @@
 
       var cursorY = m;
       itens.forEach(function (it) {
-        adicionarElemento("texto", it.valor);
+        var alvoTipo = (it.node.targetElementId || "texto");
+        var tipoCriar = "texto";
+        if (["qr", "barcode", "sub", "nome", "linha", "borda", "elipse", "diagonal", "raio", "retas", "curva"].indexOf(alvoTipo) !== -1) {
+          tipoCriar = alvoTipo;
+        }
+        adicionarElemento(tipoCriar, it.valor);
         var el = elements[elements.length - 1];
         if (!el) return;
         el.fonte = Math.max(10, Math.round(28 * escala));
