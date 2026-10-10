@@ -13625,6 +13625,8 @@
        voltar para a aba, a verificação é imediata. O abort de 2,5s já
        limitava cada checagem; os guards fecham o ciclo. */
     var _impCheckBusy = false;
+    var _impForcarPaginaHttps = false; /* probe: simula página HTTPS (github.io) */
+    function impPaginaEhHttps() { return _impForcarPaginaHttps || location.protocol === "https:"; }
     function verificarImpressoraIp() {
       if (!serverDotEl) return;
       if (_impCheckBusy) return;
@@ -13637,6 +13639,15 @@
       _impCheckBusy = true;
       atualizarIndicadorImpressora("wait", "Impressora: verificando " + ip + "…");
       var alvo = /^https?:\/\//.test(ip) ? ip : ((getProtocolo() === "https") ? "https://" : "http://") + ip + "/";
+      /* Pedido 1.186 (webhook.txt fase 6): página HTTPS (canalqb.github.io) não
+         pode buscar http:// locais — o navegador bloqueia ANTES da rede (Mixed
+         Content) e o chip mentia "não responde — verifique IP, cabo ou rede"
+         para uma impressora que pode estar ligada. Avisa o motivo real. */
+      if (impPaginaEhHttps() && alvo.indexOf("http://") === 0) {
+        _impCheckBusy = false;
+        atualizarIndicadorImpressora("wait", "Impressora: verificação indisponível em página HTTPS — o navegador bloqueia http:// locais (Mixed Content). Abra o app via http (localhost ou rede) para verificar " + ip + ".");
+        return;
+      }
       var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
       var timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e2) {} }, 2500) : null;
       fetch(alvo, { mode: "no-cors", cache: "no-store", signal: ctrl ? ctrl.signal : undefined })
@@ -13648,7 +13659,7 @@
         .catch(function () {
           clearTimeout(timer);
           _impCheckBusy = false;
-          atualizarIndicadorImpressora("off", "Impressora não responde em " + ip + " — verifique IP, cabo ou rede.");
+          atualizarIndicadorImpressora("off", "Impressora não responde em " + ip + (impPaginaEhHttps() ? " — página HTTPS não alcança impressoras http:// locais; abra o app via http (localhost ou rede)." : " — verifique IP, cabo ou rede."));
         });
     }
     verificarImpressoraIp();
@@ -15553,7 +15564,9 @@
       montarModeloPreset: montarModeloPreset,
       renderizarEtiquetaCanvas: renderizarEtiquetaCanvas,
       get activeDpmm() { return activeDpmm; },
-      get tamAtualKey() { return tamAtualKey; }
+      get tamAtualKey() { return tamAtualKey; },
+      set impForcarHttps(v) { _impForcarPaginaHttps = !!v; },
+      verificarImpressoraIp: verificarImpressoraIp
     };
 
   })();
