@@ -9328,6 +9328,128 @@
     }
 
     /* ---------------- ELEMENTOS, POSIÇÕES E CAMPOS COM CACHE DE 24H (COM EXPIRAÇÃO E RENOVAÇÃO) ---------------- */
+    /* ---------------- Pedido 1.191: LOTE DE IMPORTAÇÃO QUE SOBREVIVE AO F5 ----------------
+       O cache 24h do estúdio (localStorage) salvava apenas a etiqueta visível:
+       um Ctrl+F5 perdia as etiquetas do lote (dados, ZPL gerado, página e
+       conexões). Planilhas/bancos com MILHARES de linhas não cabem no
+       localStorage (~5MB, síncrono) — o lote inteiro agora persiste em
+       IndexedDB (assíncrono, centenas de MB). SEGURO: senha da ponte e token
+       do banco NUNCA são gravados; falha de armazenamento avisa 1x e não
+       trava o app. A página corrente vai num registro minúsculo à parte,
+       para navegar com setas não regravar megabytes de ZPL a cada clique. */
+    var zebraIDB = (function () {
+      var NOME_DB = "etiquetasZebra";
+      var STORE = "sessoes";
+      var dbProm = null;
+      function abrir() {
+        if (dbProm) return dbProm;
+        dbProm = new Promise(function (resolve, reject) {
+          try {
+            if (!window.indexedDB) { reject(new Error("IndexedDB indisponível")); return; }
+            var req = window.indexedDB.open(NOME_DB, 1);
+            req.onupgradeneeded = function () { req.result.createObjectStore(STORE); };
+            req.onsuccess = function () { resolve(req.result); };
+            req.onerror = function () { reject(req.error || new Error("IndexedDB falhou")); };
+          } catch (eAbrir) { reject(eAbrir); }
+        });
+        dbProm["catch"](function () { dbProm = null; });
+        return dbProm;
+      }
+      function operar(fn) {
+        return abrir().then(function (db) {
+          return new Promise(function (resolve, reject) {
+            try {
+              var tx = db.transaction(STORE, "readwrite");
+              var st = tx.objectStore(STORE);
+              var req = fn(st);
+              tx.oncomplete = function () { resolve(req && req.result); };
+              tx.onerror = function () { reject(tx.error || new Error("transação falhou")); };
+              tx.onabort = function () { reject(tx.error || new Error("transação abortada")); };
+            } catch (eOp) { reject(eOp); }
+          });
+        });
+      }
+      return {
+        put: function (chave, valor) { return operar(function (st) { return st.put(valor, chave); }); },
+        get: function (chave) { return operar(function (st) { return st.get(chave); }); },
+        del: function (chave) { return operar(function (st) { return st["delete"](chave); }); }
+      };
+    })();
+    var IMPORT_SESSION_TTL = 24 * 60 * 60 * 1000; /* mesma janela de 24h da sessão do estúdio */
+    var importSessaoAvisoFalha = false;
+    function importSessaoSnapshot() {
+      var conex = null;
+      try {
+        conex = coletarConexoesImport();
+        if (conex && conex.campos) {
+          delete conex.campos["ponte-senha"]; /* credenciais nunca persistem */
+          delete conex.campos["banco-token"];
+        }
+      } catch (eConex) {}
+      var zplTxt = ($("zpl") && ($("zpl").value || "").indexOf("^XA") !== -1) ? $("zpl").value : "";
+      return {
+        importDados: (importDados && importDados.linhas && importDados.linhas.length) ? importDados : null,
+        zpl: zplTxt,
+        lotePaginaAtual: lotePaginaAtual || 0,
+        conex: conex,
+        timestamp: Date.now()
+      };
+    }
+    function importSessaoSalvar() {
+      var snap = importSessaoSnapshot();
+      try { localStorage.setItem("etiquetasZebra.lotePagina", String(snap.lotePaginaAtual || 0)); } catch (ePg) {}
+      zebraIDB.put("import", snap).then(function () {
+        try { localStorage.removeItem("etiquetasZebra.sessionImport"); } catch (eRmLs) {}
+      }, function () {
+        /* Fallback localStorage: só se couber (ZPL de milhares de linhas pode
+           passar dos ~5MB); se não couber, avisa 1x e segue sem persistir. */
+        try {
+          localStorage.setItem("etiquetasZebra.sessionImport", JSON.stringify(snap));
+        } catch (eLs) {
+          if (!importSessaoAvisoFalha) {
+            importSessaoAvisoFalha = true;
+            notify("Não foi possível guardar o lote para sobreviver a um F5 (armazenamento cheio/indisponível) — exporte o Modelo .bin para garantir.", "warning");
+          }
+        }
+      });
+    }
+    function importSessaoRestaurar() {
+      return zebraIDB.get("import").then(function (snapIdb) {
+        if (snapIdb) return snapIdb;
+        try {
+          var rawLs = localStorage.getItem("etiquetasZebra.sessionImport");
+          return rawLs ? JSON.parse(rawLs) : null;
+        } catch (eLs2) { return null; }
+      }, function () {
+        try {
+          var rawLs3 = localStorage.getItem("etiquetasZebra.sessionImport");
+          return rawLs3 ? JSON.parse(rawLs3) : null;
+        } catch (eLs3) { return null; }
+      }).then(function (snap) {
+        if (!snap || !snap.timestamp || (Date.now() - snap.timestamp) > IMPORT_SESSION_TTL) {
+          zebraIDB.del("import")["catch"](function () {});
+          try { localStorage.removeItem("etiquetasZebra.sessionImport"); } catch (eRm2) {}
+          return false;
+        }
+        if (snap.conex && snap.conex.tipo) {
+          try { aplicarConexoesImport(snap.conex); } catch (eApC) {}
+        }
+        if (snap.importDados && Array.isArray(snap.importDados.colunas) && snap.importDados.colunas.length &&
+            Array.isArray(snap.importDados.linhas) && snap.importDados.linhas.length) {
+          importDados = snap.importDados;
+          importRenderMapeamento();
+        }
+        var pgMini = -1;
+        try { pgMini = parseInt(localStorage.getItem("etiquetasZebra.lotePagina") || "", 10); } catch (ePg2) {}
+        lotePaginaAtual = (typeof snap.lotePaginaAtual === "number" && snap.lotePaginaAtual >= 0) ? snap.lotePaginaAtual : 0;
+        if (!isNaN(pgMini) && pgMini >= 0) lotePaginaAtual = pgMini;
+        if (snap.zpl && snap.zpl.indexOf("^XA") !== -1 && $("zpl")) $("zpl").value = snap.zpl;
+        atualizarBarraStatusLote();
+        atualizarNavLote();
+        return true;
+      }, function () { return false; });
+    }
+
     var SESSION_KEY = "etiquetasZebra.sessionCache24h";
     var SESSION_TTL = 24 * 60 * 60 * 1000; /* 24 horas em milissegundos */
 
@@ -9933,6 +10055,7 @@
       aplicarConexoesImport(m.importConexao);
       if (importDados.linhas && importDados.linhas.length) importRenderMapeamento();
       atualizarBarraStatusLote();
+      importSessaoSalvar(); /* Pedido 1.191: o .bin trouxe dados/conexões — sessão acompanha */
     }
 
     // IMPORTAR ARQUIVO .BIN (Comandos ZPL)
@@ -10697,6 +10820,7 @@
       importDados = res;
       importRenderMapeamento();
       atualizarBarraStatusLote();
+      importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
       notify(importDados.colunas.length + " colunas encontradas (" + origemMsg + ").", "success");
     }
 
@@ -11268,6 +11392,7 @@
           importDados = importGsheetsAplicar(res);
           importRenderMapeamento();
           atualizarBarraStatusLote();
+          importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
           notify(importDados.colunas.length + " colunas encontradas (Google Sheets).", "success");
         })
         .catch(function (err) {
@@ -11328,6 +11453,7 @@
         importDados = importGsheetsAplicar({ colunas: colunas, linhas: linhas });
         importRenderMapeamento();
         atualizarBarraStatusLote();
+        importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
         notify(importDados.colunas.length + " colunas encontradas (Google Sheets — sua conta Google).", "success");
       }
       function lerRange(range) {
@@ -11386,6 +11512,7 @@
           importDados = importGsheetsAplicar({ colunas: colunas, linhas: linhas });
           importRenderMapeamento();
           atualizarBarraStatusLote();
+          importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
           finalizar(importDados.colunas.length + " colunas encontradas (Google Sheets).");
         } catch (err) {
           /* Pedido 1.183: resposta sem dados COM conta conectada = planilha
@@ -11484,6 +11611,7 @@
             importDados = res;
             importRenderMapeamento();
             atualizarBarraStatusLote();
+            importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
             notify(res.colunas.length + " colunas encontradas.", "success");
           };
           readerArq.onerror = function () { notify("Falha ao ler o arquivo.", "danger"); };
@@ -11937,6 +12065,11 @@
       if (!ativo) return;
       if (lotePaginaAtual > total - 1) lotePaginaAtual = total - 1;
       if (lotePaginaAtual < 0) lotePaginaAtual = 0;
+      /* Pedido 1.191: página corrente em registro minúsculo — navegar com
+         setas num lote de milhares de etiquetas não regrava o ZPL inteiro. */
+      if (ativo && total >= 2) {
+        try { localStorage.setItem("etiquetasZebra.lotePagina", String(lotePaginaAtual)); } catch (ePgNav) {}
+      }
       var num = $("lote-nav-num");
       if (num && document.activeElement !== num) num.value = String(lotePaginaAtual + 1);
       var tot = $("lote-nav-total"); if (tot) tot.textContent = "/ " + total;
@@ -12064,6 +12197,7 @@
         loteEspecialBindings = null;
         loteZplBlocos = null; /* Pedido 1.140: lote de CSV assume o lugar do lote ZPL */
         $("zpl").value = r.zpl;
+        importSessaoSalvar(); /* Pedido 1.191: o lote gerado sobrevive ao F5 */
         atualizarBarraStatusLote();
         notify(r.total + " etiquetas geradas (uma por linha). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
       });
@@ -14564,6 +14698,12 @@
     renderBatchSpecialTreeUI();
     /* Semeia o histórico com o estado carregado para o 1º Ctrl+Z funcionar */
     salvarHistorico();
+    /* Pedido 1.191: restaura o lote de importação (dados + ZPL gerado +
+       página + conexões) — sobrevive a F5/Ctrl+F5 em IndexedDB, que aguenta
+       planilhas/bancos com milhares de linhas. Link #modelo= tem prioridade
+       (sobrepõe a sessão inteira); sem sessão do estúdio não há lote a
+       restaurar (mesma janela de 24h). */
+    if (sessionRestored && location.hash.indexOf("#modelo=") !== 0) importSessaoRestaurar();
 
     /* Modelo compartilhado via URL (#modelo=BASE64URL) — sobrepõe a sessão */
     if (location.hash.indexOf("#modelo=") === 0) {
@@ -15678,6 +15818,14 @@
       get activeDpmm() { return activeDpmm; },
       get tamAtualKey() { return tamAtualKey; },
       get rotAtual() { return rotAtual; },
+      get importDados() { return importDados; },
+      set importDados(v) { importDados = v; },
+      get lotePaginaAtual() { return lotePaginaAtual; },
+      set lotePaginaAtual(v) { lotePaginaAtual = v; },
+      importSessaoSalvar: importSessaoSalvar,
+      importSessaoRestaurar: importSessaoRestaurar,
+      zebraIDBGet: function (k) { return zebraIDB.get(k || "import"); },
+      zebraIDBPut: function (k, v) { return zebraIDB.put(k, v); },
       set impForcarHttps(v) { _impForcarPaginaHttps = !!v; },
       verificarImpressoraIp: verificarImpressoraIp
     };
