@@ -12,6 +12,21 @@
     resumo: $('resumo'),
     btnImportar: $('btn-importar'),
     statusImport: $('status-import'),
+    gsheetUrl: $('gsheet-url'),
+    btnCarregarGsheet: $('btn-carregar-gsheet'),
+    gsheetStatus: $('gsheet-status'),
+    gsheetEstrutura: $('gsheet-estrutura'),
+    gsheetAba: $('gsheet-aba'),
+    gsheetColuna: $('gsheet-coluna'),
+    btnConectarGoogle: $('btn-conectar-google'),
+    btnDesconectarGoogle: $('btn-desconectar-google'),
+    gsConexaoStatus: $('gs-conexao-status'),
+    gsConexaoBloco: $('gs-conexao-bloco'),
+    gsClientidBloco: $('gs-clientid-bloco'),
+    gsClientid: $('gs-clientid'),
+    btnGsClientidSalvar: $('btn-gs-clientid-salvar'),
+    gsClientidEmUso: $('gs-clientid-em-uso'),
+    scriptUrl: $('script-url'),
     cartaoLista: $('cartao-lista'),
     listaInfoGrid: $('lista-info-grid'),
     infoLista: $('info-lista'),
@@ -54,11 +69,23 @@
     timerFoco: null,
     armadoLimpeza: false,
     timerArmado: null,
-    armadoStats: false,
-    timerArmadoStats: null,
     origemLista: '',
     dirHandle: null,
-    ultimoParsed: null
+    ultimoParsed: null,
+    transportJsonp: null,      /* Pedido 1.202: injetável nos testes E2E */
+    scriptChamados: new Set(), /* Pedido 1.202: 1 chamada por série/sessão */
+    scriptAtivo: '',           /* Pedido 1.202: URL do Apps Script LOCALIZADO */
+    /* Pedido 1.212: estrutura do Google Sheets carregado */
+    gsInfo: null,        /* { id, gid } da planilha aberta */
+    gsPrivado: false,   /* veio pela Sheets API (conta conectada)? */
+    gsAbas: [],         /* [{ titulo, id }] */
+    gsAbaSel: '',       /* título da aba escolhida */
+    gsColunas: [],      /* cabeçalhos (rótulos) */
+    gsColunaSel: -1,    /* índice da coluna escolhida */
+    gsLinhas: new Map(),/* norm -> nº da linha real na planilha */
+    gsStatusColOk: false, /* coluna STATUS já criada/confirmada */
+    gsUrlCarregada: '',  /* Pedido 1.216: último link carregado com sucesso */
+    gsLinkPlanilha: ''   /* Pedido 1.220: link da planilha ativa (nome clicável) */
   };
 
   var ATRASO_FOCO_MS = 900;
@@ -149,8 +176,49 @@
     no.className = 'toast' + (tipo ? ' ' + tipo : '');
     no.textContent = mensagem;
     cont.appendChild(no);
-    setTimeout(function () { no.classList.add('sai'); }, 3400);
-    setTimeout(function () { if (no.parentNode) no.remove(); }, 3750);
+    /* Pedido 1.221: toast sem validação fecha sozinho em 2 segundos */
+    setTimeout(function () { no.classList.add('sai'); }, 2000);
+    setTimeout(function () { if (no.parentNode) no.remove(); }, 2350);
+  }
+
+  /* ============================================================
+     MODAL DE CONFIRMAÇÃO (Pedido 1.221 — fim dos diálogos nativos)
+     ============================================================ */
+
+  var confirmarFila = [];
+  var confirmarEmUso = false;
+
+  function confirmarModal(mensagem, titulo) {
+    return new Promise(function (resolve) {
+      confirmarFila.push({ mensagem: mensagem, titulo: titulo || 'Confirmar', resolve: resolve });
+      confirmarProxima();
+    });
+  }
+
+  function confirmarProxima() {
+    if (confirmarEmUso || !confirmarFila.length) return;
+    var pedido = confirmarFila.shift();
+    var dlg = $('modal-confirmar');
+    if (!dlg) { pedido.resolve(true); return; } /* sem modal no DOM: mantém o fluxo */
+    if (window.__ccsvTest && window.__ccsvTest.confirmarAuto) { pedido.resolve(true); return; }
+    confirmarEmUso = true;
+    var msg = $('confirmar-msg');
+    var tit = $('confirmar-titulo');
+    var btnOk = $('confirmar-ok');
+    var btnCancelar = $('confirmar-cancelar');
+    if (msg) msg.textContent = pedido.mensagem;
+    if (tit) tit.textContent = pedido.titulo;
+    function fim(res) {
+      btnOk.onclick = null; btnCancelar.onclick = null; dlg.oncancel = null;
+      dlg.close();
+      confirmarEmUso = false;
+      pedido.resolve(res);
+      setTimeout(confirmarProxima, 0);
+    }
+    btnOk.onclick = function () { fim(true); };
+    btnCancelar.onclick = function () { fim(false); };
+    dlg.oncancel = function (ev) { ev.preventDefault(); fim(false); }; /* Esc = Cancelar */
+    dlg.showModal();
   }
 
   /* ============================================================
@@ -297,36 +365,651 @@
       '<div class="item"><b>' + resultado.mapa.size + '</b><span>séries únicas</span></div>';
   }
 
+  /* Pedido 1.220: nome da planilha clicável — o link da origem Google Sheets
+     (validado pelo extrairGsheet) abre em _blank no info-modal, no cartão da
+     lista e no info do arquivo. Origem de arquivo local continua texto puro. */
+  function linkPlanilhaAtivo(cfg) {
+    var url = state.gsLinkPlanilha || (cfg && cfg.linkPlanilha) || '';
+    return extrairGsheet(url) ? url : '';
+  }
+  function anchorOuTexto(nome, url) {
+    if (!url) return escapar(nome);
+    return '<a href="' + escapar(url) + '" target="_blank" rel="noopener">' + escapar(nome) + '</a>';
+  }
+
   function renderInfoArquivo() {
-    el.infoArquivo.textContent = state.nomeArquivo
-      ? state.nomeArquivo + ' — ' + state.linhas.length + ' linhas (' + state.codificacao + ')'
+    el.infoArquivo.innerHTML = state.nomeArquivo
+      ? anchorOuTexto(state.nomeArquivo, linkPlanilhaAtivo(null)) +
+        ' — ' + state.linhas.length + ' linhas (' + escapar(state.codificacao) + ')'
       : 'Nenhum arquivo carregado.';
   }
 
   function carregarArquivo(file) {
     if (!file) return;
     el.statusImport.textContent = '';
+    gsResetEstrutura(); /* Pedido 1.212: arquivo local invalida a estrutura do Sheets */
+    /* Pedido 1.202: XLSX lido com SheetJS carregado sob demanda (mesma
+       biblioteca/CDN do app principal) — CSV/TXT seguem o caminho de texto. */
+    if (/\.xlsx$/i.test(file.name) || /\.xlsm$/i.test(file.name)) {
+      var leitorX = new FileReader();
+      leitorX.onload = function () {
+        parseXLSX(leitorX.result).then(function (texto) {
+          aplicarTexto(texto, file.name, 'XLSX — 1ª coluna da 1ª aba');
+        }).catch(function (erro) {
+          el.statusImport.textContent = 'XLSX: ' + (erro && erro.message ? erro.message : erro);
+          showToast('Não foi possível ler o XLSX.', 'erro');
+        });
+      };
+      leitorX.onerror = function () { el.statusImport.textContent = 'Não foi possível ler o arquivo.'; };
+      leitorX.readAsArrayBuffer(file);
+      return;
+    }
     var leitor = new FileReader();
     leitor.onload = function () {
       var d = decodificar(leitor.result);
-      state.texto = d.texto;
-      state.codificacao = d.codificacao;
-      state.nomeArquivo = file.name;
-      state.linhas = d.texto.split(/\r\n|\n|\r/);
-      renderPreview();
-      var resultado = parseLista(d.texto);
-      state.ultimoParsed = resultado;
-      renderResumo(resultado);
-      renderInfoArquivo();
-      el.btnImportar.disabled = resultado.mapa.size === 0;
-      el.statusImport.textContent = resultado.mapa.size
-        ? '✓ Arquivo carregado — ' + resultado.mapa.size + ' séries únicas. Clique em "Importar lista".'
-        : 'Nenhuma série válida no arquivo.';
+      aplicarTexto(d.texto, file.name, d.codificacao);
     };
     leitor.onerror = function () {
       el.statusImport.textContent = 'Não foi possível ler o arquivo.';
     };
     leitor.readAsArrayBuffer(file);
+  }
+
+  /* ============================================================
+     PEDIDO 1.202: APLICAÇÃO COMUM DO TEXTO EXTRAÍDO
+     (CSV, TXT, XLSX e Google Sheets usam o mesmo pipeline)
+     ============================================================ */
+
+  function aplicarTexto(texto, nome, codificacao) {
+    state.texto = texto;
+    state.codificacao = codificacao;
+    state.nomeArquivo = nome;
+    state.linhas = texto.split(/\r\n|\n|\r/);
+    renderPreview();
+    var resultado = parseLista(texto);
+    state.ultimoParsed = resultado;
+    renderResumo(resultado);
+    renderInfoArquivo();
+    el.btnImportar.disabled = resultado.mapa.size === 0;
+    el.statusImport.textContent = resultado.mapa.size
+      ? '✓ Arquivo carregado — ' + resultado.mapa.size + ' séries únicas.'
+      : 'Nenhuma série válida no arquivo.';
+    /* Pedido 1.217: carga 100% válida (arquivo OU planilha) abre a consulta
+       sozinha — importa a lista e abre o modal-scanner para iniciar a busca.
+       Com lista anterior, o importar() pergunta antes de substituir. */
+    if (resultado.mapa.size) setTimeout(function () { importar(); }, 0);
+  }
+
+  var promiseXLSX = null;
+  function carregarLibXLSX() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (promiseXLSX) return promiseXLSX;
+    promiseXLSX = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = function () { window.XLSX ? resolve(window.XLSX) : reject(new Error('leitor XLSX indisponível')); };
+      s.onerror = function () { reject(new Error('falha ao carregar o leitor XLSX (CDN)')); };
+      document.head.appendChild(s);
+      setTimeout(function () { reject(new Error('tempo esgotado ao carregar o leitor XLSX')); }, 15000);
+    });
+    return promiseXLSX;
+  }
+
+  function parseXLSX(buffer) {
+    return carregarLibXLSX().then(function (XLSX) {
+      var wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+      var nome = wb.SheetNames[0];
+      var matriz = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header: 1, raw: false });
+      var linhas = [];
+      (matriz || []).forEach(function (linha) {
+        linhas.push(linha && linha.length ? String(linha[0] == null ? '' : linha[0]) : '');
+      });
+      return linhas.join('\n');
+    });
+  }
+
+  /* ============================================================
+     PEDIDO 1.202: GOOGLE SHEETS (link público via gviz CSV)
+     ============================================================ */
+
+  function extrairGsheet(url) {
+    var m = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/.exec(String(url || ''));
+    if (!m) return null;
+    var gid = /[?#&]gid=([0-9]+)/.exec(String(url || ''));
+    return { id: m[1], gid: gid ? gid[1] : '' };
+  }
+
+  /* ============================================================
+     PEDIDO 1.202: GOOGLE OAUTH (planilhas privadas)
+     Mesma tecnologia do "Importar dados" do app principal: Google
+     Identity Services (token em memória reutilizado até expirar) +
+     leitura pela Sheets API v4. GS_CID_KEY é a MESMA chave do app
+     principal — um Client ID salvo lá vale aqui (mesma origem).
+     ============================================================ */
+
+  var GS_CID_KEY = 'etiquetasZebra.gsClientId';
+  var GS_CLIENT_ID_PROJETO = '686748375741-su504he100nrogd9u1ibgsaho6u8qv9k.apps.googleusercontent.com';
+  /* Pedido 1.212: escopo de GRAVAÇÃO — "LOCALIZADO" é escrito na planilha
+     automaticamente. Um token só de leitura (conectado pelo app principal,
+     pedido 1.211) é detectado no 1º erro 403 e reautorizado na hora. */
+  var GS_SCOPE_PROJETO = 'https://www.googleapis.com/auth/spreadsheets';
+  var gsTokenMem = { valor: null, expira: 0 };
+
+  function gsTokenValido() {
+    return !!(gsTokenMem.valor && Date.now() < gsTokenMem.expira);
+  }
+
+  /* Pedido 1.211: conexão COMPARTILHADA entre as páginas da mesma origem
+     (app principal e SerieScan) — o token vive no localStorage e vale até
+     expirar; conectar em uma página conecta a outra, desconectar idem. */
+  var GS_TOKEN_KEY = 'etiquetasZebra.gsToken';
+  function gsRestaurarToken() {
+    try {
+      var bruto = localStorage.getItem(GS_TOKEN_KEY);
+      if (!bruto) return;
+      var reg = JSON.parse(bruto);
+      if (reg && reg.valor && Date.now() < (reg.expira || 0)) {
+        gsTokenMem = { valor: reg.valor, expira: reg.expira };
+      } else {
+        localStorage.removeItem(GS_TOKEN_KEY);
+      }
+    } catch (e) { /* sem localStorage */ }
+  }
+  function gsSalvarToken() {
+    try { localStorage.setItem(GS_TOKEN_KEY, JSON.stringify(gsTokenMem)); } catch (e) { /* sem localStorage */ }
+  }
+  function gsLimparToken() {
+    try { localStorage.removeItem(GS_TOKEN_KEY); } catch (e) { /* sem localStorage */ }
+  }
+  function gsStatusPorToken() {
+    gsAtualizarStatus(gsTokenValido()
+      ? 'Conectado — planilhas privadas da sua conta podem ser lidas.'
+      : 'Não conectado — planilhas privadas pedem autorização da sua conta Google.');
+  }
+
+  function gsClientIdEfetivo() {
+    var cidUsuario = '';
+    try { cidUsuario = (localStorage.getItem(GS_CID_KEY) || '').trim(); } catch (e) { /* sem localStorage */ }
+    return cidUsuario || GS_CLIENT_ID_PROJETO;
+  }
+
+  /* Diagnóstico (Pedido 1.202, refino pós-teste do usuário): mostra qual
+     Client ID está em uso NESTA origem — localStorage é por origem, então
+     o ID salvo em http://localhost não existe em https://localhost. */
+  function gsRenderClientidEmUso() {
+    if (!el.gsClientidEmUso) return;
+    var cid = gsClientIdEfetivo();
+    var personalizado = '';
+    try { personalizado = (localStorage.getItem(GS_CID_KEY) || '').trim(); } catch (e) { /* sem localStorage */ }
+    el.gsClientidEmUso.textContent = 'Client ID em uso nesta página (origem ' + location.origin + '): ' +
+      (cid ? cid.slice(0, 10) + '…' + cid.slice(-30) : 'nenhum') +
+      (cid === GS_CLIENT_ID_PROJETO
+        ? ' — Client ID do PROJETO'
+        : ' — o SEU Client ID salvo nesta origem');
+  }
+
+  function gsAtualizarStatus(txt) {
+    if (el.gsConexaoStatus) el.gsConexaoStatus.textContent = txt;
+    if (el.btnDesconectarGoogle) el.btnDesconectarGoogle.hidden = !gsTokenValido();
+  }
+
+  function gsErrouMotivo(resp) {
+    var r = String((resp && (resp.error && resp.error.type)) || (resp && resp.error) || '');
+    if (/popup_closed/i.test(r)) return 'Você fechou a janela de autorização antes de concluir.';
+    if (/access_blocked/i.test(r)) return 'Acesso bloqueado pelo Google — a conta provavelmente não está na lista de USUÁRIOS DE TESTE da tela de consentimento do projeto.';
+    if (/invalid_client|idpiframe|origin/i.test(r)) return 'Client ID/origem não autorizado pelo Google — registre a origem exata ' + location.origin + ' nas “Origens JavaScript autorizadas” do seu Client ID no Google Cloud Console (Erro 400: origin_mismatch).';
+    if (/token_failed/i.test(r)) return 'Não foi possível obter o token da sua conta Google — tente de novo.';
+    return 'Não foi possível conectar à sua conta Google (' + (r || 'sem detalhe') + ').';
+  }
+
+  function gsConectar(quandoPronto) {
+    if (location.protocol === 'file:') {
+      showToast('O login do Google não funciona abrindo o arquivo direto do disco (file://). Abra via http(s).', 'erro');
+      return;
+    }
+    if (!(window.google && window.google.accounts && window.google.accounts.oauth2)) {
+      showToast('Biblioteca da Google ainda está carregando — aguarde alguns segundos e tente de novo.', 'aviso');
+      return;
+    }
+    /* Pedido 1.211: mesmas validações do app principal — em localhost o
+       botão conecta normalmente; só avisa o que fazer se o Google recusar. */
+    if (location.origin !== 'https://canalqb.github.io') {
+      showToast('Atenção: se o Google recusar com Erro 400 origin_mismatch, registre a origem ' + location.origin + ' nas “Origens JavaScript autorizadas” do seu Client ID no Google Cloud Console.', 'aviso');
+    }
+    if (gsTokenValido()) { if (quandoPronto) quandoPronto(gsTokenMem.valor); return; }
+    var clientCfg = {
+      client_id: gsClientIdEfetivo(),
+      scope: GS_SCOPE_PROJETO,
+      callback: function (resp) {
+        if (!resp || !resp.access_token) { showToast(gsErrouMotivo(resp), 'erro'); return; }
+        gsTokenMem.valor = resp.access_token;
+        gsTokenMem.expira = Date.now() + Math.max(60, (resp.expires_in || 3600) - 60) * 1000;
+        gsSalvarToken(); /* Pedido 1.211: compartilha com as demais páginas da origem */
+        gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
+        showToast('Conectado com Google — planilhas privadas liberadas para leitura.', 'ok');
+        if (quandoPronto) quandoPronto(gsTokenMem.valor);
+      },
+      error_callback: function (errResp) {
+        showToast(gsErrouMotivo(errResp), 'erro');
+      }
+    };
+    try {
+      var tokenClient = google.accounts.oauth2.initTokenClient(clientCfg);
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch (eGis) {
+      showToast(gsErrouMotivo({ error: String(eGis && eGis.message || eGis) }), 'erro');
+    }
+  }
+
+  function gsDesconectar() {
+    var t = gsTokenMem.valor;
+    gsTokenMem = { valor: null, expira: 0 };
+    gsLimparToken(); /* Pedido 1.211 */
+    gsAtualizarStatus('Não conectado — planilhas privadas pedem autorização da sua conta Google.');
+    try { if (t && google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) google.accounts.oauth2.revoke(t, function () {}); } catch (eRev) { /* sem GIS */ }
+    showToast('Conta Google desconectada.', 'aviso');
+  }
+
+  /* ============================================================
+     PEDIDO 1.212: ESTRUTURA DA PLANILHA — aba + coluna (cabeçalho)
+     Privada: Sheets API v4 (Bearer). Pública: gviz (JSON p/ rótulos,
+     CSV p/ dados). A coluna escolhida vira a lista de séries; com a
+     conta conectada, "LOCALIZADO" é gravado na linha da série.
+     ============================================================ */
+
+  function colunaLetra(n) {
+    var s = '';
+    n = Math.max(1, Math.floor(n));
+    while (n > 0) { var r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+    return s || 'A';
+  }
+
+  function montarColunas(cabecalhos) {
+    var cols = [];
+    (cabecalhos || []).forEach(function (c, i) {
+      var rot = String(c == null ? '' : c).trim();
+      cols.push(rot || 'Coluna ' + (i + 1));
+    });
+    if (!cols.length) for (var k = 1; k <= 8; k++) cols.push('Coluna ' + k);
+    return cols;
+  }
+
+  function escolherColuna(cols) {
+    var lembrada = '';
+    try { lembrada = (localStorage.getItem('ccsv_gsheet_col') || '').trim(); } catch (e) { /* sem localStorage */ }
+    for (var i = 0; i < cols.length; i++) if (lembrada && cols[i] === lembrada) return i;
+    for (var j = 0; j < cols.length; j++) if (cols[j].indexOf('Coluna ') !== 0) return j;
+    return 0;
+  }
+
+  function gsRenderSeletores() {
+    var mostra = state.gsAbas.length > 0 && state.gsColunas.length > 0;
+    if (el.gsheetEstrutura) el.gsheetEstrutura.hidden = !mostra;
+    if (el.gsheetAba) {
+      el.gsheetAba.innerHTML = state.gsAbas.map(function (a) {
+        return '<option value="' + escapar(a.titulo) + '"' + (a.titulo === state.gsAbaSel ? ' selected' : '') + '>' + escapar(a.titulo) + '</option>';
+      }).join('');
+      el.gsheetAba.disabled = state.gsAbas.length <= 1;
+    }
+    if (el.gsheetColuna) {
+      el.gsheetColuna.innerHTML = state.gsColunas.map(function (c, i) {
+        return '<option value="' + escapar(c) + '"' + (i === state.gsColunaSel ? ' selected' : '') + '>' +
+          escapar(c) + ' (coluna ' + colunaLetra(i + 1) + ')</option>';
+      }).join('');
+    }
+  }
+
+  function gsResetEstrutura() {
+    state.gsInfo = null;
+    state.gsPrivado = false;
+    state.gsAbas = [];
+    state.gsAbaSel = '';
+    state.gsColunas = [];
+    state.gsColunaSel = -1;
+    state.gsLinhas = new Map();
+    state.gsStatusColOk = false;
+    state.gsUrlCarregada = '';
+    state.gsLinkPlanilha = '';
+    gsRenderSeletores();
+    gsRenderVisibilidadePrivada();
+  }
+
+  /* Pedido 1.216: o bloco de conexão Google + o Client ID avançado só
+     aparecem quando a planilha em uso é PRIVADA (ou antes de qualquer
+     carga) — planilha pública mostra apenas os seletores de aba/coluna. */
+  function gsRenderVisibilidadePrivada() {
+    var mostrar = !(state.gsInfo && !state.gsPrivado);
+    if (el.gsConexaoBloco) el.gsConexaoBloco.hidden = !mostrar;
+    if (el.gsClientidBloco) el.gsClientidBloco.hidden = !mostrar;
+  }
+
+  function gsErroLer(erro) {
+    el.gsheetStatus.textContent = 'Não foi possível ler a planilha (' + (erro && erro.message ? erro.message : erro) + ').';
+    showToast('Falha ao ler o Google Sheets.', 'erro');
+    return false;
+  }
+
+  function gsFinalizarCarga(linhas, rotuloColuna) {
+    /* Pedido 1.220: o link precisa estar ativo ANTES do aplicarTexto — o
+       renderInfoArquivo e o auto-import (1.217) leem state.gsLinkPlanilha
+       imediatamente, e o nome clicável sumia por ordem de execução. */
+    try {
+      localStorage.setItem('ccsv_gsheet_url', el.gsheetUrl.value.trim());
+      state.gsUrlCarregada = el.gsheetUrl.value.trim();
+      state.gsLinkPlanilha = el.gsheetUrl.value.trim();
+    } catch (e) { /* sem persistência */ }
+    aplicarTexto(linhas.join('\n'),
+      'Google Sheets — ' + (state.gsInfo ? state.gsInfo.id.slice(0, 10) : ''),
+      state.gsPrivado ? 'Google Sheets (sua conta Google)' : 'Google Sheets (CSV público)');
+    var total = state.ultimoParsed ? state.ultimoParsed.mapa.size : 0;
+    el.gsheetStatus.textContent = '✓ Planilha lida — ' + total + ' séries únicas na coluna “' + rotuloColuna + '”' +
+      (state.gsAbaSel ? ' (aba ' + state.gsAbaSel + ')' : '') + '.';
+    showToast('Planilha carregada: ' + total + ' séries únicas.', 'ok');
+    gsRenderSeletores();
+    gsRenderVisibilidadePrivada();
+    return total;
+  }
+
+  /* ---------- Planilha PRIVADA (Sheets API v4, Bearer token) ---------- */
+
+  function gsChecarStatus(r) {
+    if (r.status === 401) {
+      gsTokenMem = { valor: null, expira: 0 };
+      gsLimparToken(); /* Pedido 1.211 */
+      gsAtualizarStatus('Não conectado — planilhas privadas pedem autorização da sua conta Google.');
+      throw new Error('autorização expirada — clique em Conectar com Google e tente de novo');
+    }
+    if (r.status === 403) throw new Error('sua conta Google não tem permissão nesta planilha — solicite acesso ao proprietário');
+    if (r.status === 404) throw new Error('planilha não encontrada — confira o link');
+    if (r.status === 429) throw new Error('limite de requisições do Google excedido — aguarde um pouco');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r;
+  }
+
+  function gsLerJsonPrivado(caminho) {
+    return fetch('https://sheets.googleapis.com/v4/spreadsheets/' + state.gsInfo.id + '/' + caminho, {
+      headers: { Authorization: 'Bearer ' + gsTokenMem.valor, Accept: 'application/json' }
+    }).then(function (r) { return gsChecarStatus(r); }).then(function (r) { return r.json(); });
+  }
+
+  function gsAbrirPrivado(info) {
+    state.gsPrivado = true;
+    state.gsInfo = info;
+    el.gsheetStatus.textContent = 'Lendo a planilha com sua conta Google…';
+    return gsLerJsonPrivado('?fields=sheets(properties(sheetId,title))').then(function (meta) {
+      state.gsAbas = (meta.sheets || []).map(function (s) {
+        var p = s.properties || {};
+        return { titulo: String(p.title || 'Aba'), id: String(p.sheetId != null ? p.sheetId : '') };
+      });
+      if (!state.gsAbas.length) throw new Error('planilha sem abas');
+      var escolhida = null;
+      if (info.gid) state.gsAbas.forEach(function (a) { if (a.id === String(info.gid)) escolhida = a.titulo; });
+      if (!escolhida) {
+        var lembrada = '';
+        try { lembrada = (localStorage.getItem('ccsv_gsheet_aba') || '').trim(); } catch (e) { /* sem localStorage */ }
+        state.gsAbas.forEach(function (a) { if (a.titulo === lembrada) escolhida = a.titulo; });
+      }
+      if (!escolhida) escolhida = state.gsAbas[0].titulo;
+      return gsAbrirAbaPrivado(escolhida);
+    });
+  }
+
+  function gsAbrirAbaPrivado(aba) {
+    state.gsAbaSel = aba;
+    var range = encodeURIComponent("'" + aba + "'!1:1");
+    return gsLerJsonPrivado('values/' + range + '?majorDimension=ROWS').then(function (data) {
+      state.gsColunas = montarColunas((data.values || [])[0]);
+      return gsAplicarColunaPrivada(aba, escolherColuna(state.gsColunas));
+    });
+  }
+
+  function gsAplicarColunaPrivada(aba, idx) {
+    state.gsColunaSel = idx;
+    var letra = colunaLetra(idx + 1);
+    var range = encodeURIComponent("'" + aba + "'!" + letra + '2:' + letra + '5000');
+    el.gsheetStatus.textContent = 'Lendo a coluna ' + letra + ' da aba ' + aba + '…';
+    return gsLerJsonPrivado('values/' + range + '?majorDimension=ROWS').then(function (data) {
+      state.gsLinhas = new Map();
+      var linhas = [];
+      (data.values || []).forEach(function (linha, i) {
+        var v = linha && linha.length ? String(linha[0] == null ? '' : linha[0]) : '';
+        linhas.push(v);
+        var norm = normalizar(v);
+        if (norm && !state.gsLinhas.has(norm)) state.gsLinhas.set(norm, i + 2); /* linha real na planilha */
+      });
+      return gsFinalizarCarga(linhas, state.gsColunas[idx] || ('Coluna ' + (idx + 1)));
+    });
+  }
+
+  /* ---------- Planilha PÚBLICA (gviz, sem login) ---------- */
+
+  function gsAbrirPublico(info) {
+    state.gsPrivado = false;
+    state.gsInfo = info;
+    var urlJson = 'https://docs.google.com/spreadsheets/d/' + info.id + '/gviz/tq?tqx=out:json&headers=1' +
+      (info.gid ? '&gid=' + info.gid : '');
+    el.gsheetStatus.textContent = 'Lendo a planilha…';
+    return fetch(urlJson).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (r.redirected) throw new Error('privada'); /* redirect de login = planilha não pública */
+      return r.text();
+    }).then(function (texto) {
+      if (!texto || texto.charAt(0) === '<') throw new Error('privada'); /* HTML = pedido de login */
+      /* gviz responde google.visualization.Query.setResponse({...}) — não é
+         JSON puro; os rótulos vêm como "label":"…". Extrai por regex. */
+      var rotulos = [];
+      var reRotulo = /"label"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+      var mR;
+      while ((mR = reRotulo.exec(texto))) rotulos.push(mR[1]);
+      if (!rotulos.length) {
+        var mCols = /"cols"\s*:/.exec(texto);
+        if (!mCols) throw new Error('planilha sem conteúdo');
+      }
+      var rotuloAba = 'Aba do link' + (info.gid ? ' (gid ' + info.gid + ')' : '');
+      state.gsAbas = [{ titulo: rotuloAba, id: info.gid || '' }];
+      state.gsAbaSel = rotuloAba;
+      state.gsColunas = montarColunas(rotulos);
+      return gsAplicarColunaPublica(escolherColuna(state.gsColunas));
+    });
+  }
+
+  function gsAplicarColunaPublica(idx) {
+    state.gsColunaSel = idx;
+    var letra = colunaLetra(idx + 1);
+    var urlCsv = 'https://docs.google.com/spreadsheets/d/' + state.gsInfo.id + '/gviz/tq?tqx=out:csv&headers=1' +
+      (state.gsInfo.gid ? '&gid=' + state.gsInfo.gid : '') + '&tq=' + encodeURIComponent('select ' + letra);
+    el.gsheetStatus.textContent = 'Lendo a planilha…';
+    return fetch(urlCsv).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (r.redirected) throw new Error('privada');
+      return r.text();
+    }).then(function (texto) {
+      if (!texto || texto.charAt(0) === '<') throw new Error('privada');
+      var linhas = texto.split(/\r\n|\n|\r/);
+      var rotulo = state.gsColunas[idx] || '';
+      var comCabecalho = linhas.length > 0 && rotulo && normalizar(linhas[0]) === normalizar(rotulo);
+      var dados = linhas.slice(comCabecalho ? 1 : 0);
+      state.gsLinhas = new Map();
+      var saida = [];
+      dados.forEach(function (v, i) {
+        var norm = normalizar(v);
+        if (norm && !state.gsLinhas.has(norm)) state.gsLinhas.set(norm, (comCabecalho ? 2 : 1) + i);
+        saida.push(v);
+      });
+      return gsFinalizarCarga(saida, rotulo || ('Coluna ' + (idx + 1)));
+    });
+  }
+
+  function carregarGsheet(auto) {
+    var bruto = (el.gsheetUrl.value || '').trim();
+    if (!bruto) {
+      el.gsheetStatus.textContent = 'Cole o link da planilha primeiro.';
+      return Promise.resolve(false);
+    }
+    var info = extrairGsheet(bruto);
+    if (!info) {
+      el.gsheetStatus.textContent = 'Link inválido — use o endereço do Google Sheets (docs.google.com/spreadsheets/d/…).';
+      return Promise.resolve(false);
+    }
+    gsResetEstrutura();
+    /* Conectado: lê pela API (planilhas privadas E públicas). Sem token:
+       tenta gviz; planilha privada conecta a conta na hora (1.202/1.212). */
+    if (gsTokenValido()) return gsAbrirPrivado(info).catch(gsErroLer);
+    return gsAbrirPublico(info).catch(function (erro) {
+      var msg = erro && erro.message ? erro.message : String(erro);
+      if (msg === 'privada' && !gsTokenValido()) {
+        if (auto) {
+          /* Pedido 1.216: no carregamento AUTOMÁTICO (colar/digitar o link) o
+             popup do Google precisa de um clique do usuário — mostre o bloco
+             de conexão em vez de tentar abrir sozinho. */
+          gsResetEstrutura();
+          el.gsheetStatus.textContent = 'Planilha privada — clique em “Conectar com Google” para lê-la.';
+          return false;
+        }
+        el.gsheetStatus.textContent = 'Planilha privada detectada — conectando com sua conta Google…';
+        return new Promise(function (resolve) {
+          gsConectar(function () {
+            gsAbrirPrivado(info).then(function (v) { resolve(v); }, function (e2) { resolve(gsErroLer(e2)); });
+          });
+        });
+      }
+      if (gsTokenValido()) return gsAbrirPrivado(info).catch(gsErroLer);
+      return gsErroLer(erro);
+    });
+  }
+
+  /* ============================================================
+     PEDIDO 1.202: GRAVAR "LOCALIZADO" NO GOOGLE SHEETS (Apps Script)
+     JSONP igual ao webhook do app principal — o script do usuário é
+     que decide se cria (ou não) a coluna e grava na linha. 1 chamada
+     por série por sessão; transporte injetável para os testes.
+     ============================================================ */
+
+  var seqJsonpScript = 0;
+
+  function chamarScriptLocalizado(norm, original) {
+    var base = (state.scriptAtivo || '').trim();
+    if (!base || !norm) return;
+    if (state.scriptChamados.has(norm)) return;
+    state.scriptChamados.add(norm);
+    seqJsonpScript++;
+    var nomeCb = '__ccsvJsonp' + seqJsonpScript;
+    var sep = base.indexOf('?') === -1 ? '?' : '&';
+    var url = base + sep + 'serie=' + encodeURIComponent(original || norm) + '&callback=' + nomeCb;
+    /* Pedido 1.212: informa a aba e a coluna escolhidas (quando vieram de um Google Sheet) */
+    if (state.gsAbas.length && state.gsAbaSel) url += '&aba=' + encodeURIComponent(state.gsAbaSel);
+    if (state.gsColunaSel >= 0 && state.gsColunas[state.gsColunaSel]) url += '&col=' + encodeURIComponent(state.gsColunas[state.gsColunaSel]);
+    var finalizado = false;
+    function finalizar() {
+      if (finalizado) return;
+      finalizado = true;
+      try { delete window[nomeCb]; } catch (e) { window[nomeCb] = undefined; }
+    }
+    window[nomeCb] = function (res) {
+      finalizar();
+      if (res && res.ok === false) {
+        showToast('Script LOCALIZADO respondeu falha' + (res.erro ? ': ' + res.erro : '') + '.', 'aviso');
+        return;
+      }
+      /* Pedido 1.212: confirma a gravação no resultado do scan */
+      var ultima = state.leituras[state.leituras.length - 1];
+      if (ultima && ultima.norm === norm) {
+        mostrarResultado(ultima.original, 'ok', 'Aparelho encontrado ✓\nAtualizado no Google Sheet, na última coluna');
+      }
+    };
+    var transport = state.transportJsonp || function (urlAlvo) {
+      var s = document.createElement('script');
+      s.src = urlAlvo;
+      s.onerror = function () {
+        finalizar();
+        showToast('Script LOCALIZADO não respondeu — confira a implantação (executar como "Qualquer pessoa").', 'aviso');
+      };
+      document.head.appendChild(s);
+    };
+    try { transport(url, nomeCb); } catch (e) { finalizar(); }
+    setTimeout(finalizar, 20000);
+  }
+
+  /* ============================================================
+     PEDIDO 1.212: GRAVAÇÃO AUTOMÁTICA DE "LOCALIZADO" (Sheets API)
+     Com a conta Google conectada e a lista vinda de um Google Sheet,
+     escreve na linha da série — coluna "STATUS" existente ou uma nova
+     coluna após o último cabeçalho. Sem script visível, sem colar nada.
+     ============================================================ */
+
+  function gsResultadoEscrita(original, ok) {
+    var ultima = state.leituras[state.leituras.length - 1];
+    if (ultima && ultima.norm === normalizar(original)) {
+      mostrarResultado(ultima.original, 'ok', ok
+        ? 'Aparelho encontrado ✓\nAtualizado no Google Sheet, na última coluna'
+        : 'Aparelho encontrado ✓\nFalha ao atualizar o Google Sheet');
+    }
+    if (!ok) showToast('Falha ao gravar “LOCALIZADO” no Google Sheet.', 'aviso');
+  }
+
+  function gravarLocalizado(norm, original) {
+    if (gsTokenValido() && state.gsInfo && state.gsLinhas.has(norm)) {
+      return gravarLocalizadoApi(norm).then(function (ok) {
+        gsResultadoEscrita(original, ok);
+      }).catch(function () {
+        gsResultadoEscrita(original, false);
+      });
+    }
+    /* Sem conta conectada (ou lista que não veio de um Google Sheet):
+       caminho antigo via Apps Script público (pedido 1.202). */
+    return chamarScriptLocalizado(norm, original);
+  }
+
+  function gravarLocalizadoApi(norm, reautorizado) {
+    var aba = state.gsAbaSel;
+    var linha = state.gsLinhas.get(norm);
+    var idxStatus = -1;
+    state.gsColunas.forEach(function (c, i) {
+      if (idxStatus === -1 && String(c).trim().toUpperCase() === 'STATUS') idxStatus = i;
+    });
+    var letra = idxStatus !== -1 ? colunaLetra(idxStatus + 1) : colunaLetra(state.gsColunas.length + 1);
+    var dados = [];
+    if (idxStatus === -1 && !state.gsStatusColOk) {
+      dados.push({ range: "'" + aba + "'!" + letra + '1', values: [['STATUS']] });
+    }
+    dados.push({ range: "'" + aba + "'!" + letra + linha, values: [['LOCALIZADO']] });
+    return fetch('https://sheets.googleapis.com/v4/spreadsheets/' + state.gsInfo.id + '/values:batchUpdate', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gsTokenMem.valor, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valueInputOption: 'RAW', data: dados })
+    }).then(function (r) {
+      if ((r.status === 401 || r.status === 403) && !reautorizado) return gsReautorizar(norm);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function () {
+      state.gsStatusColOk = true;
+      return true;
+    });
+  }
+
+  function gsReautorizar(norm) {
+    /* Token só de leitura (conectado pelo app principal, pedido 1.211)
+       ou expirado: pede o escopo de GRAVAÇÃO e tenta 1× mais. */
+    gsTokenMem = { valor: null, expira: 0 };
+    gsLimparToken();
+    return new Promise(function (resolve) {
+      try {
+        var tc = google.accounts.oauth2.initTokenClient({
+          client_id: gsClientIdEfetivo(),
+          scope: GS_SCOPE_PROJETO,
+          callback: function (resp) {
+            if (!resp || !resp.access_token) { resolve(false); return; }
+            gsTokenMem.valor = resp.access_token;
+            gsTokenMem.expira = Date.now() + Math.max(60, (resp.expires_in || 3600) - 60) * 1000;
+            gsSalvarToken();
+            gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
+            gravarLocalizadoApi(norm, true).then(function (ok) { resolve(ok); }, function () { resolve(false); });
+          },
+          error_callback: function () { resolve(false); }
+        });
+        tc.requestAccessToken({ prompt: 'consent' });
+      } catch (e) { resolve(false); }
+    });
   }
 
   /* ============================================================
@@ -341,18 +1024,25 @@
       return;
     }
     if (state.lista.size) {
+      /* Pedido 1.221: modal delicado no lugar do confirm() nativo */
       var msg = 'Substituir a lista atual (' + state.lista.size + ' séries) por ' +
         resultado.mapa.size + ' séries?\nAs leituras também serão apagadas.';
-      if (!window.confirm(msg)) return;
+      confirmarModal(msg, 'Trocar lista')
+        .then(function (ok) { if (ok) importarConfirmado(resultado); });
+      return;
     }
+    importarConfirmado(resultado);
+  }
 
+  function importarConfirmado(resultado) {
     var series = [];
     resultado.mapa.forEach(function (original, norm) { series.push({ norm: norm, original: original }); });
 
     var salvamento = CCSVStorage.salvarLista({
       series: series,
       nomeArquivo: state.nomeArquivo,
-      dataImportacao: new Date().toISOString()
+      dataImportacao: new Date().toISOString(),
+      linkPlanilha: linkPlanilhaAtivo(null) /* Pedido 1.220: sobrevive ao F5 com a lista */
     });
 
     if (!salvamento.ok) {
@@ -384,8 +1074,9 @@
     // Grid de informações
     var gridHtml = '';
     if (cfg.nomeArquivo) {
+      var nomeCurtoL = cfg.nomeArquivo.length > 22 ? cfg.nomeArquivo.slice(0, 20) + '…' : cfg.nomeArquivo;
       gridHtml += '<div class="lista-info-item"><span class="val" title="' + escapar(cfg.nomeArquivo) + '">' +
-        escapar(cfg.nomeArquivo.length > 22 ? cfg.nomeArquivo.slice(0, 20) + '…' : cfg.nomeArquivo) +
+        anchorOuTexto(nomeCurtoL, linkPlanilhaAtivo(cfg)) +
         '</span><span class="rot">Arquivo</span></div>';
     }
     gridHtml += '<div class="lista-info-item"><span class="val">' + state.lista.size +
@@ -404,7 +1095,12 @@
   }
 
   function limparTudo() {
-    if (!window.confirm('Limpar lista, leituras e configurações?')) return;
+    /* Pedido 1.221: modal delicado no lugar do confirm() nativo */
+    confirmarModal('Limpar lista, leituras e configurações?', 'Limpar tudo')
+      .then(function (ok) { if (ok) limparTudoConfirmado(); });
+  }
+
+  function limparTudoConfirmado() {
     fecharScanner();
     CCSVStorage.limparLista();
     CCSVStorage.clearLeituras();
@@ -417,6 +1113,8 @@
     state.linhas = [];
     state.origemLista = '';
     state.ultimoParsed = null;
+    state.scriptChamados = new Set(); /* Pedido 1.202 */
+    gsResetEstrutura(); /* Pedido 1.212 */
     gravarTxtAutomatico();
     el.arquivo.value = '';
     el.btnImportar.disabled = true;
@@ -453,10 +1151,12 @@
 
   function renderInfoModal() {
     var cfg = CCSVStorage.carregarLista() || {};
+    /* Pedido 1.218: só séries + arquivo — as dicas de "Trocar lista" e de
+       gravação "LOCALIZADO" saíram do rodapé do scanner.
+       Pedido 1.220: nome da planilha vira link para a origem (abre em _blank). */
     var partes = [state.lista.size + ' séries carregadas'];
-    if (cfg.nomeArquivo) partes.push('arquivo: ' + cfg.nomeArquivo);
-    partes.push('use "Trocar lista" para importar outro CSV');
-    el.infoModal.textContent = partes.join(' · ');
+    if (cfg.nomeArquivo) partes.push('arquivo: ' + anchorOuTexto(cfg.nomeArquivo, linkPlanilhaAtivo(cfg)));
+    el.infoModal.innerHTML = partes.join(' · ');
   }
 
   function selecionarCampo() {
@@ -473,20 +1173,23 @@
     }, ATRASO_FOCO_MS);
   }
 
-  function mostrarResultado(texto, tipo) {
+  function mostrarResultado(texto, tipo, situacao) {
     var mensagens = {
       ok: 'Aparelho encontrado ✓',
       erro: 'Aparelho não encontrado ✗',
       neutro: 'Pronto para scanear'
     };
-    var situacao = mensagens[tipo] || '';
+    /* Pedido 1.212: situacao opcional substitui/acrescenta a mensagem
+       padrão; "\n" vira quebra de linha (<br>) na tela. */
+    var situacaoFinal = situacao || mensagens[tipo] || '';
     // Remove animação para pode re-disparar
     el.resultado.classList.remove('entrada');
     void el.resultado.offsetWidth; // reflow para reiniciar animação
     el.resultado.className = 'resultado' + (tipo === 'neutro' ? '' : ' ' + tipo) +
       (tipo !== 'neutro' ? ' entrada' : '');
     el.resultado.querySelector('.serie').textContent = texto;
-    el.resultado.querySelector('.situacao').textContent = situacao;
+    el.resultado.querySelector('.situacao').innerHTML =
+      escapar(situacaoFinal).replace(/\n/g, '<br>');
   }
 
   function renderBarraProgresso() {
@@ -505,10 +1208,24 @@
     if (!bruto) { selecionarCampo(); return; }
 
     var norm = normalizar(bruto);
-    var achou = state.lista.has(norm);
 
-    // Verifica se já foi lida antes (duplicata de sessão)
-    var jaLida = state.lidos.has(norm);
+    /* Pedido 1.212: re-scan de valor já consultado NÃO conta 2× —
+       repete o status anterior e sai sem novo registro no histórico. */
+    var anterior = null;
+    for (var iR = state.leituras.length - 1; iR >= 0; iR--) {
+      if (state.leituras[iR].norm === norm) { anterior = state.leituras[iR]; break; }
+    }
+    if (anterior) {
+      var eraAchou = anterior.status === 'encontrada';
+      mostrarResultado(bruto, eraAchou ? 'ok' : 'erro',
+        (eraAchou ? 'Aparelho encontrado ✓' : 'Aparelho não encontrado ✗') + '\nJá consultada' +
+        (eraAchou ? ' (na lista)' : ' (fora da lista)') + ' — sem contar 2×');
+      try { eraAchou ? bipOk() : bipErro(); } catch (e) { /* sem áudio */ }
+      agendarSelecao();
+      return;
+    }
+
+    var achou = state.lista.has(norm);
 
     mostrarResultado(bruto, achou ? 'ok' : 'erro');
     try { achou ? bipOk() : bipErro(); } catch (e) { /* sem áudio */ }
@@ -517,11 +1234,13 @@
       norm: norm,
       original: achou ? state.lista.get(norm) : bruto,
       status: achou ? 'encontrada' : 'fora_da_lista',
-      duplicata: achou && jaLida,  // marcação extra para histórico
       quando: Date.now()
     };
     state.leituras.push(registro);
-    if (achou) state.lidos.add(norm);
+    if (achou) {
+      state.lidos.add(norm);
+      gravarLocalizado(norm, registro.original); /* Pedidos 1.202/1.212: LOCALIZADO no Sheets */
+    }
     state.leituras = CCSVStorage.setLeituras(state.leituras);
 
     renderContadores();
@@ -555,9 +1274,7 @@
     var ultimos = state.leituras.slice(-60).reverse();
     el.historico.innerHTML = ultimos.map(function (l) {
       var tipo = l.status === 'encontrada' ? 'ok' : 'erro';
-      var rotulo = l.status === 'encontrada'
-        ? (l.duplicata ? 'duplicada' : 'na lista')
-        : 'fora';
+      var rotulo = l.status === 'encontrada' ? 'na lista' : 'fora';
       return '<li class="' + tipo + '">' +
         '<span class="hora">' + dataHora(l.quando) + '</span>' +
         '<span class="serie">' + escapar(l.original) + '</span>' +
@@ -726,11 +1443,94 @@
   el.btnAbrirScanner.addEventListener('click', function () { contextoAudio(); abrirScanner(); });
   el.btnLimparTudo.addEventListener('click', limparTudo);
 
+  /* Pedido 1.202: Google Sheets + script LOCALIZADO */
+  el.btnCarregarGsheet.addEventListener('click', function () { carregarGsheet(); });
+  /* Pedido 1.216: conectou — se há link válido ainda não lido, carrega sozinho. */
+  el.btnConectarGoogle.addEventListener('click', function () {
+    gsConectar(function () {
+      var v = (el.gsheetUrl.value || '').trim();
+      if (v && extrairGsheet(v) && !state.gsInfo) carregarGsheet();
+    });
+  });
+  el.btnDesconectarGoogle.addEventListener('click', gsDesconectar);
+  if (el.gsClientid) {
+    try { el.gsClientid.value = localStorage.getItem(GS_CID_KEY) || ''; } catch (e) { /* sem localStorage */ }
+    gsRenderClientidEmUso();
+    var salvarCid = function () {
+      var v = (el.gsClientid.value || '').trim();
+      try { localStorage.setItem(GS_CID_KEY, v); } catch (e) { /* sem localStorage */ }
+      gsRenderClientidEmUso();
+      showToast(v ? 'Client ID personalizado salvo — substitui o Client ID do projeto neste navegador (nesta origem).' : 'Client ID personalizado limpo — voltando ao Client ID do projeto.', 'ok');
+    };
+    el.btnGsClientidSalvar.addEventListener('click', salvarCid);
+    el.gsClientid.addEventListener('change', salvarCid);
+  }
+  /* Pedido 1.211: outra página da origem conectou/desconectou — acompanha em tempo real */
+  window.addEventListener('storage', function (ev) {
+    if (!ev || ev.key !== GS_TOKEN_KEY) return;
+    gsTokenMem = { valor: null, expira: 0 };
+    gsRestaurarToken();
+    gsStatusPorToken();
+  });
+  el.gsheetUrl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); carregarGsheet(); }
+  });
+  /* Pedido 1.216: colar/terminar de digitar o link carrega a planilha
+     sozinha (debounce 900ms — só link válido e diferente do já carregado). */
+  var gsTimerAuto = null;
+  el.gsheetUrl.addEventListener('input', function () {
+    if (gsTimerAuto) clearTimeout(gsTimerAuto);
+    gsTimerAuto = setTimeout(function () {
+      gsTimerAuto = null;
+      var v = (el.gsheetUrl.value || '').trim();
+      if (!v || v === state.gsUrlCarregada || !extrairGsheet(v)) return;
+      carregarGsheet(true);
+    }, 900);
+  });
+  /* Pedido 1.212: trocar de aba (privada) recarrega cabeçalhos e séries;
+     trocar de coluna recarrega só as séries da coluna escolhida. */
+  el.gsheetAba.addEventListener('change', function () {
+    state.gsAbaSel = el.gsheetAba.value;
+    try { localStorage.setItem('ccsv_gsheet_aba', state.gsAbaSel); } catch (e) { /* sem localStorage */ }
+    if (!state.gsInfo || !state.gsPrivado) return; /* pública: só existe a aba do link */
+    el.gsheetStatus.textContent = 'Lendo a aba ' + state.gsAbaSel + '…';
+    gsAbrirAbaPrivado(state.gsAbaSel).catch(gsErroLer);
+  });
+  el.gsheetColuna.addEventListener('change', function () {
+    var idx = el.gsheetColuna.selectedIndex;
+    if (idx < 0 || !state.gsInfo) return;
+    try { localStorage.setItem('ccsv_gsheet_col', state.gsColunas[idx] || ''); } catch (e) { /* sem localStorage */ }
+    var pedido = state.gsPrivado
+      ? gsAplicarColunaPrivada(state.gsAbaSel, idx)
+      : gsAplicarColunaPublica(idx);
+    pedido.catch(gsErroLer);
+  });
+  el.scriptUrl.addEventListener('change', function () {
+    state.scriptAtivo = (el.scriptUrl.value || '').trim();
+    try { localStorage.setItem('ccsv_script_url', state.scriptAtivo); } catch (e) { /* sem persistência */ }
+    state.scriptChamados = new Set();
+    showToast(state.scriptAtivo ? 'Gravação “LOCALIZADO” ativada.' : 'Gravação “LOCALIZADO” desativada.', 'ok');
+  });
+
   el.btnNovaLeitura.addEventListener('click', function () {
     if (state.timerFoco) { clearTimeout(state.timerFoco); state.timerFoco = null; }
     selecionarCampo();
   });
-  el.btnFecharScanner.addEventListener('click', fecharScanner);
+  /* Pedido 1.218: fechar o scanner limpa o cache do LINK da planilha (evita o
+     duplo carregamento da origem de dados no próximo uso), mantendo o login
+     do Google e o link do Apps Script para uso futuro. */
+  el.btnFecharScanner.addEventListener('click', function () {
+    try {
+      localStorage.removeItem('ccsv_gsheet_url');
+      localStorage.removeItem('ccsv_gsheet_aba');
+      localStorage.removeItem('ccsv_gsheet_col');
+    } catch (e) { /* sem localStorage */ }
+    if (el.gsheetUrl) el.gsheetUrl.value = '';
+    state.gsUrlCarregada = '';
+    gsResetEstrutura();
+    el.gsheetStatus.textContent = 'Cole o link da planilha — ela carrega sozinha. Depois escolha a aba e a coluna (pelo cabeçalho) com as séries. Planilhas privadas: o botão “Conectar com Google” aparece quando for o caso — conectado, a série localizada grava “LOCALIZADO” na planilha automaticamente.';
+    fecharScanner();
+  });
   el.btnFecharModal.addEventListener('click', fecharScanner);
 
   el.campo.addEventListener('keydown', function (e) {
@@ -766,32 +1566,13 @@
   el.btnEscolherPasta.addEventListener('click', escolherPasta);
 
   // Botão de limpar estatísticas e histórico (dentro do <summary>, precisa de stopPropagation)
-  function desarmarStats() {
-    state.armadoStats = false;
-    if (state.timerArmadoStats) { clearTimeout(state.timerArmadoStats); state.timerArmadoStats = null; }
-    el.btnLimparStats.classList.remove('armado');
-    el.btnLimparStats.textContent = '';
-    el.btnLimparStats.insertAdjacentHTML('afterbegin',
-      '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/></svg>Limpar');
-  }
-
+  /* Pedido 1.217: 1 clique só — a confirmação em 2 tempos foi removida. */
   function limparStats(e) {
     e.stopPropagation(); // impede abrir/fechar o <details>
     if (!state.leituras.length) {
       showToast('Nenhuma estatística para limpar.', 'aviso');
       return;
     }
-    if (!state.armadoStats) {
-      state.armadoStats = true;
-      el.btnLimparStats.classList.add('armado');
-      el.btnLimparStats.textContent = '';
-      el.btnLimparStats.insertAdjacentHTML('afterbegin',
-        '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/></svg>Confirmar?');
-      state.timerArmadoStats = setTimeout(desarmarStats, 4000);
-      return;
-    }
-    // Segundo clique: executa a limpeza
-    desarmarStats();
     CCSVStorage.clearLeituras();
     state.leituras = [];
     state.lidos = new Set();
@@ -808,7 +1589,6 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && state.armadoLimpeza) desarmarLimpeza();
-    if (e.key === 'Escape' && state.armadoStats) desarmarStats();
   });
 
   el.modal.addEventListener('close', function () {
@@ -833,8 +1613,47 @@
       // Lista já salva: o scanner abre direto.
       abrirScanner();
     }
+    /* Pedido 1.202: restaura os links salvos (Google Sheets + script LOCALIZADO) */
+    try {
+      var uG = localStorage.getItem('ccsv_gsheet_url');
+      var uS = localStorage.getItem('ccsv_script_url');
+      if (uG && el.gsheetUrl) el.gsheetUrl.value = uG;
+      if (uS) { state.scriptAtivo = uS; if (el.scriptUrl) el.scriptUrl.value = uS; }
+    } catch (e) { /* sem localStorage */ }
+    /* Pedido 1.211: reconecta sozinho se outra página da origem já conectou */
+    gsRestaurarToken();
+    if (gsTokenValido()) gsStatusPorToken();
     restaurarPasta();
   }
+
+  /* Pedido 1.202: gancho de testes E2E (mesmo padrão __zebraTest do app principal) */
+  window.__ccsvTest = {
+    carregarArquivo: carregarArquivo,
+    carregarGsheet: carregarGsheet,
+    extrairGsheet: extrairGsheet,
+    chamarScriptLocalizado: chamarScriptLocalizado,
+    aplicarTexto: aplicarTexto,
+    setTransporteJsonp: function (fn) { state.transportJsonp = fn; },
+    gsRestaurarToken: gsRestaurarToken,
+    gsSimularToken: function (token, expires_in) {
+      gsTokenMem.valor = token;
+      gsTokenMem.expira = Date.now() + Math.max(60, (expires_in || 3600) - 60) * 1000;
+      gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
+    },
+    get gsConexaoTexto() { return el.gsConexaoStatus ? el.gsConexaoStatus.textContent : ''; },
+    setScriptUrl: function (u) { state.scriptAtivo = u || ''; state.scriptChamados = new Set(); },
+    get listaSize() { return state.lista.size; },
+    get lidosSize() { return state.lidos.size; },
+    get scriptChamados() { return state.scriptChamados.size; },
+    /* Pedido 1.212 */
+    get leiturasLength() { return state.leituras.length; },
+    get gsLinhasSize() { return state.gsLinhas.size; },
+    get resultadoTexto() { return el.resultado ? el.resultado.querySelector('.situacao').textContent : ''; },
+    /* Pedido 1.221: modal de confirmação + toast 2s (usados pelo probe t115) */
+    confirmarModal: confirmarModal,
+    showToast: showToast,
+    confirmarAuto: false
+  };
 
   iniciar();
 })();

@@ -35,3 +35,9 @@ Xerox_C415/
 # (o Client ID público do projeto já está embutido no index.html; o SECRET fica só aqui)
 GoogleSheetZebraOAuth.json
 OAtuh.txt
+
+# Pedido 1.220: probes temporarios do SerieScan (tmp regenerado a cada rodada) — NÃO publicar
+probe-t*-tmp.html
+
+# Plano de implementação local — NÃO publicar
+PLANODEIMPLEMENTACAODOZB.md

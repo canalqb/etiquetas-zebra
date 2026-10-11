@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SerieScan — Scanner e validação de séries via CSV</title>
-<meta name="description" content="Importe um CSV de uma coluna e valide as séries no scanner: azul quando encontrada, vermelho quando não. Apenas HTML e JS, sem servidor de aplicação.">
+<title>SerieScan — Scanner e validação de séries (CSV, TXT, XLSX e Google Sheets)</title>
+<meta name="description" content="Importe uma lista de séries de CSV, TXT, XLSX ou de um link do Google Sheets e valide no scanner: azul quando encontrada, vermelho quando não. Apenas HTML e JS, sem servidor de aplicação.">
 <meta name="color-scheme" content="light dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -223,6 +223,30 @@ input[type="file"] { display: none; }
 .botao-rotulo:hover { background: var(--azul-h); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,.4); }
 .botao-rotulo:active { transform: translateY(0); }
 .botao-rotulo svg { width: .75rem; height: .75rem; }
+
+/* ===== PEDIDO 1.202: ENTRADA GOOGLE SHEETS / URL DO SCRIPT ===== */
+.gsheet-grid {
+  display: flex; gap: .4rem; align-items: stretch; flex-wrap: wrap;
+}
+.campo-url {
+  flex: 1 1 220px; min-width: 0;
+  font: inherit; font-size: .8rem;
+  padding: .35rem .55rem;
+  border: 1.5px solid var(--borda-forte); border-radius: var(--raio-sm);
+  background: var(--superficie-2); color: var(--texto);
+  transition: border-color var(--transicao), box-shadow var(--transicao);
+}
+.campo-url:focus {
+  outline: none; border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+#btn-carregar-gsheet { flex-shrink: 0; font-weight: 600; }
+
+/* Pedido 1.202: conexão Google (planilhas privadas) — mesma tecnologia do app principal */
+.gs-conexao {
+  display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: .45rem;
+}
+.gs-conexao button { font-size: .74rem; padding: .3rem .7rem; flex-shrink: 0; }
 
 /* ===== PREVIEW ===== */
 .preview {
@@ -527,12 +551,16 @@ dialog[open] { animation: modalEntrar .22s cubic-bezier(.34,1.56,.64,1); }
   max-width: min(92vw, 320px);
 }
 .toast {
+  /* Pedido 1.221: toast delicado — translúcido, desfoque suave e sombra leve */
   background: var(--superficie);
+  background: color-mix(in srgb, var(--superficie) 86%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--texto); border: 1px solid var(--borda);
-  border-left: 3px solid var(--azul);
-  border-radius: var(--raio-sm);
-  padding: .4rem .6rem; font-size: .78rem; font-weight: 500;
-  box-shadow: var(--sombra);
+  border-left: 2.5px solid var(--azul);
+  border-radius: 10px;
+  padding: .45rem .7rem; font-size: .78rem; font-weight: 500;
+  box-shadow: 0 6px 18px rgba(13,17,23,.13), 0 2px 6px rgba(13,17,23,.08);
   opacity: 1; transform: translateY(0) translateX(0);
   transition: opacity .28s, transform .28s;
   animation: toastEntrar .22s cubic-bezier(.34,1.56,.64,1);
@@ -545,6 +573,15 @@ dialog[open] { animation: modalEntrar .22s cubic-bezier(.34,1.56,.64,1); }
 .toast.erro { border-left-color: var(--vermelho); }
 .toast.aviso { border-left-color: var(--ambar); }
 .toast.sai { opacity: 0; transform: translateX(20px); }
+
+/* ===== MODAL DE CONFIRMAÇÃO (Pedido 1.221) ===== */
+#modal-confirmar { width: min(92vw, 360px); }
+#confirmar-titulo { margin: 0 0 .35rem; font-size: .95rem; }
+#confirmar-msg {
+  margin: 0 0 .9rem; font-size: .82rem;
+  color: var(--suave); line-height: 1.45; white-space: pre-line;
+}
+.confirmar-acoes { display: flex; justify-content: flex-end; gap: .5rem; }
 
 /* ===== FOOTER ===== */
 footer {
@@ -574,6 +611,8 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
   header .faixa, footer .faixa { padding: .5rem .75rem; }
 }
 </style>
+  <!-- Pedido 1.202: Google Identity Services — acesso a planilhas privadas com a conta logada no navegador -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <a class="skip" href="#conteudo">Pular para o conteúdo principal</a>
@@ -587,7 +626,7 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
         </svg>
       </div>
       SERIESCAN
-      <span class="marca-sub">scanner de séries via CSV</span>
+      <span class="marca-sub">scanner de séries — CSV, TXT, XLSX e Google Sheets</span>
     </div>
     <button type="button" id="btn-tema" class="btn-icone" aria-pressed="false"
       aria-label="Alternar entre tema claro e escuro" data-dica="Tema claro / escuro">
@@ -642,12 +681,12 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </span>
-        Importar CSV
-        <span class="detalhe" style="font-size:.8rem;font-weight:400;margin-left:.3rem">(1 série por linha)</span>
+        Importar lista
+        <span class="detalhe" style="font-size:.8rem;font-weight:400;margin-left:.3rem">(CSV, TXT, XLSX ou Google Sheets — 1 série por linha)</span>
       </h2>
 
       <!-- Zona de drag & drop -->
-      <div id="zona-arquivo" class="zona" role="button" tabindex="0" aria-label="Área de arrastar e soltar arquivo CSV">
+      <div id="zona-arquivo" class="zona" role="button" tabindex="0" aria-label="Área de arrastar e soltar arquivo CSV, TXT ou XLSX">
         <div class="zona-icone">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -656,7 +695,7 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
             <line x1="9" y1="15" x2="15" y2="15"/>
           </svg>
         </div>
-        <p><strong>Arraste o CSV aqui</strong></p>
+        <p><strong>Arraste o arquivo aqui</strong> <span style="font-size:.72rem">(CSV, TXT ou XLSX)</span></p>
         <p>ou</p>
         <label class="botao-rotulo" for="arquivo">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -666,9 +705,45 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
           </svg>
           Escolher arquivo
         </label>
-        <input type="file" id="arquivo" accept=".csv,.txt,text/csv,text/plain">
+        <input type="file" id="arquivo" accept=".csv,.txt,.xlsx,text/csv,text/plain">
         <p id="info-arquivo" class="detalhe" style="margin-top:.5rem">Nenhum arquivo carregado.</p>
       </div>
+
+      <!-- Pedido 1.202: entrada por link do Google Sheets (+ gravação "LOCALIZADO" via Apps Script) -->
+      <p class="sec-titulo" style="margin-top:.9rem">Google Sheets</p>
+      <div class="gsheet-grid">
+        <input type="url" id="gsheet-url" class="campo-url" placeholder="Cole o link da planilha (Compartilhar → Qualquer pessoa com o link)"
+          aria-label="Link do Google Sheets com a lista de séries">
+        <button type="button" id="btn-carregar-gsheet">Carregar</button>
+      </div>
+      <div class="gs-conexao" id="gs-conexao-bloco">
+        <button type="button" id="btn-conectar-google" aria-label="Conectar com a conta Google para ler planilhas privadas">Conectar com Google</button>
+        <button type="button" id="btn-desconectar-google" hidden aria-label="Desconectar a conta Google">Desconectar</button>
+        <span id="gs-conexao-status" class="detalhe">Não conectado — planilhas privadas pedem autorização da sua conta Google.</span>
+      </div>
+      <details id="gs-clientid-bloco" style="margin-top:.4rem">
+        <summary class="detalhe" style="cursor:pointer">Avançado — usar meu próprio Client ID</summary>
+        <div class="gsheet-grid" style="margin-top:.4rem">
+          <input type="text" id="gs-clientid" class="campo-url" placeholder="xxxxx.apps.googleusercontent.com"
+            aria-label="Google OAuth Client ID para planilhas privadas" autocomplete="off" spellcheck="false">
+          <button type="button" id="btn-gs-clientid-salvar">Salvar</button>
+        </div>
+        <p class="detalhe">O app já tem o Client ID do projeto embutido (não precisa disto). Este campo substitui pelo seu — no Google Cloud Console, ative a <b>Google Sheets API</b> e cadastre o endereço do site em “Origens JavaScript autorizadas”. A configuração vale também para o app principal (mesma origem).</p>
+        <p class="detalhe" id="gs-clientid-em-uso" style="margin-top:.3rem"></p>
+      </details>
+      <div class="gsheet-grid" id="gsheet-estrutura" hidden style="margin-top:.4rem">
+        <select id="gsheet-aba" class="campo-url" aria-label="Aba da planilha com as séries"></select>
+        <select id="gsheet-coluna" class="campo-url" aria-label="Coluna com as séries (pelo cabeçalho)"></select>
+      </div>
+      <details id="gsheet-script" style="margin-top:.4rem">
+        <summary style="cursor:pointer;color:var(--suave);font-size:.76rem;font-weight:500">Avançado — gravação via Apps Script (só para planilhas públicas sem login)</summary>
+        <div style="margin-top:.4rem">
+          <input type="url" id="script-url" class="campo-url" placeholder="URL do Apps Script implantado (Implantar → Aplicativo da Web → executar como Qualquer pessoa)"
+            aria-label="URL do Apps Script que grava LOCALIZADO na planilha">
+          <p class="detalhe">Com a conta Google conectada, a gravação de “LOCALIZADO” é automática (não use isto). Este campo serve só a planilhas públicas sem login: cada série localizada chama o script 1 vez por sessão, com os parâmetros <code>serie</code>, <code>aba</code> e <code>col</code>.</p>
+        </div>
+      </details>
+      <p id="gsheet-status" class="detalhe">Cole o link da planilha — ela carrega sozinha. Depois escolha a aba e a coluna (pelo cabeçalho) com as séries. Planilhas privadas: o botão “Conectar com Google” aparece quando for o caso — conectado, a série localizada grava “LOCALIZADO” na planilha automaticamente.</p>
 
       <!-- Preview -->
       <p class="sec-titulo" style="margin-top:.9rem">Pré-visualização <span style="font-weight:400;text-transform:none;letter-spacing:0">(primeiras 10 linhas)</span></p>
@@ -757,7 +832,7 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
         <path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>
       </svg>
     </button>
-    <button type="button" id="btn-fechar-scanner" class="btn-icone" aria-label="Trocar a lista e voltar para a importação" data-dica="Trocar lista">
+    <button type="button" id="btn-fechar-scanner" class="btn-icone" aria-label="Trocar a lista e voltar para a importação (limpa o link da planilha)" data-dica="Trocar lista" style="color:#dc3545">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 7h14M15 4l3 3-3 3M20 17H6M9 14l-3 3 3 3"/>
       </svg>
@@ -784,6 +859,16 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
     <ul id="historico" class="historico"><li class="vazio">Nenhuma leitura ainda.</li></ul>
     <p id="info-pasta" class="detalhe" style="margin-top:.5rem">TXT automático: nenhuma pasta escolhida.</p>
   </details>
+</dialog>
+
+<!-- Pedido 1.221: modal delicado de confirmação — fim dos alert/confirm nativos -->
+<dialog id="modal-confirmar" aria-labelledby="confirmar-titulo">
+  <h3 id="confirmar-titulo">Confirmar</h3>
+  <p id="confirmar-msg"></p>
+  <div class="confirmar-acoes">
+    <button type="button" id="confirmar-cancelar">Cancelar</button>
+    <button type="button" id="confirmar-ok" class="principal">OK</button>
+  </div>
 </dialog>
 
 <footer>

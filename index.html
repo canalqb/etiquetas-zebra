@@ -1737,12 +1737,6 @@
           <button type="button" class="dnv-dropdown-item" id="dnv-imp-preview" role="menuitem">
             <i class="bi bi-eye dnv-icon text-info"></i> Pré-visualizar
           </button>
-          <button type="button" class="dnv-dropdown-item" id="dnv-imp-imgprint" role="menuitem">
-            <i class="bi bi-image dnv-icon text-secondary"></i> Imprimir como Imagem
-          </button>
-          <button type="button" class="dnv-dropdown-item" id="dnv-imp-copias" role="menuitem">
-            <i class="fas fa-copy dnv-icon text-secondary"></i> Imprimir com Cópias
-          </button>
           <button type="button" class="dnv-dropdown-item fw-semibold" id="dnv-imp-imprimir" role="menuitem">
             <i class="fas fa-print dnv-icon text-success"></i> <span class="text-success">Imprimir Agora</span>
           </button>
@@ -2081,6 +2075,8 @@
                   <div class="ribbon-body">
                   <!-- Mesma ação do botão Imprimir do mobile (bottom-btn-imprimir) -->
                   <button type="button" class="icon-btn icon-btn-sm" id="ribbon-btn-imprimir" title="Imprimir etiqueta (com quantidade de cópias)" aria-label="Imprimir etiqueta"><i class="fas fa-print"></i></button>
+                  <!-- Pedido 1.215: Pré-visualizar impressão no ribbon Sistema -->
+                  <button type="button" class="icon-btn icon-btn-sm" id="ribbon-btn-preview" title="Pré-visualizar impressão — como o papel vai sair (com espelho/reverso aplicados)" aria-label="Pré-visualizar impressão"><i class="fas fa-eye"></i></button>
                   <!-- Pedido 1.143: Nova Etiqueta + Limpar Armazenamento (localStorage) -->
                   <button type="button" class="icon-btn icon-btn-sm text-danger" id="btn-reset-app" title="Nova Etiqueta + Limpar Armazenamento — apaga tudo que foi salvo no navegador (histórico, etiqueta, lote, configurações) e abre uma etiqueta em branco" aria-label="Nova etiqueta e limpar armazenamento"><i class="fas fa-rotate-left"></i></button>
 
@@ -2534,6 +2530,55 @@
         </div>
         <div class="modal-body py-2" id="modal-editor-body">
           <!-- O formulário será movido para cá via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pedido 1.203 — Modal do botão direito com 2+ elementos selecionados:
+       reúne os comandos multi que já existiam na barra de seleção (alinhamentos
+       Etiqueta/Entre si, copiar/recortar/colar/duplicar/excluir/desmarcar). -->
+  <div class="modal fade" id="modal-editor-multi" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalEditorMultiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+      <div class="modal-content border-primary">
+        <div class="modal-header py-2 bg-primary bg-opacity-10">
+          <h5 class="modal-title fs-6 fw-bold" id="modalEditorMultiLabel"><i class="bi bi-collection text-primary me-2"></i><span id="multi-count-label">Elementos selecionados</span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body py-3">
+          <div class="fw-semibold small text-secondary mb-1">Alinhar em relação à etiqueta</div>
+          <div class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Alinhar em relação à etiqueta">
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-top" title="Alinhar ao topo da etiqueta" aria-label="Alinhar ao topo"><i class="bi bi-align-top"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-bottom" title="Alinhar à parte inferior da etiqueta" aria-label="Alinhar à parte inferior"><i class="bi bi-align-bottom"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-left" title="Alinhar à esquerda da etiqueta" aria-label="Alinhar à esquerda"><i class="bi bi-align-start"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-right" title="Alinhar à direita da etiqueta" aria-label="Alinhar à direita"><i class="bi bi-align-end"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-center" title="Centralizar na etiqueta" aria-label="Centralizar na etiqueta"><i class="fas fa-arrows-to-dot"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-top-center" title="Topo ao centro — encosta no topo e centraliza na horizontal" aria-label="Topo centralizado"><i class="bi bi-arrow-up-circle"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-bottom-center" title="Inferior ao centro — encosta embaixo e centraliza na horizontal" aria-label="Inferior centralizado"><i class="bi bi-arrow-down-circle"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-left-center" title="Esquerda ao centro — encosta à esquerda e centraliza na vertical" aria-label="Esquerda centralizada"><i class="bi bi-arrow-left-circle"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-align-right-center" title="Direita ao centro — encosta à direita e centraliza na vertical" aria-label="Direita centralizada"><i class="bi bi-arrow-right-circle"></i></button>
+          </div>
+          <div class="fw-semibold small text-secondary mb-1">Alinhar entre si</div>
+          <div class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Alinhar entre os elementos selecionados">
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-entre-esq" title="Entre si — bordas esquerdas" aria-label="Bordas esquerdas entre si"><i class="bi bi-align-start"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-entre-centro-h" title="Entre si — centros na horizontal" aria-label="Centros na horizontal entre si"><i class="bi bi-align-center"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-entre-dir" title="Entre si — bordas direitas" aria-label="Bordas direitas entre si"><i class="bi bi-align-end"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-entre-topo" title="Entre si — topos" aria-label="Topos entre si"><i class="bi bi-align-top"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-entre-centro-v" title="Entre si — centros na vertical" aria-label="Centros na vertical entre si"><i class="bi bi-align-middle"></i></button>
+            <button type="button" class="icon-btn icon-btn-success icon-btn-sm" id="multi-entre-baixo" title="Entre si — bases" aria-label="Bases entre si"><i class="bi bi-align-bottom"></i></button>
+          </div>
+          <div class="fw-semibold small text-secondary mb-1">Ações</div>
+          <div class="d-flex flex-wrap gap-1" role="group" aria-label="Ações da seleção múltipla">
+            <button type="button" class="icon-btn icon-btn-primary icon-btn-sm" id="multi-copy" title="Copiar (Ctrl+C)"><i class="fas fa-copy"></i></button>
+            <button type="button" class="icon-btn icon-btn-warning icon-btn-sm" id="multi-cut" title="Recortar (Ctrl+X)"><i class="fas fa-cut"></i></button>
+            <button type="button" class="icon-btn icon-btn-info icon-btn-sm" id="multi-paste" title="Colar (Ctrl+V)"><i class="fas fa-paste"></i></button>
+            <button type="button" class="icon-btn icon-btn-primary icon-btn-sm" id="multi-dup" title="Duplicar selecionados"><i class="fas fa-clone"></i></button>
+            <button type="button" class="icon-btn icon-btn-danger icon-btn-sm" id="multi-del" title="Excluir selecionados (Delete)"><i class="fas fa-trash"></i></button>
+            <button type="button" class="icon-btn icon-btn-dark icon-btn-sm" id="multi-deselect" title="Desmarcar seleção"><i class="fas fa-times-circle"></i></button>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Concluir</button>
         </div>
       </div>
     </div>
@@ -3530,12 +3575,6 @@
           </button>
           <button type="button" class="btn btn-outline-primary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-preview" data-bs-dismiss="offcanvas">
             <i class="bi bi-eye"></i> Pré-visualizar Impressão
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-imgprint" data-bs-dismiss="offcanvas">
-            <i class="bi bi-image"></i> Imprimir como Imagem
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-sm py-2 d-flex align-items-center justify-content-center gap-2" id="nav-btn-copias" data-bs-dismiss="offcanvas">
-            <i class="fas fa-copy"></i> Imprimir com Cópias
           </button>
           <button type="button" class="btn btn-success py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" id="nav-btn-imprimir" data-bs-dismiss="offcanvas">
             <i class="fas fa-print"></i> Imprimir Etiqueta
@@ -5507,7 +5546,14 @@
         div.addEventListener("contextmenu", function (e) {
           e.preventDefault();
           e.stopPropagation();
-          abrirEditorElementoModal(el);
+          /* Pedido 1.203: com 2+ selecionados (e o clicado entre eles), o botão
+             direito abre o modal multi com os comandos de seleção em vez do
+             Editor de Elemento de um elemento só (que aparecia vazio). */
+          if (selectedElIds.length >= 2 && selectedElIds.indexOf(el.id) !== -1) {
+            abrirModalMultiElementos();
+          } else {
+            abrirEditorElementoModal(el);
+          }
         });
 
         // Toque (mobile): segurar e arrastar move; 2 dedos = pinça expande/contrai;
@@ -6355,7 +6401,7 @@
               var modsQ = (qrObter(itemEl.texto, qrNivelDe(itemEl.simbologia)) || {}).count || 33;
               if (pedidoSz > (item.origW || 0) + 2 && Math.round(newSz / modsQ) >= 10 && !avisoMagDado) {
                 avisoMagDado = true;
-                notify("QR Code atingiu o tamanho máximo da impressora (magnificação 10 do comando ZPL). Para um QR maior, ative o botão Imprimir como Imagem.", "warning");
+                notify("QR Code atingiu o tamanho máximo do modo vetorial (magnificação 10 do ZPL). Etiquetas na HORIZONTAL imprimem como imagem e aceitam um QR maior.", "warning");
               }
             } else {
               var newW = Math.max(20, item.origW + mmToDots(dxMm));
@@ -6622,6 +6668,41 @@
     if ($("sel-btn-deselect")) $("sel-btn-deselect").addEventListener("click", function() {
       selectedElIds = []; selectedElId = null; renderStudio();
     });
+
+    /* Pedido 1.203: modal do botão direito com 2+ elementos selecionados —
+       reúne os comandos multi que já existiam na barra de seleção. */
+    function abrirModalMultiElementos() {
+      var m = $("modal-editor-multi");
+      if (!m) return;
+      var lbl = $("multi-count-label");
+      if (lbl) lbl.textContent = selectedElIds.length + " elemento(s) selecionado(s)";
+      try { bootstrap.Modal.getOrCreateInstance(m).show(); } catch (eModM) {}
+    }
+    function multiAcao(fn, fecha) {
+      return function () {
+        fn();
+        var m = $("modal-editor-multi");
+        var lbl = $("multi-count-label");
+        if (lbl) lbl.textContent = selectedElIds.length + " elemento(s) selecionado(s)";
+        if (fecha || !selectedElIds.length) {
+          try { var instM = bootstrap.Modal.getInstance(m); if (instM) instM.hide(); } catch (eHidM) {}
+        }
+      };
+    }
+    [["multi-align-top","topo"],["multi-align-bottom","baixo"],["multi-align-left","esquerda"],["multi-align-right","direita"],["multi-align-center","centro"],["multi-align-top-center","topo-centro"],["multi-align-bottom-center","baixo-centro"],["multi-align-left-center","esquerda-centro"],["multi-align-right-center","direita-centro"]].forEach(function (par) {
+      if ($(par[0])) $(par[0]).addEventListener("click", function () { alinharSelecionados(par[1]); });
+    });
+    [["multi-entre-esq","esquerda"],["multi-entre-centro-h","centro-h"],["multi-entre-dir","direita"],["multi-entre-topo","topo"],["multi-entre-centro-v","centro-v"],["multi-entre-baixo","baixo"]].forEach(function (par) {
+      if ($(par[0])) $(par[0]).addEventListener("click", function () { alinharEntreSi(par[1]); });
+    });
+    if ($("multi-copy")) $("multi-copy").addEventListener("click", multiAcao(copiarSelecionados));
+    if ($("multi-cut")) $("multi-cut").addEventListener("click", multiAcao(recortarSelecionados, true));
+    if ($("multi-paste")) $("multi-paste").addEventListener("click", multiAcao(colarElementos));
+    if ($("multi-dup")) $("multi-dup").addEventListener("click", multiAcao(duplicarSelecionados));
+    if ($("multi-del")) $("multi-del").addEventListener("click", multiAcao(deletarSelecionados, true));
+    if ($("multi-deselect")) $("multi-deselect").addEventListener("click", multiAcao(function () {
+      selectedElIds = []; selectedElId = null; renderStudio();
+    }, true));
 
     /* ---------------- Alinhamento de elementos na etiqueta ---------------- */
     function bboxVisualElemento(el, dW, dH) {
@@ -8671,12 +8752,29 @@
           ctx.fillRect(0, 0, vw, lsL === "thick" ? espL * 2 : espL);
         }
       } else if (el.tipo === "borda") {
-        var espB = el.espessura || 3;
+        /* Pedido 1.219: "Preenchido" também no canvas (impressão modo imagem,
+           PNG, PDF e Pré-visualização) — antes só a moldura DOM do Estúdio
+           pintava o fundo; o canvas desenhava apenas o contorno fino. */
+        var espB = el.cheio ? Math.floor(Math.min(vw, vh) / 2) : (el.espessura || 3);
         var fsB = el.frameStyle || "solid";
         ctx.strokeStyle = "#000"; ctx.fillStyle = "#000"; ctx.lineWidth = espB;
         if (fsB === "shadow") ctx.fillRect(espB * 1.5, espB * 1.5, vw - espB, vh - espB);
         if (fsB === "dashed" || fsB === "dotted") ctx.setLineDash(fsB === "dashed" ? [espB * 3, espB * 2] : [espB, espB]);
-        if (fsB === "rounded") {
+        if (el.cheio) {
+          if (fsB === "rounded") {
+            var rBC = Math.min(16, vw / 4, vh / 4);
+            ctx.beginPath();
+            ctx.moveTo(rBC, 0);
+            ctx.arcTo(vw, 0, vw, vh, rBC);
+            ctx.arcTo(vw, vh, 0, vh, rBC);
+            ctx.arcTo(0, vh, 0, 0, rBC);
+            ctx.arcTo(0, 0, vw, 0, rBC);
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.fillRect(0, 0, vw, vh);
+          }
+        } else if (fsB === "rounded") {
           var rB = Math.min(16, vw / 4, vh / 4);
           ctx.beginPath();
           ctx.moveTo(rB, espB / 2);
@@ -8949,7 +9047,7 @@
         if (multi) { zpl = multi.zpl; temLote = true; }
       }
       if (!zpl) {
-        if (paraImpressao && (localStorage.getItem("etiquetasZebra.printAsImage") !== "0" || temTextoGirado())) {
+        if (paraImpressao && (modoImpressaoImagem() || temTextoGirado())) {
           zpl = gerarZPLImagem();
         } else {
           zpl = gerarZPLBloco(elements, tamAtualKey, rotAtual);
@@ -9247,15 +9345,22 @@
                 cheio: gbT >= Math.min(w, h) / 2
               });
             } else {
-              var isBorder = (x === 0 && y === 0);
+              /* Pedido 1.219: roundtrip fiel do ^GB — espessura e fundo
+                 preenchido não podem se perder no re-import. Barra fina
+                 (lado ≈ espessura) volta como "linha"; retângulo volta como
+                 "borda", sólido quando t >= metade do menor lado (regra Zebra). */
+              var isLinhaGB = (h <= gbT + 2) || (w <= gbT + 2);
+              var gbSolido = !isLinhaGB && gbT >= Math.min(w, h) / 2;
               newElements.push({
                 id: "el_bin_" + idx,
-                tipo: isBorder ? "borda" : "linha",
+                tipo: isLinhaGB ? "linha" : "borda",
                 texto: "",
                 x: x,
                 y: y,
                 w: w,
-                h: h
+                h: h,
+                espessura: gbT,
+                cheio: isLinhaGB ? undefined : gbSolido
               });
             }
           }
@@ -9395,7 +9500,9 @@
         timestamp: Date.now()
       };
     }
+    var importRestaurando = false; /* Pedido 1.192: durante a restauração ninguém regrava a sessão */
     function importSessaoSalvar() {
+      if (importRestaurando) return;
       var snap = importSessaoSnapshot();
       try { localStorage.setItem("etiquetasZebra.lotePagina", String(snap.lotePaginaAtual || 0)); } catch (ePg) {}
       zebraIDB.put("import", snap).then(function () {
@@ -9431,22 +9538,32 @@
           try { localStorage.removeItem("etiquetasZebra.sessionImport"); } catch (eRm2) {}
           return false;
         }
-        if (snap.conex && snap.conex.tipo) {
-          try { aplicarConexoesImport(snap.conex); } catch (eApC) {}
+        importRestaurando = true;
+        try {
+          /* Pedido 1.192: restaurar a página ANTES de renderizar mapeamento/UI — os
+             re-renders intermediários regravavam o registro mínimo (etiquetasZebra.
+             lotePagina) com lotePaginaAtual ainda 0, apagando a página corrente: a
+             etiqueta 6 "virava" a 1 após o F5. Lê o mini primeiro, aplica a página,
+             e só então o resto do estado. */
+          var pgMini = -1;
+          try { pgMini = parseInt(localStorage.getItem("etiquetasZebra.lotePagina") || "", 10); } catch (ePg2) {}
+          lotePaginaAtual = (typeof snap.lotePaginaAtual === "number" && snap.lotePaginaAtual >= 0) ? snap.lotePaginaAtual : 0;
+          if (!isNaN(pgMini) && pgMini >= 0) lotePaginaAtual = pgMini;
+          if (snap.conex && snap.conex.tipo) {
+            try { aplicarConexoesImport(snap.conex); } catch (eApC) {}
+          }
+          if (snap.importDados && Array.isArray(snap.importDados.colunas) && snap.importDados.colunas.length &&
+              Array.isArray(snap.importDados.linhas) && snap.importDados.linhas.length) {
+            importDados = snap.importDados;
+            importRenderMapeamento();
+          }
+          if (snap.zpl && snap.zpl.indexOf("^XA") !== -1 && $("zpl")) $("zpl").value = snap.zpl;
+          atualizarBarraStatusLote();
+          atualizarNavLote();
+          return true;
+        } finally {
+          importRestaurando = false;
         }
-        if (snap.importDados && Array.isArray(snap.importDados.colunas) && snap.importDados.colunas.length &&
-            Array.isArray(snap.importDados.linhas) && snap.importDados.linhas.length) {
-          importDados = snap.importDados;
-          importRenderMapeamento();
-        }
-        var pgMini = -1;
-        try { pgMini = parseInt(localStorage.getItem("etiquetasZebra.lotePagina") || "", 10); } catch (ePg2) {}
-        lotePaginaAtual = (typeof snap.lotePaginaAtual === "number" && snap.lotePaginaAtual >= 0) ? snap.lotePaginaAtual : 0;
-        if (!isNaN(pgMini) && pgMini >= 0) lotePaginaAtual = pgMini;
-        if (snap.zpl && snap.zpl.indexOf("^XA") !== -1 && $("zpl")) $("zpl").value = snap.zpl;
-        atualizarBarraStatusLote();
-        atualizarNavLote();
-        return true;
       }, function () { return false; });
     }
 
@@ -10614,7 +10731,7 @@
       } else if (loteEspecialAtivo && zplAtual.indexOf("^XA") !== -1 &&
                  (zplAtual.indexOf("^SN") !== -1 || zplAtual.split("^XA").length - 1 > 1)) {
         zplBase = zplAtual; /* lote especial gerado (ainda no campo ZPL) */
-      } else if (localStorage.getItem("etiquetasZebra.printAsImage") !== "0") {
+      } else if (modoImpressaoImagem() || temTextoGirado()) { /* Pedido 1.213: automático pela orientação */
         zplBase = gerarZPLImagem();
       } else {
         zplBase = renderZPL();
@@ -11302,6 +11419,26 @@
     function gsTokenValido() {
       return !!(gsTokenMem.valor && Date.now() < gsTokenMem.expira);
     }
+    /* Pedido 1.211: conexão COMPARTILHADA entre as páginas da mesma origem
+       (app principal e adicionais/ccsv) — o token vive no localStorage e
+       vale até expirar; conectar em uma página conecta a outra, e
+       desconectar em uma desconecta em todas. */
+    var GS_TOKEN_KEY = "etiquetasZebra.gsToken";
+    function gsTokenRestaurar() {
+      try {
+        var bruto = localStorage.getItem(GS_TOKEN_KEY);
+        if (!bruto) return;
+        var reg = JSON.parse(bruto);
+        if (reg && reg.valor && Date.now() < (reg.expira || 0)) gsTokenMem = { valor: reg.valor, expira: reg.expira };
+        else localStorage.removeItem(GS_TOKEN_KEY);
+      } catch (eGSTok) { /* sem localStorage */ }
+    }
+    function gsTokenSalvar() {
+      try { localStorage.setItem(GS_TOKEN_KEY, JSON.stringify(gsTokenMem)); } catch (eGSTok) { /* sem localStorage */ }
+    }
+    function gsTokenLimpar() {
+      try { localStorage.removeItem(GS_TOKEN_KEY); } catch (eGSTok) { /* sem localStorage */ }
+    }
     function gsAtualizarStatus(txt) {
       var st = $("gs-status");
       if (st) st.textContent = txt;
@@ -11314,7 +11451,7 @@
       var r = String((resp && (resp.error && resp.error.type)) || (resp && resp.error) || "");
       if (/popup_closed/i.test(r)) return "Você fechou a janela de autorização antes de concluir.";
       if (/access_blocked/i.test(r)) return "Acesso bloqueado pelo Google — a conta provavelmente não está na lista de USUÁRIOS DE TESTE da tela de consentimento do projeto (ou o administrador da conta negou o acesso).";
-      if (/invalid_client|idpiframe|origin/i.test(r)) return "Client ID/origem não autorizado pelo Google — abra o app em https://canalqb.github.io (origem cadastrada no OAuth).";
+      if (/invalid_client|idpiframe|origin/i.test(r)) return "Client ID/origem não autorizado pelo Google — registre a origem exata " + location.origin + " nas “Origens JavaScript autorizadas” do seu Client ID no Google Cloud Console (Erro 400: origin_mismatch).";
       if (/token_failed/i.test(r)) return "Não foi possível obter o token da sua conta Google — tente de novo.";
       return "Não foi possível conectar à sua conta Google (" + (r || "sem detalhe") + ").";
     }
@@ -11330,7 +11467,7 @@
         return;
       }
       if (location.origin !== "https://canalqb.github.io") {
-        notify("Atenção: esta origem (" + location.origin + ") não está cadastrada no OAuth do projeto — se o Google recusar, abra o app em https://canalqb.github.io.", "dark");
+        notify("Atenção: se o Google recusar com Erro 400 origin_mismatch, registre a origem " + location.origin + " nas “Origens JavaScript autorizadas” do seu Client ID no Google Cloud Console.", "dark");
       }
       if (gsTokenValido()) { if (quandoPronto) quandoPronto(gsTokenMem.valor); return; }
       var clientCfg = {
@@ -11340,6 +11477,7 @@
           if (!resp || !resp.access_token) { notify(gsErrouMotivo(resp), "danger"); return; }
           gsTokenMem.valor = resp.access_token;
           gsTokenMem.expira = Date.now() + Math.max(60, (resp.expires_in || 3600) - 60) * 1000;
+          gsTokenSalvar(); /* Pedido 1.211: compartilha com as demais páginas da origem */
           gsAtualizarStatus("Conectado — planilhas privadas da sua conta podem ser lidas.");
           notify("Conectado com Google — planilhas privadas liberadas para leitura.", "success");
           if (quandoPronto) quandoPronto(gsTokenMem.valor);
@@ -11358,12 +11496,24 @@
     function gsDesconectar() {
       var t = gsTokenMem.valor;
       gsTokenMem = { valor: null, expira: 0 };
+      gsTokenLimpar(); /* Pedido 1.211 */
       gsAtualizarStatus("Não conectado — planilhas privadas pedem autorização da sua conta Google.");
       try { if (t && google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) google.accounts.oauth2.revoke(t, function () {}); } catch (eRev) {}
       notify("Conta Google desconectada.", "info");
     }
     if ($("btn-gs-conectar")) $("btn-gs-conectar").addEventListener("click", function () { gsConectar(null); });
     if ($("btn-gs-desconectar")) $("btn-gs-desconectar").addEventListener("click", gsDesconectar);
+    /* Pedido 1.211: reconecta sozinho quando outra página da mesma origem
+       já conectou (ex.: app principal ↔ SerieScan) e acompanha em tempo
+       real via evento storage. */
+    gsTokenRestaurar();
+    if (gsTokenValido()) gsAtualizarStatus("Conectado — planilhas privadas da sua conta podem ser lidas.");
+    window.addEventListener("storage", function (evGSTok) {
+      if (!evGSTok || evGSTok.key !== GS_TOKEN_KEY) return;
+      gsTokenMem = { valor: null, expira: 0 };
+      gsTokenRestaurar();
+      gsAtualizarStatus(gsTokenValido() ? "Conectado — planilhas privadas da sua conta podem ser lidas." : "Não conectado — planilhas privadas pedem autorização da sua conta Google.");
+    });
     function importGsheetsAplicar(res) {
       var vistas = {};
       res.colunas = (res.colunas || []).map(function (c, i) {
@@ -11434,6 +11584,7 @@
       function checarStatus(r) {
         if (r.status === 401) {
           gsTokenMem = { valor: null, expira: 0 };
+          gsTokenLimpar(); /* Pedido 1.211 */
           gsAtualizarStatus("Não conectado — planilhas privadas pedem autorização da sua conta Google.");
           throw new Error("autorização expirada — clique em Conectar com Google e tente de novo");
         }
@@ -13501,6 +13652,14 @@
       });
     }
 
+    /* Pedido 1.213: modo automático — etiqueta na HORIZONTAL imprime como
+       imagem (^GF, posições 100% fiéis ao editor); na VERTICAL usa o ZPL
+       vetorial nativo (o formato que a impressora aceita girado). O botão
+       manual "Imprimir como Imagem" foi removido. */
+    function modoImpressaoImagem() {
+      return !(rotAtual === 90 || rotAtual === 270);
+    }
+
     function imprimirFTP(qtd) {
       var baseZpl = $("zpl").value;
       if (!baseZpl) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
@@ -13718,28 +13877,6 @@
     var btnImprimirDesk = $("btn-imprimir");
     if (btnImprimirDesk) btnImprimirDesk.addEventListener("click", solicitarImpressaoComCopias);
 
-    /* Toggle: Imprimir como Imagem (^GF) — persistente. Pedido 1.176: padrão
-       LIGADO — só a chave "0" (gravada pelo próprio toggle) desativa. */
-    var btnImgPrint = $("btn-toggle-imgprint");
-    function atualizarBtnImgPrint() {
-      var ativo = localStorage.getItem("etiquetasZebra.printAsImage") !== "0";
-      if (btnImgPrint) {
-        btnImgPrint.classList.toggle("icon-btn-success", ativo);
-        btnImgPrint.classList.toggle("icon-btn-muted", !ativo);
-        btnImgPrint.classList.toggle("icon-btn-off", !ativo); /* OFF = preto e branco; ON = colorido */
-        btnImgPrint.setAttribute("aria-pressed", ativo ? "true" : "false");
-      }
-    }
-    if (btnImgPrint) {
-      btnImgPrint.addEventListener("click", function () {
-        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") !== "0");
-        localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
-        atualizarBtnImgPrint();
-        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
-      });
-      atualizarBtnImgPrint();
-    }
-
     /* Tema claro/escuro */
     var btnTema = $("btn-tema");
     function aplicarTema() {
@@ -13811,6 +13948,7 @@
           localStorage.setItem("etiquetasZebra.espelho", novo);
           atualizar();
           notify(novo === "0" ? "Espelhamento desativado." : par[2], novo === "0" ? "dark" : "success");
+          aplicarEspelhoReversoTela(); /* Pedido 1.214: representação visual na tela */
           renderZPL();
         });
       });
@@ -13822,6 +13960,28 @@
     ligarToggleFlag("nav-toggle-reverso", "etiquetasZebra.reverso",
       "Reverso ^LR ativado — branco-sobre-preto em toda a etiqueta.",
       "Reverso ^LR desativado.");
+
+    /* Pedido 1.214: Espelho (^PM) e Reverso (^LR) aplicados TAMBÉM na tela —
+       a etiqueta do estúdio (#preview) mostra a representação visual dos
+       comandos: espelhamento via transform (h = scaleX, v = scaleY, vh = 180°)
+       e reverso via invert — igual à pré-visualização de impressão. */
+    function aplicarEspelhoReversoTela() {
+      var alvo = $("preview");
+      if (!alvo) return;
+      var modo = getEspelhoModo();
+      var reversoAtivo = false;
+      try { reversoAtivo = localStorage.getItem("etiquetasZebra.reverso") === "1"; } catch (eR) { /* sem localStorage */ }
+      alvo.style.transition = "transform .2s ease, filter .2s ease";
+      alvo.style.transform = modo === "h" ? "scaleX(-1)"
+        : modo === "v" ? "scaleY(-1)"
+        : modo === "vh" ? "scale(-1,-1)" : "";
+      alvo.style.filter = reversoAtivo ? "invert(1)" : "";
+    }
+    ["btn-toggle-reverso", "nav-toggle-reverso"].forEach(function (idRev) {
+      var bRev = $(idRev);
+      if (bRev) bRev.addEventListener("click", aplicarEspelhoReversoTela);
+    });
+    aplicarEspelhoReversoTela();
 
     /* Pré-visualização de Impressão fiel */
     var modalPrevEl = $("modal-print-preview");
@@ -13936,12 +14096,14 @@
       bsModalPrev.show();
     }
     if ($("btn-print-preview")) $("btn-print-preview").addEventListener("click", abrirPreviewImpressao);
+    if ($("ribbon-btn-preview")) $("ribbon-btn-preview").addEventListener("click", abrirPreviewImpressao); /* Pedido 1.215 */
     if ($("btn-prev-download")) $("btn-prev-download").addEventListener("click", exportarPNG);
     if ($("btn-prev-imprimir")) {
       $("btn-prev-imprimir").addEventListener("click", function () {
         var ipP = localStorage.getItem(CHAVE_IP);
-        if (!ipP && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { enviarImpressao(null, gerarZPLImagem()); }); return; }
-        enviarImpressao(ipP, gerarZPLImagem());
+        var zplPrev = (modoImpressaoImagem() || temTextoGirado()) ? gerarZPLImagem() : renderZPL(); /* Pedido 1.213: automático pela orientação */
+        if (!ipP && !(usbDevice && usbDevice.opened) && !btChar) { repetirPermissaoImpressao(function () { enviarImpressao(null, zplPrev); }); return; }
+        enviarImpressao(ipP, zplPrev);
       });
     }
 
@@ -14934,24 +15096,6 @@
       });
     }
 
-    var navImgPrint = $("nav-btn-imgprint");
-    if (navImgPrint) {
-      navImgPrint.addEventListener("click", function() {
-        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") !== "0");
-        localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
-        notify(novo ? "Impressão como IMAGEM ativada — a etiqueta sai exatamente como desenhada." : "Impressão ZPL vetorial padrão reativada.", novo ? "success" : "dark");
-      });
-    }
-
-    var navCop = $("nav-btn-copias");
-    if (navCop) {
-      navCop.addEventListener("click", function() {
-        if (!$("zpl").value) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
-        if ($("tab-zpl") && $("tab-zpl").classList.contains("active")) { abrirModalImprimirZPLBruto(); return; }
-        abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
-      });
-    }
-
     var navCarregarZpl = $("nav-btn-carregar-zpl");
     if (navCarregarZpl) {
       navCarregarZpl.addEventListener("click", function() {
@@ -15351,15 +15495,6 @@
       dnvAcao("dnv-imp-ip", function () { if (typeof abrirModalIp === "function") abrirModalIp(); });
       dnvAcao("dnv-imp-cal-exec", function () { if (typeof calibrarImpressora === "function") calibrarImpressora(); });
       dnvAcao("dnv-imp-preview", function () { if (typeof abrirPreviewImpressao === "function") abrirPreviewImpressao(); });
-      dnvAcao("dnv-imp-imgprint", function () {
-        var novo = !(localStorage.getItem("etiquetasZebra.printAsImage") !== "0");
-        localStorage.setItem("etiquetasZebra.printAsImage", novo ? "1" : "0");
-        notify(novo ? "Impressao como IMAGEM ativada." : "Impressao ZPL vetorial padrao reativada.", novo ? "success" : "dark");
-      });
-      dnvAcao("dnv-imp-copias", function () {
-        if (!$("zpl").value) { notify("Gere ou adicione elementos a etiqueta primeiro.", "danger"); return; }
-        abrirModalQuantidadeImpressao(function (qtd) { imprimirFTP(qtd); });
-      });
       dnvAcao("dnv-imp-imprimir", function () { if (typeof solicitarImpressaoComCopias === "function") solicitarImpressaoComCopias(); });
 
       /* Submenu Calibrar Impressora — sliders, combos e listagem apenas ENCENAM
@@ -15764,8 +15899,7 @@
       clic("sb-rot", function () {
         rotAtual = ROT_CICLO[(ROT_CICLO.indexOf(rotAtual) + 1) % ROT_CICLO.length];
         renderStudio();
-        atualizarRotuloOrientacao();
-        sbSet("sb-rot-label-val", rotRotulo());
+        atualizarRotuloOrientacao(); /* já atualiza sb-rot-label-val via wrapper da Fase A2 */
       });
       function sbZoomPasso(delta) {
         if (delta > 0 && scaleZoom >= 2) delta = 0.5;
@@ -15822,11 +15956,18 @@
       set importDados(v) { importDados = v; },
       get lotePaginaAtual() { return lotePaginaAtual; },
       set lotePaginaAtual(v) { lotePaginaAtual = v; },
+      get selectedElIds() { return selectedElIds.slice(); },
+      set selectedElIds(v) { selectedElIds = Array.isArray(v) ? v.filter(function (x) { return typeof x === "string"; }) : []; selectedElId = selectedElIds[0] || null; },
+      renderStudio: renderStudio,
       importSessaoSalvar: importSessaoSalvar,
       importSessaoRestaurar: importSessaoRestaurar,
       zebraIDBGet: function (k) { return zebraIDB.get(k || "import"); },
       zebraIDBPut: function (k, v) { return zebraIDB.put(k, v); },
+      zebraIDBDel: function (k) { return zebraIDB.del(k || "import"); },
       set impForcarHttps(v) { _impForcarPaginaHttps = !!v; },
+      modoImpressaoImagem: modoImpressaoImagem,
+      parseZPLToElements: parseZPLToElements,
+      gerarZPLBloco: gerarZPLBloco,
       verificarImpressoraIp: verificarImpressoraIp
     };
 
@@ -16009,9 +16150,8 @@
                       <ul class="small text-muted mb-0 ps-3">
                         <li><strong>Configurar Impressora</strong> — escolhe o jeito de conectar: Rede (IP), USB ou Bluetooth (seção 9).</li>
                         <li><strong>Pré-visualizar</strong> — mostra na tela como o papel vai sair.</li>
-                        <li><strong>Imprimir como Imagem</strong> — imprime a etiqueta exatamente como está desenhada (à prova de enrolamento de papel). <strong>Ativado por padrão</strong> — desative no botão se preferir o ZPL vetorial nativo.</li>
-                        <li><strong>Imprimir com Cópias</strong> — pergunta quantas cópias imprimir.</li>
-                        <li><strong>Imprimir Agora</strong> — envia direto para a impressora configurada, com progresso em tempo real (um aviso de falta de papel, por exemplo, aparece na tela na hora).</li>
+                        <li><strong>Impressão automática</strong> — etiqueta na <strong>horizontal</strong> sai como imagem (^GF), exatamente como desenhada; na <strong>vertical</strong> sai o ZPL vetorial nativo (o formato que a impressora aceita girado). Sem botão para ligar/desligar.</li>
+                        <li><strong>Imprimir Agora</strong> — pergunta quantas cópias imprimir e envia direto para a impressora configurada, com progresso em tempo real (um aviso de falta de papel, por exemplo, aparece na tela na hora).</li>
                       </ul>
                     </div>
                     <div class="col-lg-4">
@@ -16039,7 +16179,7 @@
                           </ul>
                         </li>
                       </ul>
-                      <p class="small text-muted mb-0 mt-2 ps-3"><i class="bi bi-info-circle me-1"></i> Os efeitos aparecem na Pré-visualização antes de você imprimir.</p>
+                      <p class="small text-muted mb-0 mt-2 ps-3"><i class="bi bi-info-circle me-1"></i> Os efeitos aparecem na própria tela do estúdio e na Pré-visualização antes de você imprimir.</p>
                     </div>
                   </div>
                 </div>
