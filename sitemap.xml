@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sitemap do CanalQb Impressao em Zebras — Google Search Console
+     Base: https://canalqb.github.io/etiquetas-zebra/ (canonical do index.html)
+     Excluidos: templates internos, artefatos de teste (probe-t*-tmp) e logs. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/</loc>
+    <lastmod>2026-10-11</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/sobre.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/contato.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/analise-sistema.html</loc>
+    <lastmod>2026-09-27</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/termos-de-servico.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/politica-privacidade.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/politica-cookies.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/disclaimer.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/seus-direitos-lgpd-dsa.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/protecao-menores.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/declaracao-acessibilidade.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/pages/solicitacao-exclusao-dados.html</loc>
+    <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/adicionais/ccsv/index.html</loc>
+    <lastmod>2026-10-11</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/adicionais/honeywell/8675i/Codigos-de-Barras-8675i.html</loc>
+    <lastmod>2026-10-06</lastmod>
+  </url>
+  <url>
+    <loc>https://canalqb.github.io/etiquetas-zebra/adicionais/honeywell/software/ezconfig-for-scanning.html</loc>
+    <lastmod>2026-10-01</lastmod>
+  </url>
+</urlset>
