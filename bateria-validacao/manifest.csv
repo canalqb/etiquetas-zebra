@@ -1,0 +1,27 @@
+﻿id,slug,descricao,ok,chk,arquivo,bytes
+A01,a01-code-128-wysiwyg,Code 128 WYSIWYG,1,1,a01-code-128-wysiwyg.zpl,280
+A02,a02-gs1-128-modo-d-ais-fixos,GS1-128 modo D AIs fixos,1,1,a02-gs1-128-modo-d-ais-fixos.zpl,318
+A03,a03-gs1-128-ai-variavel-maior-que-8,GS1-128 AI variavel maior que 8,1,1,a03-gs1-128-ai-variavel-maior-que-8.zpl,344
+A04,a04-ean-13,EAN-13,1,1,a04-ean-13.zpl,261
+A05,a05-ean-13-add-on-2,EAN-13 add-on +2,1,1,a05-ean-13-add-on-2.zpl,310
+A06,a06-ean-13-add-on-5,EAN-13 add-on +5,1,1,a06-ean-13-add-on-5.zpl,313
+A07,a07-upc-a-add-on-5,UPC-A add-on +5,1,1,a07-upc-a-add-on-5.zpl,312
+A08,a08-ean-8-add-on-2,EAN-8 add-on +2,1,1,a08-ean-8-add-on-2.zpl,303
+B01,b01-qr-correcao-q,QR correcao Q,1,1,b01-qr-correcao-q.zpl,274
+B02,b02-qr-correcao-h,QR correcao H,1,1,b02-qr-correcao-h.zpl,274
+B03,b03-qr-correcao-m,QR correcao M,1,1,b03-qr-correcao-m.zpl,274
+B04,b04-qr-correcao-l,QR correcao L,1,1,b04-qr-correcao-l.zpl,274
+B05,b05-gs1-qr-separador-1d,GS1 QR separador _1D,1,1,b05-gs1-qr-separador-1d.zpl,306
+B06,b06-gs1-datamatrix-separador,GS1 DataMatrix separador,1,1,b06-gs1-datamatrix-separador.zpl,308
+B07,b07-databar-omni-tipo-1,DataBar Omni tipo 1,1,1,b07-databar-omni-tipo-1.zpl,281
+B08,b08-databar-truncado-tipo-2,DataBar Truncado tipo 2,1,1,b08-databar-truncado-tipo-2.zpl,289
+B09,b09-databar-empilhado-tipo-3,DataBar Empilhado tipo 3,1,1,b09-databar-empilhado-tipo-3.zpl,291
+B10,b10-databar-empilhado-omni-tipo-4,DataBar Empilhado Omni tipo 4,1,1,b10-databar-empilhado-omni-tipo-4.zpl,301
+B11,b11-databar-limited-tipo-5,DataBar Limited tipo 5,1,1,b11-databar-limited-tipo-5.zpl,287
+B12,b12-databar-expandido-tipo-6,DataBar Expandido tipo 6,1,1,b12-databar-expandido-tipo-6.zpl,303
+B13,b13-databar-expandido-empilhado-seg-4,DataBar Expandido Empilhado seg 4,1,1,b13-databar-expandido-empilhado-seg-4.zpl,324
+B14,b14-microqr-grafico-gfa,MicroQR grafico ^GFA,1,1,b14-microqr-grafico-gfa.zpl,4688
+C01,c01-horizontal-modo-imagem-raster,Horizontal modo imagem raster,1,1,c01-horizontal-modo-imagem-raster.zpl,80073
+C02,c02-vertical-rot-90-modo-vetor,Vertical rot 90 modo vetor,1,1,c02-vertical-rot-90-modo-vetor.zpl,255
+C03,c03-acentos-no-vetor-ci28,Acentos no vetor ^CI28,1,1,c03-acentos-no-vetor-ci28.zpl,306
+C04,c04-acentos-no-modo-imagem,Acentos no modo imagem,1,1,c04-acentos-no-modo-imagem.zpl,80073
