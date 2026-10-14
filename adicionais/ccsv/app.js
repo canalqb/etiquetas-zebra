@@ -85,7 +85,10 @@
     gsLinhas: new Map(),/* norm -> nº da linha real na planilha */
     gsStatusColOk: false, /* coluna STATUS já criada/confirmada */
     gsUrlCarregada: '',  /* Pedido 1.216: último link carregado com sucesso */
-    gsLinkPlanilha: ''   /* Pedido 1.220: link da planilha ativa (nome clicável) */
+    gsLinkPlanilha: '',  /* Pedido 1.220: link da planilha ativa (nome clicável) */
+    /* Pedido 1.224: sessão Google Sheet sobrevive ao F5 */
+    restaurandoSessao: false,   /* recarga automática da própria sessão em andamento */
+    restauracaoPendente: ''     /* URL aguardando o usuário reconectar o Google */
   };
 
   var ATRASO_FOCO_MS = 900;
@@ -585,9 +588,18 @@
         gsTokenMem.valor = resp.access_token;
         gsTokenMem.expira = Date.now() + Math.max(60, (resp.expires_in || 3600) - 60) * 1000;
         gsSalvarToken(); /* Pedido 1.211: compartilha com as demais páginas da origem */
+        try { localStorage.setItem('ccsv_gs_conectado', '1'); } catch (e) { /* sem localStorage */ }
         gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
         showToast('Conectado com Google — planilhas privadas liberadas para leitura.', 'ok');
         if (quandoPronto) quandoPronto(gsTokenMem.valor);
+        /* Pedido 1.224: reconectou por iniciativa própria — se uma sessão de
+           planilha ficou pendente (token expirado no F5), retoma sozinha. */
+        if (!quandoPronto && state.restauracaoPendente) {
+          var uPend = state.restauracaoPendente;
+          state.restauracaoPendente = '';
+          if (el.gsheetUrl) el.gsheetUrl.value = uPend;
+          restaurarGsheetSessao(uPend);
+        }
       },
       error_callback: function (errResp) {
         showToast(gsErrouMotivo(errResp), 'erro');
@@ -605,9 +617,97 @@
     var t = gsTokenMem.valor;
     gsTokenMem = { valor: null, expira: 0 };
     gsLimparToken(); /* Pedido 1.211 */
+    try { localStorage.removeItem('ccsv_gs_conectado'); } catch (e) { /* sem localStorage */ }
+    state.restauracaoPendente = ''; /* Pedido 1.224: desconectar encerra a retomada */
     gsAtualizarStatus('Não conectado — planilhas privadas pedem autorização da sua conta Google.');
     try { if (t && google && google.accounts && google.accounts.oauth2 && google.accounts.oauth2.revoke) google.accounts.oauth2.revoke(t, function () {}); } catch (eRev) { /* sem GIS */ }
     showToast('Conta Google desconectada.', 'aviso');
+  }
+
+  /* ============================================================
+     PEDIDO 1.224: SESSÃO GOOGLE SHEET SOBREVIVE AO F5
+     No load, com lista vinda de um Google Sheet, a planilha é
+     RECARREGADA antes de abrir o scanner: sincronismo (gravação
+     "LOCALIZADO"), aba e coluna voltam pela própria carga (dicas
+     ccsv_gsheet_aba / ccsv_gsheet_col). Token expirado tenta
+     reconexão silenciosa (prompt:'none') UMA vez quando a origem
+     já tinha conectado antes (ccsv_gs_conectado); sem resposta, o
+     bloco de conexão fica visível e o scanner NÃO abre sem a
+     conexão garantida.
+     ============================================================ */
+
+  function gsConectarSilencioso(quandoResposta) {
+    var atendeu = false;
+    function responder(okSil) {
+      if (atendeu) return;
+      atendeu = true;
+      quandoResposta(okSil);
+    }
+    if (location.protocol === 'file:') { responder(false); return; }
+    if (!(window.google && window.google.accounts && window.google.accounts.oauth2)) { responder(false); return; }
+    try {
+      var tcSilencioso = google.accounts.oauth2.initTokenClient({
+        client_id: gsClientIdEfetivo(),
+        scope: GS_SCOPE_PROJETO,
+        callback: function (respSil) {
+          if (!respSil || !respSil.access_token) { responder(false); return; }
+          gsTokenMem.valor = respSil.access_token;
+          gsTokenMem.expira = Date.now() + Math.max(60, (respSil.expires_in || 3600) - 60) * 1000;
+          gsSalvarToken();
+          try { localStorage.setItem('ccsv_gs_conectado', '1'); } catch (e) { /* sem localStorage */ }
+          gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
+          responder(true);
+        },
+        error_callback: function () { responder(false); }
+      });
+      tcSilencioso.requestAccessToken({ prompt: 'none' });
+    } catch (eSil) { responder(false); }
+    setTimeout(function () { responder(false); }, 12000);
+  }
+
+  function restaurarGsheetSessao(url) {
+    var info = extrairGsheet(url);
+    if (!info) {
+      el.gsheetStatus.textContent = 'Link salvo inválido — cole o link da planilha de novo.';
+      return;
+    }
+    state.restaurandoSessao = true;
+    if (el.gsheetUrl) el.gsheetUrl.value = url;
+    el.gsheetStatus.textContent = 'Restaurando a planilha salva (' + (gsTokenValido() ? 'sua conta Google' : 'CSV público') + ')…';
+    gsResetEstrutura();
+    function falha(motivo, pedirConexao) {
+      state.restaurandoSessao = false;
+      if (pedirConexao) state.restauracaoPendente = url;
+      gsResetEstrutura(); /* limpa gsInfo para o bloco “Conectar com Google” aparecer */
+      el.gsheetStatus.textContent = motivo;
+    }
+    var pedido = gsTokenValido() ? gsAbrirPrivado(info) : gsAbrirPublico(info);
+    pedido.then(function () {
+      /* Sucesso: gsFinalizarCarga → aplicarTexto → importar abre o scanner
+         com aba, coluna e sincronismo de volta (pedidos 1.217/1.224). */
+    }, function (erro) {
+      var msg = erro && erro.message ? erro.message : String(erro);
+      if (msg === 'privada' && !gsTokenValido()) {
+        var jaConectou = false;
+        try { jaConectou = localStorage.getItem('ccsv_gs_conectado') === '1'; } catch (e) { /* sem localStorage */ }
+        if (jaConectou) {
+          el.gsheetStatus.textContent = 'Planilha privada — reconectando com sua conta Google…';
+          gsConectarSilencioso(function (okSil) {
+            if (!okSil) {
+              falha('Sessão do Google expirada — clique em “Conectar com Google” para continuar de onde parou.', true);
+              return;
+            }
+            gsAbrirPrivado(info).then(null, function (eSil2) {
+              falha('Não foi possível recarregar a planilha (' + (eSil2 && eSil2.message ? eSil2.message : eSil2) + ').');
+            });
+          });
+          return;
+        }
+        falha('Planilha privada — clique em “Conectar com Google” para continuar de onde parou.', true);
+        return;
+      }
+      falha('Não foi possível recarregar a planilha (' + msg + ').');
+    });
   }
 
   /* ============================================================
@@ -684,6 +784,7 @@
   }
 
   function gsErroLer(erro) {
+    state.restaurandoSessao = false; /* Pedido 1.224: carga que falha não deixa a flag pendurada */
     el.gsheetStatus.textContent = 'Não foi possível ler a planilha (' + (erro && erro.message ? erro.message : erro) + ').';
     showToast('Falha ao ler o Google Sheets.', 'erro');
     return false;
@@ -743,10 +844,14 @@
       });
       if (!state.gsAbas.length) throw new Error('planilha sem abas');
       var escolhida = null;
-      if (info.gid) state.gsAbas.forEach(function (a) { if (a.id === String(info.gid)) escolhida = a.titulo; });
+      var lembrada = '';
+      try { lembrada = (localStorage.getItem('ccsv_gsheet_aba') || '').trim(); } catch (e) { /* sem localStorage */ }
+      /* Pedido 1.224: na restauração de sessão (F5) a aba lembrada vence o gid
+         do link — o gid aponta para a aba de onde o link foi copiado, não
+         necessariamente para a que o usuário escolheu no select. */
+      if (state.restaurandoSessao && lembrada) state.gsAbas.forEach(function (a) { if (a.titulo === lembrada) escolhida = a.titulo; });
+      if (!escolhida && info.gid) state.gsAbas.forEach(function (a) { if (a.id === String(info.gid)) escolhida = a.titulo; });
       if (!escolhida) {
-        var lembrada = '';
-        try { lembrada = (localStorage.getItem('ccsv_gsheet_aba') || '').trim(); } catch (e) { /* sem localStorage */ }
         state.gsAbas.forEach(function (a) { if (a.titulo === lembrada) escolhida = a.titulo; });
       }
       if (!escolhida) escolhida = state.gsAbas[0].titulo;
@@ -850,6 +955,13 @@
     if (!info) {
       el.gsheetStatus.textContent = 'Link inválido — use o endereço do Google Sheets (docs.google.com/spreadsheets/d/…).';
       return Promise.resolve(false);
+    }
+    /* Pedido 1.224: retomada da sessão pendente (mesma planilha do F5 que
+       ficou sem token) — a carga não pede confirmação e mantém as leituras. */
+    if (state.restauracaoPendente) {
+      var infoPend = extrairGsheet(state.restauracaoPendente);
+      if (infoPend && infoPend.id === info.id) state.restaurandoSessao = true;
+      state.restauracaoPendente = '';
     }
     gsResetEstrutura();
     /* Conectado: lê pela API (planilhas privadas E públicas). Sem token:
@@ -1024,6 +1136,9 @@
       return;
     }
     if (state.lista.size) {
+      /* Pedido 1.224: recarga da própria sessão (F5) não pede confirmação —
+         é a mesma planilha/aba/coluna sendo restaurada. */
+      if (state.restaurandoSessao) { importarConfirmado(resultado); return; }
       /* Pedido 1.221: modal delicado no lugar do confirm() nativo */
       var msg = 'Substituir a lista atual (' + state.lista.size + ' séries) por ' +
         resultado.mapa.size + ' séries?\nAs leituras também serão apagadas.';
@@ -1035,6 +1150,8 @@
   }
 
   function importarConfirmado(resultado) {
+    var manterLeituras = !!state.restaurandoSessao; /* Pedido 1.224 */
+    state.restaurandoSessao = false;
     var series = [];
     resultado.mapa.forEach(function (original, norm) { series.push({ norm: norm, original: original }); });
 
@@ -1053,10 +1170,21 @@
 
     state.lista = resultado.mapa;
     state.origemLista = salvamento.onde;   // FIX: era 'origem', propriedade correta é 'onde'
-    state.leituras = [];
-    state.lidos = new Set();
+    if (manterLeituras) {
+      /* Pedido 1.224: F5 na mesma sessão mantém o histórico — re-scan de
+         série já consultada continua sem duplicar a contagem (pedido 1.212).
+         Leituras de séries que saíram da planilha são descartadas. */
+      var mapaNovo = resultado.mapa;
+      state.leituras = state.leituras.filter(function (l) { return mapaNovo.has(l.norm); });
+      state.lidos = new Set();
+      state.leituras.forEach(function (l) { if (l.status === 'encontrada') state.lidos.add(l.norm); });
+      CCSVStorage.setLeituras(state.leituras);
+    } else {
+      state.leituras = [];
+      state.lidos = new Set();
+      CCSVStorage.clearLeituras();
+    }
     state.ultimoParsed = null;
-    CCSVStorage.clearLeituras();
     gravarTxtAutomatico();
 
     showToast('Lista salva: ' + resultado.mapa.size + ' séries únicas (' + salvamento.onde + ').', 'ok');
@@ -1471,6 +1599,13 @@
     gsTokenMem = { valor: null, expira: 0 };
     gsRestaurarToken();
     gsStatusPorToken();
+    /* Pedido 1.224: outra página da origem conectou — sessão pendente retoma */
+    if (gsTokenValido() && state.restauracaoPendente) {
+      var uOutra = state.restauracaoPendente;
+      state.restauracaoPendente = '';
+      if (el.gsheetUrl) el.gsheetUrl.value = uOutra;
+      restaurarGsheetSessao(uOutra);
+    }
   });
   el.gsheetUrl.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); carregarGsheet(); }
@@ -1601,18 +1736,7 @@
 
   function iniciar() {
     var registro = CCSVStorage.carregarLista();
-    if (registro && registro.series && registro.series.length) {
-      state.lista = new Map();
-      registro.series.forEach(function (s) { state.lista.set(s.norm, s.original); });
-      state.origemLista = registro.origem || 'localStorage';
-      state.leituras = CCSVStorage.getLeituras();
-      state.leituras.forEach(function (l) {
-        if (l.status === 'encontrada') state.lidos.add(l.norm);
-      });
-      renderCartaoLista();
-      // Lista já salva: o scanner abre direto.
-      abrirScanner();
-    }
+    var temLista = !!(registro && registro.series && registro.series.length);
     /* Pedido 1.202: restaura os links salvos (Google Sheets + script LOCALIZADO) */
     try {
       var uG = localStorage.getItem('ccsv_gsheet_url');
@@ -1624,6 +1748,34 @@
     gsRestaurarToken();
     if (gsTokenValido()) gsStatusPorToken();
     restaurarPasta();
+    if (temLista) {
+      state.lista = new Map();
+      registro.series.forEach(function (s) { state.lista.set(s.norm, s.original); });
+      state.origemLista = registro.origem || 'localStorage';
+      state.leituras = CCSVStorage.getLeituras();
+      state.leituras.forEach(function (l) {
+        if (l.status === 'encontrada') state.lidos.add(l.norm);
+      });
+      renderCartaoLista();
+    }
+    /* Pedido 1.224: lista vinda de Google Sheet recarrega a planilha ANTES de
+       abrir o scanner — sincronismo ("LOCALIZADO"), aba e coluna voltam pela
+       própria carga; o modal só abre com a conexão garantida. */
+    var urlSessao = '';
+    try { urlSessao = (localStorage.getItem('ccsv_gsheet_url') || '').trim(); } catch (e) { /* sem localStorage */ }
+    if (!urlSessao && temLista && registro.linkPlanilha) urlSessao = String(registro.linkPlanilha).trim();
+    var origemGsheet = temLista && /^Google Sheets/i.test(String(registro.nomeArquivo || ''));
+    if (origemGsheet && urlSessao && extrairGsheet(urlSessao)) {
+      restaurarGsheetSessao(urlSessao);
+      return;
+    }
+    if (origemGsheet && temLista) {
+      /* Origem Google Sheet sem link recuperável: a lista anterior continua
+         salva, mas o scanner não abre sem reconectar a planilha. */
+      el.gsheetStatus.textContent = 'Cole o link da planilha para reconectar o scanner — a lista anterior continua salva.';
+      return;
+    }
+    if (temLista) abrirScanner(); /* arquivo: abre direto como antes */
   }
 
   /* Pedido 1.202: gancho de testes E2E (mesmo padrão __zebraTest do app principal) */
