@@ -150,6 +150,8 @@ var CCSVStorage = (function () {
 
     setLeituras: function (leituras) {
       var corte = leituras.slice(-MAX_LEITURAS);
+      /* Pedido 1.227: histórico é conveniência — só persiste com consentimento */
+      if (window.ccsvConsentePreferencias && !ccsvConsentePreferencias()) return corte;
       gravarLS(CHAVE_LEITURAS, JSON.stringify(corte));
       return corte;
     },

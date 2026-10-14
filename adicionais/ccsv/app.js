@@ -4,6 +4,17 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
+  /* Pedido 1.227: consentimento (banner LGPD/GDPR do index.html). Helper global
+     consultado por este app e pelo storage.js antes de gravar conveniências
+     (tema, histórico, lembrar planilha/Client ID). Sem estado (probes antigos),
+     mantém true para não mudar o comportamento. */
+  window.ccsvConsentePreferencias = function () {
+    if (window.__ccsvConsent && typeof window.__ccsvConsent.permite === 'function') {
+      return window.__ccsvConsent.permite('preferences');
+    }
+    return true;
+  };
+
   var el = {
     zonaArquivo: $('zona-arquivo'),
     arquivo: $('arquivo'),
@@ -588,7 +599,7 @@
         gsTokenMem.valor = resp.access_token;
         gsTokenMem.expira = Date.now() + Math.max(60, (resp.expires_in || 3600) - 60) * 1000;
         gsSalvarToken(); /* Pedido 1.211: compartilha com as demais páginas da origem */
-        try { localStorage.setItem('ccsv_gs_conectado', '1'); } catch (e) { /* sem localStorage */ }
+        try { if (ccsvConsentePreferencias()) localStorage.setItem('ccsv_gs_conectado', '1'); } catch (e) { /* sem localStorage */ }
         gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
         showToast('Conectado com Google — planilhas privadas liberadas para leitura.', 'ok');
         if (quandoPronto) quandoPronto(gsTokenMem.valor);
@@ -654,7 +665,7 @@
           gsTokenMem.valor = respSil.access_token;
           gsTokenMem.expira = Date.now() + Math.max(60, (respSil.expires_in || 3600) - 60) * 1000;
           gsSalvarToken();
-          try { localStorage.setItem('ccsv_gs_conectado', '1'); } catch (e) { /* sem localStorage */ }
+          try { if (ccsvConsentePreferencias()) localStorage.setItem('ccsv_gs_conectado', '1'); } catch (e) { /* sem localStorage */ }
           gsAtualizarStatus('Conectado — planilhas privadas da sua conta podem ser lidas.');
           responder(true);
         },
@@ -795,7 +806,7 @@
        renderInfoArquivo e o auto-import (1.217) leem state.gsLinkPlanilha
        imediatamente, e o nome clicável sumia por ordem de execução. */
     try {
-      localStorage.setItem('ccsv_gsheet_url', el.gsheetUrl.value.trim());
+      if (ccsvConsentePreferencias()) localStorage.setItem('ccsv_gsheet_url', el.gsheetUrl.value.trim());
       state.gsUrlCarregada = el.gsheetUrl.value.trim();
       state.gsLinkPlanilha = el.gsheetUrl.value.trim();
     } catch (e) { /* sem persistência */ }
@@ -1507,7 +1518,7 @@
 
   function aplicarTema(tema) {
     document.documentElement.setAttribute('data-theme', tema);
-    try { localStorage.setItem('tema', tema); } catch (e) { /* sem persistência */ }
+    try { if (ccsvConsentePreferencias()) localStorage.setItem('tema', tema); } catch (e) { /* sem persistência */ }
     var escuro = tema === 'escuro';
     el.btnTema.setAttribute('aria-pressed', escuro ? 'true' : 'false');
     el.btnTema.setAttribute('aria-label', escuro ? 'Ativar tema claro' : 'Ativar tema escuro');
@@ -1586,7 +1597,7 @@
     gsRenderClientidEmUso();
     var salvarCid = function () {
       var v = (el.gsClientid.value || '').trim();
-      try { localStorage.setItem(GS_CID_KEY, v); } catch (e) { /* sem localStorage */ }
+      try { if (ccsvConsentePreferencias()) localStorage.setItem(GS_CID_KEY, v); } catch (e) { /* sem localStorage */ }
       gsRenderClientidEmUso();
       showToast(v ? 'Client ID personalizado salvo — substitui o Client ID do projeto neste navegador (nesta origem).' : 'Client ID personalizado limpo — voltando ao Client ID do projeto.', 'ok');
     };
@@ -1626,7 +1637,7 @@
      trocar de coluna recarrega só as séries da coluna escolhida. */
   el.gsheetAba.addEventListener('change', function () {
     state.gsAbaSel = el.gsheetAba.value;
-    try { localStorage.setItem('ccsv_gsheet_aba', state.gsAbaSel); } catch (e) { /* sem localStorage */ }
+    try { if (ccsvConsentePreferencias()) localStorage.setItem('ccsv_gsheet_aba', state.gsAbaSel); } catch (e) { /* sem localStorage */ }
     if (!state.gsInfo || !state.gsPrivado) return; /* pública: só existe a aba do link */
     el.gsheetStatus.textContent = 'Lendo a aba ' + state.gsAbaSel + '…';
     gsAbrirAbaPrivado(state.gsAbaSel).catch(gsErroLer);
@@ -1634,7 +1645,7 @@
   el.gsheetColuna.addEventListener('change', function () {
     var idx = el.gsheetColuna.selectedIndex;
     if (idx < 0 || !state.gsInfo) return;
-    try { localStorage.setItem('ccsv_gsheet_col', state.gsColunas[idx] || ''); } catch (e) { /* sem localStorage */ }
+    try { if (ccsvConsentePreferencias()) localStorage.setItem('ccsv_gsheet_col', state.gsColunas[idx] || ''); } catch (e) { /* sem localStorage */ }
     var pedido = state.gsPrivado
       ? gsAplicarColunaPrivada(state.gsAbaSel, idx)
       : gsAplicarColunaPublica(idx);
@@ -1642,7 +1653,7 @@
   });
   el.scriptUrl.addEventListener('change', function () {
     state.scriptAtivo = (el.scriptUrl.value || '').trim();
-    try { localStorage.setItem('ccsv_script_url', state.scriptAtivo); } catch (e) { /* sem persistência */ }
+    try { if (ccsvConsentePreferencias()) localStorage.setItem('ccsv_script_url', state.scriptAtivo); } catch (e) { /* sem persistência */ }
     state.scriptChamados = new Set();
     showToast(state.scriptAtivo ? 'Gravação “LOCALIZADO” ativada.' : 'Gravação “LOCALIZADO” desativada.', 'ok');
   });
