@@ -4,8 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="google-adsense-account" content="ca-pub-3614622181047762">
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-NX8ZW87H');</script>
+  <!-- Pedido 1.228: consentimento LGPD/GDPR — PRIMEIRO script do head. Estado
+       compartilhado com o SerieScan (chave etiquetasZebra.consent, mesma
+       origem). Sem escolha salva: só o funcional roda; GTM e AdSense só
+       carregam após consentimento (decisão do usuário: bloquear até aceitar). -->
+  <script>
+  (function () {
+    'use strict';
+    var CHAVE = 'etiquetasZebra.consent';
+    var escolhido = null;
+    try { escolhido = JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch (e) { escolhido = null; }
+    if (!escolhido || typeof escolhido !== 'object') escolhido = null;
+    var ouvintes = {};
+    function permite(tipo) {
+      if (escolhido) return !!escolhido[tipo];
+      return tipo === 'preferences'; /* sem escolha: funcional sim, rastreio não */
+    }
+    window.__zebraConsent = {
+      permite: permite,
+      quandoPermitir: function (tipo, cb) {
+        if (permite(tipo)) { try { cb(); } catch (e) {} return; }
+        (ouvintes[tipo] || (ouvintes[tipo] = [])).push(cb);
+      },
+      estado: function () {
+        return escolhido
+          ? { analytics: !!escolhido.analytics, marketing: !!escolhido.marketing, preferences: !!escolhido.preferences }
+          : null;
+      },
+      gravar: function (estado) {
+        escolhido = {
+          analytics: !!estado.analytics, marketing: !!estado.marketing,
+          preferences: !!estado.preferences, quando: Date.now()
+        };
+        try { localStorage.setItem(CHAVE, JSON.stringify(escolhido)); } catch (e) { /* sem localStorage */ }
+        ['analytics', 'marketing', 'preferences'].forEach(function (tipo) {
+          if (permite(tipo)) {
+            (ouvintes[tipo] || []).forEach(function (cb) { try { cb(); } catch (e) {} });
+            ouvintes[tipo] = [];
+          }
+        });
+      }
+    };
+  })();
+  </script>
+  <!-- Google Tag Manager (carrega só com consentimento de analytics) -->
+  <script>
+  (function (w, d, s, l, i) {
+    w[l] = w[l] || [];
+    var f = d.getElementsByTagName(s)[0], j = d.createElement(s),
+        dl = l != 'dataLayer' ? '&l=' + l : '';
+    function carregarGtm() {
+      if (w[l].__gtmCarregado) return;
+      w[l].__gtmCarregado = true;
+      w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      j.async = true;
+      j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+      f.parentNode.insertBefore(j, f);
+    }
+    if (w.__zebraConsent) w.__zebraConsent.quandoPermitir('analytics', carregarGtm);
+  })(window, document, 'script', 'dataLayer', 'GTM-NX8ZW87H');
+  </script>
   <!-- End Google Tag Manager -->
 
   <title>CanalQb Impressão em Zebras</title>
@@ -29,8 +87,21 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=3">
 
   
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3614622181047762" crossorigin="anonymous"></script>
+  <!-- Google AdSense (carrega só com consentimento de marketing) -->
+  <script>
+  (function () {
+    function carregarAdsense() {
+      if (window.__adsenseCarregado) return;
+      window.__adsenseCarregado = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3614622181047762';
+      s.crossOrigin = 'anonymous';
+      document.head.appendChild(s);
+    }
+    if (window.__zebraConsent) window.__zebraConsent.quandoPermitir('marketing', carregarAdsense);
+  })();
+  </script>
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1543,6 +1614,58 @@
     .sb-exib-btn:focus-visible { outline: 2px solid var(--bs-primary); border-radius: 4px; }
     .sb-exib-select { font-size: 0.70rem; padding: 0.04rem 0.28rem; height: auto; width: 6ch; min-width: 50px; border-color: var(--zebra-border); background: var(--zebra-bg); color: var(--zebra-text); border-radius: 6px; cursor: pointer; }
     .sb-exib-label { font-size: 0.67rem; color: var(--zebra-muted); font-weight: 500; white-space: nowrap; }
+    /* ===== BANNER DE CONSENTIMENTO (Pedido 1.228 — curto e delicado) ===== */
+    .gdpr-consent-banner {
+      position: fixed; left: 50%; bottom: 1rem; z-index: 1150;
+      width: min(560px, calc(100vw - 1.5rem));
+      transform: translate(-50%, 14px);
+      background: var(--zebra-card-bg);
+      background: color-mix(in srgb, var(--zebra-card-bg) 90%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--zebra-text);
+      border: 1px solid var(--zebra-border);
+      border-radius: .75rem;
+      box-shadow: 0 12px 40px rgba(13,17,23,.14), 0 4px 12px rgba(13,17,23,.08);
+      padding: 1rem 1.1rem .9rem;
+      opacity: 0; visibility: hidden;
+      transition: opacity .28s, transform .28s, visibility .28s;
+    }
+    .gdpr-consent-banner.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+    .gdpr-consent-banner h2 { margin: 0 2rem .3rem 0; font-size: 1rem; font-weight: 700; }
+    .gdpr-consent-banner p { margin: 0 0 .8rem; font-size: .8rem; color: var(--zebra-muted); line-height: 1.5; }
+    #consent-close-banner {
+      position: absolute; top: .45rem; right: .45rem;
+      width: 1.7rem; height: 1.7rem; border: 0; border-radius: .35rem;
+      background: transparent; color: var(--zebra-muted); font-size: .85rem; cursor: pointer;
+      transition: background .18s, color .18s;
+    }
+    #consent-close-banner:hover { background: rgba(30,58,138,.08); color: var(--zebra-primary); }
+    [data-bs-theme="dark"] #consent-close-banner:hover { background: rgba(59,130,246,.12); }
+    .consent-buttons { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .consent-btn {
+      flex: 1 1 auto; min-height: 2.1rem; padding: .4rem .7rem;
+      font-size: .78rem; font-weight: 600; cursor: pointer;
+      border-radius: .35rem; border: 1px solid var(--zebra-border);
+      background: transparent; color: var(--zebra-text);
+      transition: border-color .18s, background .18s;
+    }
+    .consent-btn:hover { border-color: var(--zebra-primary); }
+    #consent-accept-all { background: var(--zebra-primary); border-color: var(--zebra-primary); color: #fff; }
+    #consent-accept-all:hover { background: var(--zebra-primary-hover); border-color: var(--zebra-primary-hover); }
+    #consent-settings { margin-top: .8rem; }
+    #consent-settings.hidden { display: none; }
+    #consent-settings h3 { margin: 0 0 .5rem; font-size: .85rem; }
+    .consent-option {
+      display: flex; align-items: flex-start; gap: .5rem;
+      padding: .45rem .55rem; border: 1px solid var(--zebra-border);
+      border-radius: .35rem; margin-bottom: .45rem;
+    }
+    .consent-option input { margin-top: .18rem; accent-color: var(--zebra-primary); }
+    .consent-option label { font-size: .78rem; line-height: 1.35; cursor: pointer; }
+    .consent-option label span { display: block; color: var(--zebra-muted); font-weight: 400; font-size: .72rem; }
+    .consent-nota { margin: .5rem 0 .6rem; font-size: .7rem; color: var(--zebra-muted); }
+
   </style>
 </head>
 <body>
@@ -2208,22 +2331,28 @@
                     var insAd = document.currentScript.previousElementSibling;
                     var boxAd = insAd ? insAd.parentNode : null;
                     var tentativas = 0;
+                    var empurrado = false;
                     function tentarAd() {
-                      if (!insAd || !boxAd || insAd.getAttribute("data-ad-status")) return;
+                      if (!insAd || !boxAd || empurrado || insAd.getAttribute("data-ad-status")) return;
+                      if (!window.__zebraConsent || !window.__zebraConsent.permite('marketing')) return; /* Pedido 1.228: sem consentimento não empurra */
                       boxAd.classList.add("ad-loading");
                       if (insAd.offsetWidth > 0) {
+                        empurrado = true;
                         try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
                         return; /* o observador resolve: filled → ad-active; unfilled → tira o loading */
                       }
                        boxAd.classList.remove("ad-loading");
                        if (++tentativas < 40) setTimeout(tentarAd, 700); /* coluna oculta (mobile) não empurra */
                      }
-                     /* Pedido 1.163: nada de push no parse — a fila do adsbygoogle
-                        é processada de forma assíncrona e medições cedo demais
-                        pegam layout incompleto (TagError availableWidth=0).
-                        A primeira tentativa só sai depois do load completo. */
-                     if (document.readyState === "complete") tentarAd();
-                     else window.addEventListener("load", function () { setTimeout(tentarAd, 50); });
+                      /* Pedido 1.163: nada de push no parse — a fila do adsbygoogle
+                         é processada de forma assíncrona e medições cedo demais
+                         pegam layout incompleto (TagError availableWidth=0).
+                         A primeira tentativa só sai depois do load completo.
+                         Pedido 1.228: se o consentimento chegar depois, o banner
+                         notifica e a tentativa sai na hora. */
+                      if (document.readyState === "complete") tentarAd();
+                      else window.addEventListener("load", function () { setTimeout(tentarAd, 50); });
+                      if (window.__zebraConsent) window.__zebraConsent.quandoPermitir('marketing', tentarAd);
                   })();
                   </script>
                 </div>
@@ -2509,6 +2638,7 @@
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="solicitacao-exclusao-dados" data-titulo="Solicitação de Exclusão de Dados">Excluir Dados</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="declaracao-acessibilidade" data-titulo="Declaração de Acessibilidade">Acessibilidade</button>
         <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2 btn-pagina-legal" data-pagina="disclaimer" data-titulo="Disclaimer / Isenção de Responsabilidade">Disclaimer</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2" id="abrir-consent" title="Abrir as preferências de consentimento">Preferências de Cookies</button>
       </div>
       <!-- Pedido 1.148: mini botão isolado à direita — abre o modal de erros capturados -->
       <button type="button" class="btn-erros-app" id="btn-erros-app" data-bs-toggle="modal" data-bs-target="#modal-erros-app" title="Erros capturados nesta página — exceções, promessas, console.error e recursos que falharam (útil em testes)" aria-label="Ver erros capturados nesta página">
@@ -16556,6 +16686,96 @@
       </div>
     </div>
   </div>
+<!-- Pedido 1.228: banner de consentimento (LGPD/GDPR) — curto e delicado.
+     O estado mora no __zebraConsent do head (chave compartilhada com o
+     SerieScan); aqui só mostramos e gravamos a escolha do visitante. -->
+<div id="gdpr-consent-banner" class="gdpr-consent-banner" role="dialog" aria-modal="true"
+     aria-labelledby="consent-title" aria-hidden="true">
+  <button id="consent-close-banner" type="button" aria-label="Fechar banner de consentimento">&#10005;</button>
+  <h2 id="consent-title">&#128274; Sua Privacidade Importa</h2>
+  <p>Usamos cookies e tecnologias similares para melhorar sua experiência, analisar tráfego e fornecer conteúdo personalizado.</p>
+  <div class="consent-buttons">
+    <button id="consent-accept-all" type="button" class="consent-btn">&#10003; Aceitar Todos</button>
+    <button id="consent-reject-all" type="button" class="consent-btn">&#10007; Rejeitar</button>
+    <button id="consent-customize" type="button" class="consent-btn" aria-expanded="false" aria-controls="consent-settings">&#9881; Personalizar</button>
+  </div>
+  <div id="consent-settings" class="hidden">
+    <h3>Preferências de Consentimento</h3>
+    <div class="consent-option">
+      <input type="checkbox" id="consent-analytics" checked>
+      <label for="consent-analytics"><strong>Google Analytics</strong> <span>Nos ajuda a entender como você usa o site.</span></label>
+    </div>
+    <div class="consent-option">
+      <input type="checkbox" id="consent-marketing">
+      <label for="consent-marketing"><strong>Google AdSense</strong> <span>Permite exibir anúncios personalizados.</span></label>
+    </div>
+    <div class="consent-option">
+      <input type="checkbox" id="consent-preferences" checked disabled>
+      <label for="consent-preferences"><strong>Preferências e Funcionalidades</strong> <span>Sempre ativo — necessário para salvar seus modelos, configurações e a sessão do editor.</span></label>
+    </div>
+    <p class="consent-nota">O editor só funciona com este armazenamento e ele nunca é compartilhado com terceiros.</p>
+    <button id="consent-save-settings" type="button" class="consent-btn">&#128190; Salvar Preferências</button>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var banner = document.getElementById('gdpr-consent-banner');
+  if (!banner || !window.__zebraConsent) return;
+  function $(id) { return document.getElementById(id); }
+  function sincronizarChecks() {
+    var e = window.__zebraConsent.estado();
+    if (!e) return;
+    $('consent-analytics').checked = !!e.analytics;
+    $('consent-marketing').checked = !!e.marketing;
+  }
+  function mostrar() {
+    sincronizarChecks();
+    banner.classList.add('show');
+    banner.setAttribute('aria-hidden', 'false');
+  }
+  function esconder() {
+    banner.classList.remove('show');
+    banner.setAttribute('aria-hidden', 'true');
+  }
+  function dispensar() {
+    try { sessionStorage.setItem('etiquetasZebra.consent.dispensado', '1'); } catch (e) { /* sem sessionStorage */ }
+    esconder();
+  }
+  /* A 3ª opção é sempre ativa (necessária ao editor): o valor gravado preserva
+     o que o visitante escolheu no SerieScan, onde ela é opcional. */
+  function gravarDoBanner(analytics, marketing) {
+    var atual = window.__zebraConsent.estado();
+    window.__zebraConsent.gravar({
+      analytics: analytics, marketing: marketing,
+      preferences: atual ? atual.preferences : true
+    });
+  }
+  var dispensado = false;
+  try { dispensado = sessionStorage.getItem('etiquetasZebra.consent.dispensado') === '1'; } catch (e) { /* sem sessionStorage */ }
+  if (!window.__zebraConsent.estado() && !dispensado) mostrar(); else esconder();
+
+  $('consent-accept-all').addEventListener('click', function () { gravarDoBanner(true, true); esconder(); });
+  $('consent-reject-all').addEventListener('click', function () { gravarDoBanner(false, false); esconder(); });
+  $('consent-save-settings').addEventListener('click', function () {
+    gravarDoBanner($('consent-analytics').checked, $('consent-marketing').checked);
+    esconder();
+  });
+  $('consent-customize').addEventListener('click', function () {
+    var aberto = $('consent-settings').classList.toggle('hidden') === false;
+    this.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+  });
+  $('consent-close-banner').addEventListener('click', dispensar);
+  $('abrir-consent').addEventListener('click', function (ev) {
+    ev.preventDefault();
+    try { sessionStorage.removeItem('etiquetasZebra.consent.dispensado'); } catch (e) { /* sem sessionStorage */ }
+    mostrar();
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && banner.classList.contains('show')) dispensar();
+  });
+})();
+</script>
 </body>
 </html>
 

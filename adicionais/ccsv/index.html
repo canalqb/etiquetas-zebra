@@ -966,10 +966,12 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
 </div>
 <script>
 /* Pedido 1.227: estado de consentimento + banner. Roda ANTES de storage.js/app.js.
-   Grava a escolha em 'ccsv_consent' e expõe window.__ccsvConsent.permite(tipo). */
+   Pedido 1.228: chave COMPARTILHADA com a página principal (etiquetasZebra.consent,
+   mesma origem) — quem escolheu em uma página não é perguntado de novo na outra.
+   Grava a escolha e expõe window.__ccsvConsent.permite(tipo). */
 (function () {
   'use strict';
-  var CHAVE = 'ccsv_consent';
+  var CHAVE = 'etiquetasZebra.consent';
   var escolhido = null;
   try { escolhido = JSON.parse(localStorage.getItem(CHAVE) || 'null'); } catch (e) { escolhido = null; }
   if (!escolhido || typeof escolhido !== 'object') escolhido = null;
@@ -1005,7 +1007,7 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
     banner.setAttribute('aria-hidden', 'true');
   }
   function dispensar() {
-    try { sessionStorage.setItem('ccsv_consent_dispensado', '1'); } catch (e) { /* sem sessionStorage */ }
+    try { sessionStorage.setItem('etiquetasZebra.consent.dispensado', '1'); } catch (e) { /* sem sessionStorage */ }
     esconder();
   }
   function gravar(estado) {
@@ -1017,7 +1019,7 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
     esconder();
   }
   var dispensado = false;
-  try { dispensado = sessionStorage.getItem('ccsv_consent_dispensado') === '1'; } catch (e) { /* sem sessionStorage */ }
+  try { dispensado = sessionStorage.getItem('etiquetasZebra.consent.dispensado') === '1'; } catch (e) { /* sem sessionStorage */ }
   if (!escolhido && !dispensado) mostrar(); else esconder();
 
   $('consent-accept-all').addEventListener('click', function () {
@@ -1040,7 +1042,7 @@ footer .ponto { width: .35rem; height: .35rem; background: var(--verde); border-
   $('consent-close-banner').addEventListener('click', dispensar);
   $('abrir-consent').addEventListener('click', function (ev) {
     ev.preventDefault();
-    try { sessionStorage.removeItem('ccsv_consent_dispensado'); } catch (e) { /* sem sessionStorage */ }
+    try { sessionStorage.removeItem('etiquetasZebra.consent.dispensado'); } catch (e) { /* sem sessionStorage */ }
     mostrar();
   });
   document.addEventListener('keydown', function (ev) {
