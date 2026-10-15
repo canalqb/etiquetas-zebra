@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Etiquetas Zebra — impressão direto do navegador</title>
+<style>
+  :root{ --ok:#0a7a3d; --ruim:#b3261e; --aviso:#8a5a00; --cinza:#5f6368; }
+  *{ box-sizing:border-box; }
+  body{ font-family:Segoe UI, Arial, sans-serif; margin:0; background:#f1f3f4; color:#202124; }
+  header{ background:#1a3a5c; color:#fff; padding:16px 22px; }
+  header h1{ margin:0; font-size:20px; }
+  header p{ margin:4px 0 0; font-size:13px; opacity:.85; }
+  main{ max-width:960px; margin:20px auto; padding:0 16px 60px; }
+  section{ background:#fff; border:1px solid #dadce0; border-radius:8px; padding:16px 18px; margin-bottom:16px; }
+  h2{ font-size:15px; margin:0 0 12px; color:#1a3a5c; }
+  label{ display:block; font-size:13px; margin:8px 0 3px; color:var(--cinza); }
+  input[type=text], select{ width:100%; padding:8px; font-size:14px; border:1px solid #bbb; border-radius:4px; }
+  .linha{ display:flex; gap:12px; flex-wrap:wrap; }
+  .linha > div{ flex:1 1 260px; }
+  .botoes{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
+  button{ padding:12px; font-size:14px; border:0; border-radius:6px; cursor:pointer; color:#fff; background:#1a73e8; }
+  button:hover{ filter:brightness(1.08); }
+  button:disabled{ background:#9aa0a6; cursor:not-allowed; }
+  button.imprime{ background:var(--ok); font-size:16px; padding:14px; width:100%; }
+  button.cinza{ background:#5f6368; }
+  .tag{ display:inline-block; font-size:11px; padding:2px 7px; border-radius:10px; margin-top:6px; background:#e8eaed; color:#3c4043; }
+  #log{ font-family:Consolas, monospace; font-size:13px; background:#0d1117; color:#c9d1d9; border-radius:6px; padding:12px; height:230px; overflow:auto; white-space:pre-wrap; }
+  .ok{ color:#3fb950; } .ruim{ color:#ff7b72; } .aviso{ color:#e3b341; } .info{ color:#8ab4f8; }
+  .ok-txt{ color:var(--ok); font-weight:600; } .ruim-txt{ color:var(--ruim); font-weight:600; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th,td{ border:1px solid #dadce0; padding:7px 9px; text-align:left; vertical-align:top; }
+  th{ background:#f8f9fa; }
+  code{ background:#f1f3f4; padding:1px 5px; border-radius:3px; font-size:12px; }
+  .aviso-box{ background:#fff8e1; border-left:4px solid #f9ab00; padding:10px 12px; font-size:13px; border-radius:4px; }
+  .passo-box{ background:#e8f0fe; border-left:4px solid #1a73e8; padding:12px 14px; font-size:14px; border-radius:4px; margin-top:12px; }
+  .passo-box ol{ margin:8px 0 10px; padding-left:20px; }
+  .passo-box li{ margin-bottom:6px; }
+  .destaque{ font-weight:600; }
+  details{ background:#fff; border:1px solid #dadce0; border-radius:8px; padding:0; margin-bottom:16px; }
+  details > summary{ cursor:pointer; padding:14px 18px; font-size:15px; font-weight:600; color:#1a3a5c; }
+  details > div{ padding:0 18px 16px; }
+  .status{ font-size:14px; margin-top:10px; min-height:20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Etiquetas Zebra</h1>
+  <p>Impressão direto do navegador para <code style="background:rgba(255,255,255,.15)">https://&lt;IP da impressora&gt;/pstprnt</code> — sem instalar nada no computador</p>
+</header>
+
+<main>
+
+<!-- ==================== IMPRESSORA + IMPRIMIR ==================== -->
+<section>
+  <h2>1. Impressora e etiqueta</h2>
+  <div class="linha">
+    <div>
+      <label for="ip">IP (ou hostname) da impressora — salvo neste navegador</label>
+      <input type="text" id="ip" placeholder="10.112.105.62" autocomplete="off">
+    </div>
+    <div>
+      <label for="proto">Protocolo</label>
+      <select id="proto">
+        <option value="https" selected>HTTPS (porta 443 — padrão)</option>
+        <option value="http">HTTP (porta 80 — só se habilitado na impressora)</option>
+      </select>
+    </div>
+    <div>
+      <label for="apelido">Apelido da impressora (opcional)</label>
+      <input type="text" id="apelido" placeholder="Ex.: Expedição" maxlength="30">
+    </div>
+  </div>
+  <div class="linha">
+    <div>
+      <label for="titulo">Texto principal da etiqueta</label>
+      <input type="text" id="titulo" value="TESTE JS" maxlength="24">
+    </div>
+    <div>
+      <label for="sub">Subtítulo</label>
+      <input type="text" id="sub" value="100x50mm via navegador" maxlength="30">
+    </div>
+    <div>
+      <label for="codigo">Código de barras (Code128)</label>
+      <input type="text" id="codigo" value="12345678" maxlength="20">
+    </div>
+  </div>
+
+  <div style="margin-top:14px">
+    <button id="btnImprimir" class="imprime">🖨️ Imprimir etiqueta</button>
+  </div>
+  <div id="statusA" class="status"></div>
+
+  <!-- Passo da exceção de certificado (aparece só quando necessário) -->
+  <div id="passoExcecao" class="passo-box" style="display:none">
+    <span class="destaque">Liberação única (uma vez por sessão do navegador):</span>
+    o certificado da impressora é auto-assinado, então o navegador exige que você
+    o aceite <b>uma vez</b> — nada é instalado, vale até fechar o navegador.
+    <ol>
+      <li>Clique em <b>Abrir a impressora em nova aba</b> (o link já está com o seu IP);</li>
+      <li>Na tela <i>"Sua conexão não é particular"</i>: clique em <b>Avançado</b> e depois em
+          <b id="passoIrPara">Ir para a impressora (inseguro)</b>;</li>
+      <li>Volte para esta aba — <b>a página detecta sozinha</b> e imprime automaticamente.</li>
+    </ol>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a id="linkImpressora" href="#" target="_blank" rel="noopener"
+         style="padding:11px 14px;background:#1a73e8;color:#fff;text-decoration:none;border-radius:6px;font-size:14px">
+         ↗ Abrir a impressora em nova aba</a>
+      <button id="btnJaAceitei" class="cinza">✔ Já aceitei o aviso — verificar agora</button>
+      <button id="btnCancelarPasso" style="background:#9aa0a6">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Painel: permissão de rede local negada -->
+  <div id="painelLna" class="passo-box" style="display:none">
+    <span class="destaque">O navegador bloqueou o acesso à rede local.</span>
+    Clique no <b>cadeado</b> ao lado do endereço desta página → <b>Permissões</b> →
+    <b>Rede local</b> → <b>Permitir</b> → recarregue a página e clique em Imprimir de novo.
+  </div>
+
+  <!-- Painel: ainda bloqueado depois da exceção -->
+  <div id="painelBloqueado" style="display:none;margin-top:12px">
+    <div class="aviso-box">
+      <span class="destaque">Ainda não conecta.</span> Nesta ordem de probabilidade:
+      <ol style="margin:8px 0 0;padding-left:20px">
+        <li>O aviso de certificado não foi aceito (precisa clicar <i>Avançado → Ir para…</i> na aba da impressora);</li>
+        <li>Sua empresa <b>bloqueou o clique no aviso de certificado</b> (política
+            <code>SSLErrorOverrideAllowed=false</code> no navegador corporativo) — nesse caso é
+            necessário um certificado assinado pela CA da empresa (fale com a TI);</li>
+        <li>O IP está errado ou a porta 443 está bloqueada entre você e a impressora.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="aviso-box" style="margin-top:12px">
+    <span class="destaque">Como funciona (caminho sem instalação):</span> a etiqueta é enviada por
+    <code>&lt;form&gt;</code> — uma <b>navegação</b>, não uma requisição — por isso passa por CORS,
+    preflight e mixed content sem travar. O único obstáculo HTTPS é o certificado auto-assinado,
+    resolvido pela aceitação única acima. A exceção de certificado <b>não é permanente</b> no Chrome
+    (dura a sessão); no Firefox a tela de aviso tem a opção <i>Lembrar esta decisão</i>.
+    Envios muito seguidos (menos de ~8 s) podem descartar etiquetas na impressora.
+  </div>
+</section>
+
+<!-- ==================== LOG ==================== -->
+<section>
+  <h2>2. Log</h2>
+  <div id="log">Pronto. Preencha o IP e clique em Imprimir.</div>
+</section>
+
+<!-- ==================== LABORATÓRIO (avaliado) ==================== -->
+<details>
+  <summary>3. Laboratório — diagnóstico e métodos de envio (avançado)</summary>
+  <div>
+    <h2>Diagnóstico da conexão</h2>
+    <p style="font-size:13px;color:#5f6368;margin-top:0">
+      Separa <b>rede/TLS</b> de <b>CORS</b> usando <code>fetch(..., {mode:'no-cors'})</code>:
+      se falhar, nada foi enviado (rede/TLS); se passar, a requisição foi entregue e o bloqueio é só CORS.
+    </p>
+    <button id="btnDiag" class="cinza" style="width:100%">Executar diagnóstico da conexão</button>
+    <div id="diagResultado" style="margin-top:10px;font-size:13px"></div>
+
+    <h2 style="margin-top:18px">Métodos de envio (validados na ZT411)</h2>
+    <div class="botoes">
+      <div>
+        <button id="btn1" style="width:100%">1 · fetch() + octet-stream</button>
+        <span class="tag">ESPERA-SE FALHA (preflight)</span>
+      </div>
+      <div>
+        <button id="btn2" style="width:100%">2 · XMLHttpRequest + octet-stream</button>
+        <span class="tag">ESPERA-SE FALHA (preflight)</span>
+      </div>
+      <div>
+        <button id="btn3" class="imprime" style="width:100%;font-size:14px;padding:12px">3 · fetch() simple request</button>
+        <span class="tag">IMPRIME (sem confirmação)</span>
+      </div>
+      <div>
+        <button id="btn4" class="imprime" style="width:100%;font-size:14px;padding:12px">4 · sendBeacon()</button>
+        <span class="tag">IMPRIME (sem confirmação)</span>
+      </div>
+      <div>
+        <button id="btn5" class="imprime" style="width:100%;font-size:14px;padding:12px">5 · FORM + iframe (o usado acima)</button>
+        <span class="tag">IMPRIME (sem erro no console)</span>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#5f6368">
+      Botões 1 e 2 disparam preflight <code>OPTIONS</code> e morrem <b>antes</b> de enviar.
+      Nos 3 e 4 a etiqueta sai, mas a impressora não manda <code>Access-Control-Allow-Origin</code>
+      e o navegador esconde a resposta (erro no console mesmo com etiqueta impressa).
+      O botão 5 é uma <b>navegação</b>: sem preflight, sem CORS, sem erro — é o mecanismo do botão Imprimir.
+      Envelope que imprime: <code>multipart/form-data</code> (campo <code>zpl</code>) ou
+      <code>text/plain</code> puro; <code>urlencoded</code> e <code>text/plain</code> com prefixo
+      <code>zpl=</code> retornam 200 mas <b>não imprimem</b>.
+    </p>
+
+    <h2>Diagnóstico deste navegador/página</h2>
+    <table>
+      <tr><th style="width:34%">Origem da página</th><td id="diagOrigem"></td></tr>
+      <tr><th>URL da impressora</th><td id="diagUrl"></td></tr>
+      <tr><th>Permissão rede local (LNA)</th><td id="diagLna"></td></tr>
+      <tr><th>Comportamento esperado</th><td id="diagEspera"></td></tr>
+    </table>
+
+    <h2 style="margin-top:18px">Matriz dos testes feitos na rede (ferramenta nativa)</h2>
+    <table>
+      <tr><th>Transporte</th><th>Resultado</th><th>Via navegador HTML/JS?</th></tr>
+      <tr><td>HTTPS 443 · POST /pstprnt</td><td>Impresso (HTTP 200)</td><td class="ok-txt">SIM — é o caminho do botão Imprimir</td></tr>
+      <tr><td>HTTP 80 · POST /pstprnt</td><td>Não testável (serviço desligado)</td><td>Sim, se habilitado (Link-OS recente vem com HTTP desligado por padrão)</td></tr>
+      <tr><td>RAW TCP 9100 (ZPL puro)</td><td>Impresso</td><td class="ruim-txt">NÃO — navegador não abre socket cru</td></tr>
+      <tr><td>LPR 6101 (RFC 1179)</td><td>Impresso (sem ACK)</td><td class="ruim-txt">NÃO — protocolo de socket</td></tr>
+      <tr><td>IPP 631</td><td>Sem resposta</td><td class="ruim-txt">NÃO</td></tr>
+    </table>
+  </div>
+</details>
+
+</main>
+
+<script>
+'use strict';
+
+/* =========================================================================
+   CONFIGURAÇÃO
+   ========================================================================= */
+var CFG = {
+  ipPadrao: '10.112.105.62',
+  path: '/pstprnt',
+  larguraDots: 787,   // 100 mm @ 203 dpi (8 dots/mm)
+  alturaDots:  394,   //  50 mm @ 203 dpi
+  sondeoMs: 1500,     // intervalo do "polling" da exceção de certificado
+  sondeoMaxTentativas: 60, // ~90 s de paciência
+  cooldownMs: 8000    // intervalo mínimo entre etiquetas (evita descarte na impressora)
+};
+
+var $ = function(id){ return document.getElementById(id); };
+
+/* =========================================================================
+   localStorage — lembrar impressora e etiqueta NESTE navegador
+   ========================================================================= */
+function lsGet(k, def){ try { var v = localStorage.getItem('zebra.' + k); return v === null ? def : v; } catch(e){ return def; } }
+function lsSet(k, v){ try { localStorage.setItem('zebra.' + k, v); } catch(e){} }
+
+function persistir(){
+  lsSet('ip', $('ip').value.trim());
+  lsSet('proto', $('proto').value);
+  lsSet('apelido', $('apelido').value);
+  lsSet('titulo', $('titulo').value);
+  lsSet('sub', $('sub').value);
+  lsSet('codigo', $('codigo').value);
+}
+
+function restaurar(){
+  $('ip').value       = lsGet('ip', CFG.ipPadrao);
+  $('proto').value    = lsGet('proto', 'https');
+  $('apelido').value  = lsGet('apelido', '');
+  $('titulo').value   = lsGet('titulo', 'TESTE JS');
+  $('sub').value      = lsGet('sub', '100x50mm via navegador');
+  $('codigo').value   = lsGet('codigo', '12345678');
+}
+
+function urlImpressao(){ return $('proto').value + '://' + $('ip').value.trim() + CFG.path; }
+function urlRaiz(){     return $('proto').value + '://' + $('ip').value.trim() + '/'; }
+
+/* =========================================================================
+   MONTAGEM DO ZPL (etiqueta 100x50 mm)
+   ========================================================================= */
+function limpar(s){
+  return String(s || '').replace(/[\^~]/g, '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+function montarZpl(opts){
+  var titulo = limpar(opts.titulo) || 'TESTE';
+  var sub    = limpar(opts.sub);
+  var codigo = limpar(opts.codigo) || '0';
+  var ts     = new Date().toLocaleString('pt-BR');
+
+  if (!opts.comDimensoes) {
+    return '^XA' +
+           '^FO20,20^A0N,40,40^FD' + titulo + '^FS' +
+           '^FO20,80^A0N,25,25^FD' + ts + ' (sem dimensoes)^FS' +
+           '^FO20,125^BY2,2.5,60^BCN,60,Y,N,N^FD' + codigo + '^FS' +
+           '^XZ\n';
+  }
+
+  return '^XA' +
+         '^CI28' +
+         '^PW' + CFG.larguraDots +
+         '^LL' + CFG.alturaDots +
+         '^LH0,0' +
+         '^FO10,10^GB767,374,4^FS' +
+         '^FO30,30^A0N,50,50^FD' + titulo + '^FS' +
+         '^FO30,95^A0N,28,28^FD' + sub + '^FS' +
+         '^FO30,135^A0N,25,25^FD' + ts + '  100x50mm^FS' +
+         '^FO30,180^BY2,2.5,70^BCN,70,Y,N,N^FD' + codigo + '^FS' +
+         '^FO30,280^A0N,35,35^FDIMPRESSO VIA JS^FS' +
+         '^XZ\n';
+}
+
+function lerCampos(){
+  return { titulo: $('titulo').value, sub: $('sub').value,
+           codigo: $('codigo').value, comDimensoes: true };
+}
+
+/* =========================================================================
+   LOG + STATUS
+   ========================================================================= */
+function log(msg, tipo){
+  var el = $('log');
+  var hora = new Date().toLocaleTimeString('pt-BR');
+  var linha = document.createElement('div');
+  linha.className = tipo || 'info';
+  linha.textContent = '[' + hora + '] ' + msg;
+  el.appendChild(linha);
+  el.scrollTop = el.scrollHeight;
+}
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function statusA(html, classe){
+  var el = $('statusA');
+  el.innerHTML = html || '';
+  el.className = 'status ' + (classe || '');
+}
+
+/* =========================================================================
+   SONDA — "o navegador consegue falar com a impressora?"
+   fetch no-cors: se falhar, NADA foi enviado (rede/TLS/permissão).
+   targetAddressSpace:'local' dispara o prompt de Rede Local do Chrome 142+.
+   ========================================================================= */
+async function sondar(){
+  var opts = { method: 'GET', mode: 'no-cors', cache: 'no-store' };
+  opts.targetAddressSpace = 'local';   // navegadores antigos ignoram a opção
+  try {
+    await fetch(urlRaiz(), opts);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function estadoLna(){
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      var p = await navigator.permissions.query({ name: 'local-network-access' });
+      return p.state;                  // 'granted' | 'denied' | 'prompt'
+    }
+  } catch(e){}
+  return 'desconhecido';
+}
+
+/* =========================================================================
+   ENVIO PRINCIPAL — <form> + iframe oculto (NAVEGAÇÃO)
+   Navegação não sofre preflight, não é bloqueada por CORS e não é
+   mixed content bloqueável (não é subrecurso). É o único caminho que
+   funciona de uma página pública (GitHub Pages) para a impressora.
+   ========================================================================= */
+function enviarForm(){
+  var url = urlImpressao();
+
+  var frame = document.getElementById('frameImpressao');
+  if (!frame) {
+    frame = document.createElement('iframe');
+    frame.id = 'frameImpressao';
+    frame.name = 'frameImpressao';
+    frame.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;border:0;';
+    document.body.appendChild(frame);
+  }
+
+  var antigo = document.getElementById('formImpressao');
+  if (antigo) antigo.parentNode.removeChild(antigo);
+
+  var form = document.createElement('form');
+  form.id = 'formImpressao';
+  form.method = 'POST';
+  form.action = url;
+  form.target = 'frameImpressao';
+  // OBRIGATORIO multipart/form-data (validado na ZT411):
+  //   multipart/form-data .............. IMPRIME
+  //   text/plain puro .................. IMPRIME
+  //   text/plain com prefixo "zpl=" ... NAO IMPRIME
+  //   urlencoded ....................... NAO IMPRIME
+  form.enctype = 'multipart/form-data';
+
+  var campo = document.createElement('input');
+  campo.type = 'hidden';
+  campo.name = 'zpl';
+  campo.value = montarZpl(lerCampos());
+  form.appendChild(campo);
+
+  document.body.appendChild(form);
+  form.submit();
+
+  log('Form enviado (NAVEGAÇÃO, multipart) -> ' + url, 'ok');
+  log('Sem preflight e sem CORS -> nenhum erro no console.', 'ok');
+  log('NAO ha como ler a resposta (iframe, nao API): confira a impressora.', 'aviso');
+  log('Nao envie etiquetas com menos de ~' + (CFG.cooldownMs / 1000) + 's de intervalo.', 'aviso');
+
+  statusA('✅ Etiqueta <b>enviada</b> para ' + (esc(lsGet('apelido')) || esc(url)) +
+          ' — se nada saiu, veja o log e a seção Laboratório.', 'ok-txt');
+  cooldownBotao();
+}
+
+function cooldownBotao(){
+  var btn = $('btnImprimir');
+  btn.disabled = true;
+  var restante = Math.round(CFG.cooldownMs / 1000);
+  btn.textContent = '⏳ Aguarde ' + restante + ' s...';
+  var t = setInterval(function(){
+    restante--;
+    if (restante <= 0) {
+      clearInterval(t);
+      btn.disabled = false;
+      btn.textContent = '🖨️ Imprimir etiqueta';
+    } else {
+      btn.textContent = '⏳ Aguarde ' + restante + ' s...';
+    }
+  }, 1000);
+}
+
+/* =========================================================================
+   FLUXO PRINCIPAL — imprimir com detecção automática de bloqueio
+   ========================================================================= */
+var sondeoTimer = null;
+
+function pararSondeo(){
+  if (sondeoTimer) { clearInterval(sondeoTimer); sondeoTimer = null; }
+}
+
+function esconderPaineis(){
+  $('passoExcecao').style.display = 'none';
+  $('painelLna').style.display = 'none';
+  $('painelBloqueado').style.display = 'none';
+}
+
+function mostrarPassoExcecao(){
+  var raiz = urlRaiz();
+  $('linkImpressora').href = raiz;
+  $('passoIrPara').textContent = 'Ir para ' + $('ip').value.trim() + ' (inseguro)';
+  $('passoExcecao').style.display = 'block';
+  $('painelBloqueado').style.display = 'none';
+  log('TLS/permissao ainda bloqueado. Mostrando o passo de liberacao unica.', 'aviso');
+  log('Excecao de certificado vale ate fechar o navegador (no Chrome nao e permanente).', 'aviso');
+}
+
+function iniciarSondeoAutomatico(){
+  pararSondeo();
+  var tentativas = 0;
+  statusA('👀 Aguardando você aceitar o aviso na aba da impressora… (impressão automática em seguida)', '');
+  sondeoTimer = setInterval(async function(){
+    tentativas++;
+    if (await sondar()) {
+      pararSondeo();
+      esconderPaineis();
+      log('Liberacao detectada! Enviando a etiqueta automaticamente...', 'ok');
+      enviarForm();
+    } else if (tentativas >= CFG.sondeoMaxTentativas) {
+      pararSondeo();
+      log('Ainda bloqueado apos ~' + Math.round(CFG.sondeoMaxTentativas * CFG.sondeoMs / 1000) + 's.', 'ruim');
+      $('painelBloqueado').style.display = 'block';
+      statusA('⛔ A conexão continua bloqueada — veja as causas no painel abaixo.', 'ruim-txt');
+    }
+  }, CFG.sondeoMs);
+}
+
+async function imprimir(){
+  pararSondeo();
+  esconderPaineis();
+
+  var ip = $('ip').value.trim();
+  if (!ip) { statusA('⚠ Informe o IP da impressora.', 'ruim-txt'); return; }
+  persistir();
+  atualizarDiagnostico();
+
+  log('--- Imprimir para ' + urlImpressao() + ' ---', 'info');
+
+  // 1) Permissão de rede local (Chrome 142+)
+  var lna = await estadoLna();
+  if (lna === 'denied') {
+    log('Permissao de rede local NEGADA neste site.', 'ruim');
+    $('painelLna').style.display = 'block';
+    statusA('⛔ O navegador negou o acesso à rede local (veja instruções acima).', 'ruim-txt');
+    return;
+  }
+  if (lna === 'prompt') {
+    log('Permissao de rede local: o navegador pode perguntar agora — aceite.', 'aviso');
+  }
+
+  // 2) Sonda de TLS/rede
+  if (await sondar()) {
+    log('Conexao OK (rede, TLS e permissao liberados).', 'ok');
+    enviarForm();
+    return;
+  }
+
+  // 3) Bloqueado: certificado e/ou permissão. Distingue o caso.
+  var lnaDepois = await estadoLna();
+  if (lnaDepois === 'denied') {
+    log('Permissao de rede local NEGADA (prompt recusado).', 'ruim');
+    $('painelLna').style.display = 'block';
+    statusA('⛔ O navegador negou o acesso à rede local (veja instruções acima).', 'ruim-txt');
+    return;
+  }
+  log('Bloqueado antes do envio — provavelmente o certificado auto-assinado ainda nao foi aceito.', 'ruim');
+  mostrarPassoExcecao();
+  iniciarSondeoAutomatico();
+}
+
+$('btnImprimir').onclick = imprimir;
+
+$('btnJaAceitei').onclick = async function(){
+  log('Verificacao manual: testando conexao...', 'info');
+  if (await sondar()) {
+    esconderPaineis();
+    pararSondeo();
+    log('Liberacao confirmada. Enviando...', 'ok');
+    enviarForm();
+  } else {
+    log('Ainda bloqueado. Confira se clicou em "Avançado -> Ir para..." na aba da impressora.', 'ruim');
+    $('painelBloqueado').style.display = 'block';
+    statusA('⛔ Ainda bloqueado — veja as causas prováveis abaixo.', 'ruim-txt');
+  }
+};
+
+$('btnCancelarPasso').onclick = function(){
+  pararSondeo();
+  esconderPaineis();
+  statusA('');
+  log('Passo de liberacao cancelado.', 'aviso');
+};
+
+$('ip').onchange = function(){ persistir(); atualizarDiagnostico(); };
+$('proto').onchange = function(){ persistir(); atualizarDiagnostico(); };
+
+/* =========================================================================
+   LABORATÓRIO — diagnóstico e métodos 1..5 (mantidos do projeto)
+   ========================================================================= */
+async function diagnosticar(){
+  var alvo = urlImpressao();
+  var raiz = urlRaiz();
+  var saida = $('diagResultado');
+  saida.innerHTML = '';
+  function linha(txt, tipo){
+    var d = document.createElement('div');
+    d.className = tipo || 'info';
+    d.textContent = txt;
+    saida.appendChild(d);
+    log('[DIAG] ' + txt, tipo);
+  }
+
+  linha('Testando: ' + raiz + ' (mode: no-cors)', 'info');
+
+  var ehHttps = raiz.indexOf('https:') === 0;
+  try {
+    var opts = { method: 'GET', mode: 'no-cors', cache: 'no-store' };
+    opts.targetAddressSpace = 'local';
+    var r = await fetch(raiz, opts);
+    linha('OK: o navegador conectou na impressora (tipo de resposta: ' + r.type + ').', 'ok');
+    if (ehHttps) {
+      linha('=> Rede, TLS e permissao ESTAO BONS. O botao Imprimir deve funcionar.', 'ok');
+    } else {
+      linha('=> HTTP sem TLS: nao existe problema de certificado.', 'ok');
+    }
+  } catch (e) {
+    linha('FALHOU antes de qualquer envio: ' + e.message, 'ruim');
+    if (ehHttps) {
+      linha('Causas possiveis (nesta ordem):', 'aviso');
+      linha('  1. Certificado auto-assinado NAO aceito nesta sessao.', 'aviso');
+      linha('     SOLUCAO: use o botao Imprimir — ele guia a aceitacao unica.', 'aviso');
+      linha('  2. Permissao de rede local negada (cadeado -> Permissoes -> Rede local).', 'aviso');
+      linha('  3. Hostname nao resolve / porta 443 bloqueada / IP errado.', 'aviso');
+    } else {
+      linha('Causas possiveis:', 'aviso');
+      linha('  1. Servico HTTP (porta 80) desligado — Link-OS recente vem com HTTP desligado.', 'aviso');
+      linha('  2. Porta 80 bloqueada por firewall.', 'aviso');
+    }
+    linha('NENHUMA etiqueta sera impressa ate resolver isso.', 'ruim');
+    return;
+  }
+
+  try {
+    var zpl = montarZpl(lerCampos());
+    var opts2 = { method: 'POST', mode: 'no-cors',
+                  headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: zpl };
+    opts2.targetAddressSpace = 'local';
+    var p = await fetch(alvo, opts2);
+    linha('POST aceito pelo navegador (resposta: ' + p.type + ').', 'ok');
+    linha('A etiqueta FOI ENVIADA. Se nada saiu, o problema e da impressora.', 'ok');
+  } catch (e) {
+    linha('POST rejeitado: ' + e.message, 'ruim');
+  }
+}
+
+function imprimirFetchOctet(){
+  var url = urlImpressao();
+  log('1) fetch() POST ' + url + ' (Content-Type: application/octet-stream)', 'info');
+  fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' },
+               body: montarZpl(lerCampos()) })
+    .then(function(resp){ log('   Resposta HTTP ' + resp.status + ' — provavelmente IMPRIMIU.', 'ok'); })
+    .catch(function(e){
+      log('   FALHOU: ' + e.message, 'ruim');
+      log('   Motivo: preflight OPTIONS sem resposta na impressora. NAO enviou.', 'aviso');
+    });
+}
+
+function imprimirXhrOctet(){
+  var url = urlImpressao();
+  log('2) XMLHttpRequest POST ' + url + ' (application/octet-stream)', 'info');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+  xhr.onload = function(){ log('   Resposta HTTP ' + xhr.status + ' — provavelmente IMPRIMIU.', 'ok'); };
+  xhr.onerror = function(){
+    log('   FALHOU (preflight/cors) — a etiqueta NAO foi enviada.', 'ruim');
+  };
+  xhr.send(montarZpl(lerCampos()));
+}
+
+function imprimirFetchSimples(){
+  var url = urlImpressao();
+  log('3) fetch() POST ' + url + ' (text/plain — sem preflight)', 'info');
+  var opts = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+               body: montarZpl(lerCampos()) };
+  opts.targetAddressSpace = 'local';
+  fetch(url, opts)
+    .then(function(resp){ log('   Resposta HTTP ' + resp.status + ' — IMPRIMIU e confirmou!', 'ok'); })
+    .catch(function(e){
+      log('   Erro no JS: ' + e.message, 'ruim');
+      log('   Causas: (a) CORS — SAIU e o navegador escondeu a resposta;', 'aviso');
+      log('           (b) certificado/rede — NADA foi enviado (use o Diagnostico).', 'aviso');
+    });
+}
+
+function imprimirBeacon(){
+  var url = urlImpressao();
+  log('4) sendBeacon() POST ' + url + ' (text/plain, ZPL sem ^PW/^LL)', 'info');
+  try {
+    var zpl = montarZpl({ titulo: $('titulo').value, sub: $('sub').value,
+                          codigo: $('codigo').value, comDimensoes: false });
+    var ok = navigator.sendBeacon(url, new Blob([zpl], { type: 'text/plain;charset=UTF-8' }));
+    if (ok) {
+      log('   sendBeacon aceitou no navegador — confira a impressora.', 'ok');
+    } else {
+      log('   FALHOU: navegador recusou (rede/CORS/permissao).', 'ruim');
+    }
+  } catch (e) {
+    log('   Excecao: ' + e.message, 'ruim');
+  }
+}
+
+$('btnDiag').onclick = function(){ log('--- Diagnostico ---', 'info'); diagnosticar(); };
+$('btn1').onclick = imprimirFetchOctet;
+$('btn2').onclick = imprimirXhrOctet;
+$('btn3').onclick = imprimirFetchSimples;
+$('btn4').onclick = imprimirBeacon;
+$('btn5').onclick = function(){ log('--- Botao 5 (FORM, mesmo mecanismo do Imprimir) ---', 'info'); enviarForm(); };
+
+/* =========================================================================
+   DIAGNÓSTICO DO AMBIENTE
+   ========================================================================= */
+function atualizarDiagnostico(){
+  var origem = (location.protocol === 'file:')
+    ? 'file:// (arquivo aberto com duplo clique)'
+    : location.origin;
+
+  $('diagOrigem').textContent = origem;
+  $('diagUrl').textContent = urlImpressao();
+
+  estadoLna().then(function(s){
+    var mapa = {
+      'granted':  ' concedida ✔',
+      'denied':   ' NEGADA ⛔ (cadeado -> Permissoes -> Rede local -> Permitir)',
+      'prompt':   ' ainda nao perguntada (aceite quando aparecer)',
+      'desconhecido': ' nao suportada por este navegador (nao ha bloqueio)'
+    };
+    $('diagLna').textContent = mapa[s] || s;
+  });
+
+  var msg = '';
+  if (location.protocol === 'file:') {
+    msg = 'Pagina local. O envio direto funciona; resposta pode ser escondida por CORS.';
+  } else if (location.hostname === $('ip').value.trim()) {
+    msg = 'Pagina servida pela propria impressora (mesma origem) -> tudo funciona, sem CORS.';
+  } else if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    msg = 'Servidor local -> envio direto deve funcionar.';
+  } else {
+    msg = 'Origem PUBLICA (ex.: GitHub Pages). O envio e feito por FORM (navegacao), que passa ' +
+          'por CORS/preflight/mixed content. Restam 2 liberacoes por site: (1) permissao de rede ' +
+          'local (prompt unico do Chrome 142+) e (2) aceitar o certificado auto-assinado da ' +
+          'impressora (uma vez por sessao). Ambas sao guiadas pelo botao Imprimir.';
+  }
+  $('diagEspera').textContent = msg;
+}
+
+/* =========================================================================
+   INICIALIZAÇÃO
+   ========================================================================= */
+restaurar();
+atualizarDiagnostico();
+log('Ambiente: ' + (location.protocol === 'file:' ? 'file://' : location.origin), 'info');
+log('Impressora lembrada: ' + (lsGet('ip', CFG.ipPadrao)) + ' (' + $('proto').value + ')', 'info');
+</script>
+</body>
+</html>
