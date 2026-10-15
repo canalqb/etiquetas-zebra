@@ -1685,7 +1685,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-      <span class="brand-ver">v1.031</span>
+        <span class="brand-ver">v1.032</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -15090,7 +15090,7 @@
 
     // Índice da Ajuda: clique rola suave até a seção (âncoras internas do modal)
     document.addEventListener("click", function (e) {
-      var link = e.target.closest('#ajuda-indice a[href^="#ajuda-"]');
+      var link = e.target.closest('#ajuda-indice a[href^="#ajuda-"], #ajuda-pane-tecnologias a[href^="#ajuda-"]');
       if (!link) return;
       e.preventDefault();
       var alvo = document.getElementById(link.getAttribute("href").slice(1));
@@ -16299,6 +16299,24 @@
             </p>
           </div>
 
+          <!-- Pedido 1.233: Ajuda em 2 abas — Funções do App | Tecnologias & Conceitos -->
+          <ul class="nav nav-tabs nav-fill mb-3" id="ajuda-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-semibold" id="ajuda-tab-funcoes" data-bs-toggle="tab" data-bs-target="#ajuda-pane-funcoes" type="button" role="tab" aria-controls="ajuda-pane-funcoes" aria-selected="true">
+                <i class="bi bi-hand-index-thumb me-1"></i>1. Funções do App
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-semibold" id="ajuda-tab-tec" data-bs-toggle="tab" data-bs-target="#ajuda-pane-tecnologias" type="button" role="tab" aria-controls="ajuda-pane-tecnologias" aria-selected="false">
+                <i class="bi bi-cpu me-1"></i>2. Tecnologias & Conceitos
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="ajuda-tabs-conteudo">
+
+          <div class="tab-pane fade show active" id="ajuda-pane-funcoes" role="tabpanel" aria-labelledby="ajuda-tab-funcoes" tabindex="0">
+
           <!-- Índice navegável: um clique rola até a seção (PC e celular) -->
           <div class="card p-3 mb-4 border-0 shadow-sm bg-white" id="ajuda-indice">
             <h6 class="fw-bold text-primary mb-2"><i class="bi bi-list-ul me-1"></i>Índice — toque/clique para ir direto à seção</h6>
@@ -16306,6 +16324,7 @@
               <a class="btn btn-sm btn-outline-danger" href="#ajuda-secao-1"><i class="bi bi-heart-fill me-1"></i>1. Apoie o Projeto (PIX)</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-2"><i class="bi bi-stars me-1"></i>2. O que você pode fazer</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-3"><i class="bi bi-menu-button-wide me-1"></i>3. Menus da barra superior</a>
+              <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-3b"><i class="bi bi-window-stack me-1"></i>3b. Janelas — cada campo explicado</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-4"><i class="fas fa-shapes me-1"></i>4. Paleta de elementos</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-5"><i class="bi bi-sliders me-1"></i>5. Barra de status</a>
               <a class="btn btn-sm btn-outline-primary" href="#ajuda-secao-6"><i class="bi bi-sliders2 me-1"></i>6. Editor de elemento</a>
@@ -16315,6 +16334,7 @@
               <a class="btn btn-sm btn-outline-primary ajuda-so-pc" href="#ajuda-secao-10"><i class="bi bi-keyboard me-1"></i>10. Atalhos</a>
               <a class="btn btn-sm btn-outline-primary ajuda-so-mobile" href="#ajuda-secao-11"><i class="fas fa-mobile-screen me-1"></i>11. Celular</a>
             </div>
+            <p class="small text-muted mb-0 mt-2"><i class="bi bi-cpu me-1"></i>Curioso sobre como tudo isso funciona por dentro — comandos, conexões, regras e o que está em desenvolvimento? Veja a aba <strong>2. Tecnologias & Conceitos</strong> no topo.</p>
           </div>
 
           <!-- Section 1: Apoie o Projeto (PIX) — primeiro assunto -->
@@ -16453,6 +16473,280 @@
                 <span class="text-danger fw-semibold">vermelho</span> = falha na conexão, cinza = nada configurado. <strong>Duplo clique</strong> abre a
                 configuração completa da impressora (IP, USB e Bluetooth).
               </p>
+            </div>
+          </div>
+
+          <!-- Section 3b: Janelas do aplicativo — cada botão, cada campo (Pedido 1.233) -->
+          <div class="mb-4">
+            <h5 class="fw-bold text-dark mb-3" id="ajuda-secao-3b"><i class="bi bi-window-stack text-primary me-2"></i>3b. Janelas do aplicativo — cada campo explicado</h5>
+            <div class="p-3 mb-3 border-start border-4 border-success bg-success bg-opacity-10 rounded">
+              <p class="small text-muted mb-0">
+                <span class="fw-semibold text-success"><i class="bi bi-lightbulb-fill me-1"></i> Como ler esta seção:</span>
+                sempre que um botão abre uma janela, <strong>todos os elementos daquela janela</strong> estão listados aqui na ordem em que
+                aparecem — e cada um traz um <strong>exemplo de uso</strong>. Estão na mesma ordem dos menus.
+              </p>
+            </div>
+
+            <!-- A. Arquivo -->
+            <div class="row g-3 mb-3">
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-circle-plus me-1"></i>A. Nova Etiqueta em Branco</h6>
+                  <p class="small text-muted mb-2">Abre a janela <strong>"Nova Etiqueta + Limpar Armazenamento?"</strong> (menu Arquivo; no celular em Processos de Impressão; no ribbon Sistema é o ícone vermelho). Elementos da janela:</p>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li><strong>Aviso amarelo e texto</strong> — explica o que será apagado: etiqueta atual, histórico de alterações, lote, modelos salvos e configurações. A ação não pode ser desfeita.</li>
+                    <li><strong>✕ (canto) e Cancelar</strong> — fecham a janela sem apagar nada.</li>
+                    <li><strong>Apagar e Recomeçar</strong> (vermelho) — confirma: limpa o armazenamento do navegador e abre uma etiqueta em branco.</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> você andou testando 15 elementos e quer voltar ao "zero": Arquivo → Nova Etiqueta em Branco → Apagar e Recomeçar. (Com a etiqueta já vazia, o menu limpa direto, sem janela.)</p>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-folder-open me-1"></i>B. Carregar Modelo (.bin) e Salvar Modelo Atual</h6>
+                  <p class="small text-muted mb-2">Os dois itens abrem a mesma janela, <strong>"Salvar / Exportar (.BIN)"</strong> — o Salvar já deixa o campo de nome selecionado para digitar. Elementos:</p>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li><strong>Cabeçalho "Modelos, Cache & Exportação"</strong> — acordeão: clique para abrir/fechar o painel.</li>
+                    <li><strong>Nome do Modelo / Arquivo</strong> — digite o nome (ex.: <code>Endereco-Padrao</code>) e clique no <strong>disquete</strong> para salvar no navegador.</li>
+                    <li><strong>Carregar Modelo do Cache</strong> — lista dos modelos guardados + <strong>Carregar</strong> (abre no Estúdio), <strong>Exportar</strong> (baixa como .bin) e <strong>Excluir</strong> (tira do cache).</li>
+                    <li><strong>Galeria de Templates</strong> — miniaturas dos modelos oficiais do tamanho atual; um clique aplica.</li>
+                    <li><strong>Botões de ação</strong>: <strong>+</strong> nova etiqueta (guarda a atual como "view"); <strong>importar etiqueta</strong> (.bin/.json/.vip adiciona como nova view); <strong>Exportar Modelo de Etiqueta</strong> (baixa a atual); <strong>Importar Modelo ou ZPL</strong> (reconhece .bin/.json sozinho); <strong>Copiar Link do Modelo</strong> (URL com o modelo inteiro dentro para compartilhar).</li>
+                    <li><strong>Etiquetas do projeto</strong> — seletor que aparece quando há views guardadas: alterna qual etiqueta você edita (ao imprimir, todas saem).</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> montou o layout de endereçamento → Salvar Modelo Atual → "Endereco-Padrao" → disquete. Semana que vem: Carregar Modelo (.bin) → selecione "Endereco-Padrao" → Carregar.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- B. Geração em lote -->
+            <div class="row g-3 mb-3">
+              <div class="col-12">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-import me-1"></i>C. Importar Dados (Excel, CSV, planilhas, banco...)</h6>
+                  <p class="small text-muted mb-2">Abre a janela <strong>"Importar Dados"</strong>. Elementos, na ordem:</p>
+                  <div class="row g-3">
+                    <div class="col-lg-6">
+                      <ul class="small text-muted mb-2 ps-3">
+                        <li><strong>Origem dos dados</strong> — 6 botões de rádio, cada um revela seus campos:
+                          <ul class="ps-3 mt-1">
+                            <li><strong>Arquivo (CSV/TXT/Excel)</strong> — seleção de arquivo <code>.csv</code>, <code>.txt</code> ou <code>.xlsx</code>.</li>
+                            <li><strong>Google Sheets (link)</strong> — campo do link; <strong>Conectar com Google</strong> / <strong>Desconectar</strong> + status para planilhas privadas; em <em>Avançado</em>, o campo <strong>Google Client ID</strong> substitui o embutido pelo seu.</li>
+                            <li><strong>Webhook</strong> — URL, método (GET/POST) e headers em JSON (ex.: Authorization).</li>
+                            <li><strong>Banco de Dados (API)</strong> — URL da API (Supabase, PostgREST...), tabela e usuário/token.</li>
+                            <li><strong>Pasta Local</strong> — botão <strong>Escolher Pasta e Importar</strong>: lê todos os .csv/.txt/.xlsx da pasta.</li>
+                            <li><strong>ODBC / Banco Local (ponte)</strong> — tipo (ODBC/MySQL/PostgreSQL/SQL Server), DSN ou host, porta, usuário, senha, banco e a <strong>consulta SQL</strong> (o navegador não fala ODBC, então a ponte local consulta por você; a senha fica só em memória).</li>
+                          </ul>
+                        </li>
+                        <li><strong>Ler Colunas</strong> — lê a origem escolhida (também roda sozinho ao escolher o arquivo ou colar um link válido).</li>
+                      </ul>
+                    </div>
+                    <div class="col-lg-6">
+                      <ul class="small text-muted mb-2 ps-3">
+                        <li><strong>Mapeamento de colunas</strong> — para cada coluna da planilha, escolhe qual campo da etiqueta recebe aquele valor (uma coluna pode alimentar vários campos; com um elemento selecionado no Estúdio, marcar a coluna vincula direto nele).</li>
+                        <li><strong>Pré-visualização</strong> — as primeiras 3 linhas, para conferir antes de gerar.</li>
+                        <li><strong>Fechar</strong> / <strong>Criar Etiquetas</strong> — gera uma etiqueta por linha (o mapeamento fica salvo; sem nenhuma coluna vinculada a janela avisa e continua aberta).</li>
+                      </ul>
+                      <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> planilha com Nome/Preço/QR de 25 produtos → Arquivo → escolher o .xlsx → mapear Nome→"Nome do Produto", Preço→Texto, QR→QR Code → Criar Etiquetas → "25 etiquetas serão geradas" → navegue pelas setas ‹ › e use <strong>Testar 1</strong> antes de imprimir tudo.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-code me-1"></i>D. Carregar arquivo .ZPL</h6>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li>Abre a caixa de seleção de arquivo — <strong>somente .zpl</strong> é aceito. O código entra na <strong>aba ZPL</strong> e a etiqueta é reconstruída na tela.</li>
+                    <li>Arquivo com <strong>vários blocos</strong> <code>^XA…^XZ</code> vira um lote navegável pelas setas ‹ › da barra de status.</li>
+                    <li>Na aba ZPL ficam: <strong>Copiar</strong>, <strong>Baixar .ZPL</strong>, <strong>Carregar</strong>, exportar <strong>PNG/SVG/PDF</strong> e o campo do código (editável).</li>
+                    <li>Ao <strong>enviar o ZPL bruto</strong> abre a janela <strong>"Enviar ZPL para onde?"</strong>: <strong>Impressora cadastrada (IP)</strong> ou <strong>Range da rede — procurar impressoras e enviar</strong>. O conteúdo sai exatamente como digitado, sem cópias ^PQ.</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> receberam um <code>etiqueta.zpl</code> de outra pessoa → Carregar arquivo .ZPL → a etiqueta aparece editável na tela; para imprimir sem mexer em nada, use o botão de envio da aba ZPL → Impressora cadastrada.</p>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-file-download me-1"></i>E. Download ZPL</h6>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li>Baixa o arquivo <code>.zpl</code> com <strong>todas as etiquetas da saída atual</strong>: lote gerado de planilha, lote importado de ZPL e as etiquetas "views" guardadas — exatamente o que o Imprimir enviaria.</li>
+                    <li>Reimportar o arquivo (item D) devolve o lote completo — é o backup perfeito.</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> gerou o lote de 100 endereços → Download ZPL → guarde o arquivo; em outro computador, Carregar arquivo .ZPL traz as 100 de volta.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- C. Etiqueta -->
+            <div class="row g-3 mb-3">
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-ruler-combined me-1"></i>F. Tamanho da Etiqueta</h6>
+                  <p class="small text-muted mb-2">Abre a janela <strong>"Tamanho da Etiqueta"</strong>. Elementos:</p>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li><strong>Seletor de tamanho</strong> — 40×25, 100×50, 100×100, 100×150 mm (com os dots entre parênteses) ou <strong>Personalizado</strong>.</li>
+                    <li><strong>Personalizado</strong> — abre a janelinha <strong>"Tamanho Personalizado"</strong>: <strong>Largura</strong> e <strong>Altura</strong> (10 a 300 mm) + <strong>Criar Tamanho</strong> (ou Cancelar).</li>
+                    <li><strong>Estimativa por rolo</strong> — <strong>Rolo (m)</strong> + <strong>espaço entre etiquetas (mm)</strong> → o badge mostra "≈ N etiquetas" (contagem aproximada para mídia recortada).</li>
+                    <li><strong>Fechar</strong> — fecha sem alterar.</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> comprou um rolo de 100 m com vão de 3 mm → preencha 100 e 3 → o badge calcula quantas etiquetas rendem.</p>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="fas fa-rotate me-1"></i>G. Alternar Orientação e Modelos Prontos</h6>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li><strong>Alternar Orientação</strong> — vira a etiqueta entre <strong>Horizontal</strong> e <strong>Vertical</strong> (o chip da barra de status mostra o estado; um clique no chip também alterna). Os elementos giram junto com a etiqueta e a impressão escolhe o modo certo sozinha.</li>
+                    <li><strong>Modelos Prontos</strong> — abre a janela com: <strong>Tamanho da etiqueta</strong> (botões que trocam a lista), <strong>Modelo</strong> (5 layouts por tamanho — um clique aplica) e o rodapé com a fonte dos modelos.</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> etiqueta de prateleira vertical → Alternar Orientação (vira "Vertical") → Modelos Prontos → toque no layout "Produto" → pronto, só trocar os textos.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- D. Configurar Impressora / Calibrar -->
+            <div class="card p-3 mb-3 border-0 shadow-sm">
+              <h6 class="fw-bold text-primary mb-2"><i class="fas fa-print me-1"></i>H. Configurar Impressora (janela com 3 abas)</h6>
+              <div class="row g-3">
+                <div class="col-lg-4">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Aba Rede / Cloud</strong>:
+                      <ul class="ps-3 mt-1">
+                        <li><strong>IP Local ou URL da Nuvem</strong> — ex.: <code>192.168.0.50</code> ou <code>https://sua-api.com/print</code>.</li>
+                        <li><strong>Procurar impressoras na rede</strong> — varre a rede e lista as impressoras encontradas; um clique no item preenche o IP (usa a ponte local).</li>
+                        <li><strong>Protocolo de Impressão</strong> — HTTP Direct, <strong>HTTPS Direct (recomendado)</strong>, Nuvem/Webhook, FTP, TCP 9100 (ponte local).</li>
+                        <li><strong>Aviso do certificado</strong> (com HTTPS) — explica o caminho automático pela ponte e o manual (aceitar o certificado 1× por sessão, pelo link que abre a impressora).</li>
+                        <li><strong>Instalar / Verificar Extensão Chrome</strong> — abre a loja.</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+                <div class="col-lg-4">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Aba USB (WebUSB)</strong>:
+                      <ul class="ps-3 mt-1">
+                        <li><strong>Diagnóstico do navegador</strong> — contexto seguro e suporte a WebUSB.</li>
+                        <li><strong>Status</strong> — "Nao conectado" / conectado + detalhes.</li>
+                        <li><strong>Conectar Impressora USB</strong>, <strong>Teste USB</strong>, <strong>Desconectar</strong>.</li>
+                        <li><strong>Listar somente Zebra</strong> — filtra pelo fabricante.</li>
+                        <li><strong>Log</strong> — histórico da sessão USB.</li>
+                      </ul>
+                    </li>
+                    <li class="mt-2"><strong>Aba Bluetooth</strong>: <strong>Conectar Impressora Bluetooth</strong>, <strong>Teste Bluetooth</strong>, <strong>Desconectar</strong>, "mostrar todos os dispositivos" e log — funciona com Bluetooth Low Energy (ZQ/Link-OS); iPhone não suporta.</li>
+                  </ul>
+                </div>
+                <div class="col-lg-4">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Rodapé da janela</strong>:
+                      <ul class="ps-3 mt-1">
+                        <li><strong>Testar Conexão</strong> — consulta o status da impressora (é o ✅/❌ do pontinho).</li>
+                        <li><strong>Conferir Mídia</strong> — lê pela ponte o comprimento da bobada carregada e compara com a altura da sua etiqueta: <strong>✅ casa</strong>, <strong>⚠️ sobra</strong> ou <strong>⚠️ atravessa</strong> (etiqueta maior que a bobada "atravessa" as etiquetas em silêncio — este aviso previne o erro nº 1 de tamanho); avisa também cabeça aberta / sem papel.</li>
+                        <li><strong>Cancelar</strong> / <strong>Salvar</strong> — o IP e o protocolo ficam salvos no navegador.</li>
+                      </ul>
+                    </li>
+                  </ul>
+                  <p class="small text-muted mt-2 mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> impressora no Wi-Fi → Configurar Impressora → digite <code>192.168.15.42</code> → Testar Conexão (pontinho verde) → HTTPS Direct → Salvar. Antes do primeiro rolo, <strong>Conferir Mídia</strong> para garantir que a bobada casa com a etiqueta.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card p-3 mb-3 border-0 shadow-sm">
+              <h6 class="fw-bold text-primary mb-2"><i class="fas fa-sliders-h me-1"></i>I. Calibrar Impressora (submenu do menu Impressora)</h6>
+              <p class="small text-muted mb-2">Painel para a impressora "aprender" o papel. Os itens abaixo <strong>apenas preparam os valores</strong> — o envio único acontece no <strong>Calibrar Agora</strong>. Elementos, na ordem:</p>
+              <div class="row g-3">
+                <div class="col-lg-6">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Modo Ribbon</strong> — ciclo: <em>Padrão da impressora → Sem (Térmica Direto) → Com (Transferência)</em>. "Padrão" não envia nada; a impressora usa a configuração do painel dela.</li>
+                    <li><strong>Tipo de mídia</strong> — lista: etiquetas contínuas, com intervalos (gap), com marcações pretas ou com ranhuras laterais.</li>
+                    <li><strong>Modo operacional de impressão</strong> — lista: Arrancar, Descolar, Cortador, Rebobinar, Parte sem revestimento, Corte sem revestimento, Retroceder sem linha, Aplicador.</li>
+                    <li><strong>Tonalidade</strong> — botão <strong>Padrão</strong> + slider 10 a 30 (intensidade da queima; impressão clara → aumente).</li>
+                  </ul>
+                </div>
+                <div class="col-lg-6">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Tamanho do Papel</strong> — atalhos dos tamanhos (troca o papel do layout na hora).</li>
+                    <li><strong>Velocidade</strong> — botão <strong>Padrão</strong> + slider 2 a 14 pol/s.</li>
+                    <li><strong>Qualidade</strong> — ciclo: Padrão → Tons de cinza → Preto e branco.</li>
+                    <li><strong>Redefinir Configurações</strong> — volta todos os itens acima para o Padrão da impressora.</li>
+                    <li><strong>Calibrar Agora</strong> — envia a calibração: o papel anda e volta sozinho, levando os ajustes feitos acima.</li>
+                  </ul>
+                </div>
+              </div>
+              <p class="small text-muted mt-2 mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> impressão saindo clara em papel térmico → Calibrar → Modo Ribbon: <em>Sem</em> → Tonalidade: <em>22</em> → Calibrar Agora.</p>
+            </div>
+
+            <!-- E/F. Espelhos, pré-visualizar, imprimir -->
+            <div class="row g-3 mb-3">
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-symmetry-vertical me-1"></i>J. Espelho & Reverso (4 interruptores)</h6>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li><strong>Espelho Vertical</strong> — espelha topo↔base (transferência térmica).</li>
+                    <li><strong>Espelho Horizontal</strong> — espelha esquerda↔direita.</li>
+                    <li><strong>Inverter Vertical + Horizontal</strong> — gira a etiqueta 180°.</li>
+                    <li><strong>Reverso (Branco sobre Preto)</strong> — inverte as cores de toda a etiqueta.</li>
+                  </ul>
+                  <p class="small text-muted mb-0">Cada um liga/desliga com um clique (✓ verde quando ativo) e o efeito aparece na hora no estúdio e na pré-visualização. Os espelhos são exclusivos entre si.</p>
+                  <p class="small text-muted mt-2 mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> imprimir um estêncil/transferência que será aplicado espelhado → ligue <strong>Espelho Horizontal</strong> e imprima normalmente.</p>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card p-3 h-100 border-0 shadow-sm">
+                  <h6 class="fw-bold text-primary mb-2"><i class="bi bi-eye me-1"></i>K. Pré-visualizar e Imprimir Agora</h6>
+                  <ul class="small text-muted mb-2 ps-3">
+                    <li><strong>Pré-visualizar</strong> — janela com a etiqueta <strong>exatamente como sai no papel</strong> (espelho/reverso aplicados): a imagem, a linha de informação, <strong>Baixar PNG</strong>, <strong>Imprimir Agora</strong> e <strong>Fechar</strong>.</li>
+                    <li><strong>Imprimir Agora</strong> — abre <strong>"Quantidade de Cópias"</strong>: botões <strong>−</strong> / <strong>+</strong>, o campo (1 a 999), o resumo "N etiquetas serão impressas" (atualiza sozinho), <strong>Cancelar</strong> e <strong>Imprimir</strong>.</li>
+                    <li><strong>"Impressão em andamento"</strong> (lotes e importações) — "N de M", barra de progresso animada, o status de cada etiqueta e <strong>Cancelar impressão</strong> (para a fila na hora). As cópias vão num único envio — a impressora não recebe rajadas.</li>
+                  </ul>
+                  <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> 3 cópias do lote de 10 linhas → Imprimir → cópias = 3 → Imprimir: o app envia uma linha por vez, validada, 3× cada, com o progresso na tela.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- G. Adicionais -->
+            <div class="card p-3 mb-3 border-0 shadow-sm">
+              <h6 class="fw-bold text-primary mb-2"><i class="fas fa-puzzle-piece me-1"></i>L. Menu Adicionais (Honeywell, Xerox-Lexmark, Zebra, SerieScan)</h6>
+              <div class="row g-3">
+                <div class="col-lg-6">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Honeywell → 8675i</strong> — página <strong>Códigos de Barras — 8675i</strong>: simbologias que o leitor lê, com exemplos prontos para testar a leitura.</li>
+                    <li><strong>Honeywell → Software → EZConfig for Scanning</strong> — página do software de configuração para Windows, com download e a correção do aviso do Chrome.</li>
+                    <li><strong>Xerox - Lexmark → Instaladores</strong> — <strong>Instalar Lexmark (M3350/XM3350)</strong> e <strong>Instalar Xerox C415</strong>: o clique <strong>copia o comando</strong>; cole no PowerShell para baixar e instalar o driver pela internet.</li>
+                  </ul>
+                </div>
+                <div class="col-lg-6">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Zebra → Instaladores</strong> — <strong>Instalar ZQ630</strong>, <strong>Instalar ZQ630 Plus</strong> e <strong>Instalar ZT411</strong>: mesma mecânica — clique copia o comando do PowerShell.</li>
+                    <li><strong>SerieScan — Consultar Séries (CSV)</strong> — sistema irmão para conferir números de série digitados ou scaneados contra uma base (TXT/CSV/XLSX ou planilha Google): <strong>azul + bipe = encontrada</strong>, vermelho = fora da lista; tem histórico, contadores, desfazer e gravação opcional de "LOCALIZADO" na planilha.</li>
+                  </ul>
+                  <p class="small text-muted mt-2 mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> chegaram 200 seriais para embalar → Adicionais → SerieScan → carregue a planilha do estoque → aponte o leitor: tela azul e bipe = pode embalar; vermelho = separar para revisão.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- H. Outras janelas -->
+            <div class="card p-3 border-0 shadow-sm">
+              <h6 class="fw-bold text-primary mb-2"><i class="bi bi-window-plus me-1"></i>M. Outras janelas (abertas por gestos e atalhos)</h6>
+              <div class="row g-3">
+                <div class="col-lg-6">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Editor de Elemento</strong> (botão direito / toque longo) — o formulário completo de um elemento: <strong>Conteúdo/Texto</strong>; <strong>Fonte do Código</strong> (simbologia do QR/barcode); <strong>Coluna da importação</strong> (vínculo fixo com a planilha); <strong>Pos. X / Pos. Y</strong> (mm); <strong>Fonte</strong> (dots); <strong>Largura / Altura</strong> (mm); <strong>Rotação</strong> + botão girar 90°; <strong>Espessura</strong> (− valor +); <strong>Estilo da moldura</strong> (sólida, tracejada, pontilhada, dupla, arredondada, sombra); <strong>Estilo da linha</strong> (sólida, tracejada, pontilhada, grossa, dupla, gradiente); <strong>Preenchido</strong>, <strong>Raio (0-8)</strong> e <strong>Diagonal</strong> ↗/↘ para formas; <strong>Multilinha</strong> (largura do bloco, máx. linhas, alinhamento) para textos; <strong>Negrito/Itálico/Sublinhado</strong>; <strong>Remover</strong>.</li>
+                    <li><strong>Seleção múltipla</strong> (botão direito com 2+ marcados) — <strong>Alinhar em relação à etiqueta</strong> (9 posições), <strong>Alinhar entre si</strong> (6), Copiar/Recortar/Colar/Duplicar/Excluir/Desmarcar e <strong>Concluir</strong>.</li>
+                    <li><strong>Mini janela do QR/código de barras</strong> (duplo clique) — <strong>Conteúdo</strong>, as <strong>Fontes 1D/2D</strong> com o aviso de formato (ex.: EAN-13 pede 12-13 dígitos) e o botão <strong>Montar dados GS1</strong>.</li>
+                    <li><strong>Montar Dados GS1</strong> — linhas de <strong>identificador de aplicação (AI) + dado</strong>, botão <strong>Adicionar campo</strong>, a <strong>prévia do conteúdo</strong> <code>(01)…(17)…</code>, o status de validação e <strong>Aplicar</strong>.</li>
+                  </ul>
+                </div>
+                <div class="col-lg-6">
+                  <ul class="small text-muted mb-0 ps-3">
+                    <li><strong>Limites de Margem</strong> (botão de margens, régua ou canto do papel) — <strong>Superior, Inferior, Esquerda, Direita</strong> (mm), <strong>Zerar (0,0,0,0)</strong> e <strong>Aplicar Limites</strong>; use quando a impressão sai deslocada.</li>
+                    <li><strong>Densidade da Impressora (DPI)</strong> (chip DPI) — 6/8/12/24 dpmm (152/203/300/600 dpi) e <strong>Aplicar Densidade</strong> — atualiza réguas, editor e ZPL.</li>
+                    <li><strong>Imagem por Link / Base64</strong> (ícone de corrente da paleta) — campo do endereço <code>https://…</code> ou <code>data:image/…</code>, status do download, pré-visualização e <strong>Adicionar à Etiqueta</strong>.</li>
+                    <li><strong>Limpar Canvas</strong> — Cancelar / <strong>Limpar Tudo</strong> (com confirmação).</li>
+                    <li><strong>Erros Capturados</strong> (botão do inseto no rodapé) — tudo que o navegador capturou (exceções, promessas, console, recursos que falharam; até 300), com <strong>Copiar</strong>, <strong>Limpar</strong> e Fechar — útil para reportar um problema.</li>
+                    <li><strong>Extensão Zebra Printing</strong> — janela informativa com o botão da Chrome Web Store.</li>
+                    <li><strong>Confirmação universal</strong> — a pergunta "Deseja continuar?" do app com <strong>Cancelar</strong> / <strong>Confirmar</strong>.</li>
+                  </ul>
+                </div>
+              </div>
+              <p class="small text-muted mt-2 mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> a etiqueta saiu com o conteúdo subindo 3 mm em todas as peças? Abra <strong>Limites de Margem</strong>, ajuste apenas a margem <strong>Superior</strong> e mande uma página de teste — o resto do desenho fica exatamente no mesmo lugar.</p>
             </div>
           </div>
 
@@ -16807,6 +17101,199 @@
               </p>
             </div>
           </div>
+          </div><!-- /#ajuda-pane-funcoes -->
+
+          <div class="tab-pane fade" id="ajuda-pane-tecnologias" role="tabpanel" aria-labelledby="ajuda-tab-tec" tabindex="0">
+
+            <!-- Mini-índice da aba 2 -->
+            <div class="card p-3 mb-4 border-0 shadow-sm bg-white">
+              <h6 class="fw-bold text-primary mb-2"><i class="bi bi-list-ul me-1"></i>Tecnologias — índice rápido</h6>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-0"><i class="bi bi-globe2 me-1"></i>Como o app funciona</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-1"><i class="bi bi-filetype-zpl me-1"></i>ZPL — a linguagem da impressora</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-2"><i class="bi bi-eye me-1"></i>WYSIWYG — tela = papel</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-3"><i class="fas fa-print me-1"></i>Caminhos de impressão</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-4"><i class="bi bi-journal-check me-1"></i>Regras de impressoras reais</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-5"><i class="bi bi-shield-lock me-1"></i>Dados e privacidade</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-6"><i class="fas fa-cloud-arrow-down me-1"></i>De onde os dados vêm</a>
+                <a class="btn btn-sm btn-outline-primary" href="#ajuda-tec-7"><i class="bi bi-book me-1"></i>Conceitos rápidos</a>
+                <a class="btn btn-sm btn-outline-warning" href="#ajuda-tec-8"><i class="bi bi-cone-striped me-1"></i>Em desenvolvimento</a>
+              </div>
+            </div>
+
+            <!-- Tec 0: Como o app funciona -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-0"><i class="bi bi-globe2 text-primary me-2"></i>Como o app funciona por dentro</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <ul class="small text-muted mb-0 ps-3">
+                  <li><strong>100% estático, sem servidor próprio</strong> — o app inteiro roda no seu navegador (GitHub Pages), sem cadastro e sem enviar nada para nuvens: a etiqueta que você monta fica no seu aparelho.</li>
+                  <li><strong>A impressão vai direto</strong> do navegador para a impressora — por HTTPS/TCP na rede, cabo USB (WebUSB), Bluetooth (Low Energy) ou webhook na nuvem. Nenhum passo "repassa" sua etiqueta por servidores de terceiros.</li>
+                  <li><strong>O gerador é o ZPL II</strong> — a linguagem nativa das impressoras Zebra. Tudo que você desenha é traduzido para comandos <code>^</code> e <code>~</code>; a aba ZPL mostra esse código ao vivo (copie, baixe, importe).</li>
+                  <li><strong>Funciona offline depois de aberto</strong> — os recursos principais não dependem de internet (fontes de dados online, como Google Sheets, precisam de conexão).</li>
+                  <li><strong>Desktop e celular</strong> — a mesma página se adapta; no celular os ribbons viram menu lateral e os gestos de toque fazem o trabalho do mouse.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tec 1: ZPL -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-1"><i class="bi bi-filetype-zpl text-primary me-2"></i>ZPL II — a linguagem que o app foca</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <p class="small text-muted">Principais comandos gerados pelo app (você não precisa usá-los — a aba <strong>1. Funções</strong> cuida disso por você):</p>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle small mb-0 bg-white">
+                    <thead class="table-light">
+                      <tr><th style="width:130px;">Comando</th><th>O que faz</th></tr>
+                    </thead>
+                    <tbody class="text-muted">
+                      <tr><td><code>^XA … ^XZ</code></td><td>Abre e fecha o formato (a etiqueta inteira).</td></tr>
+                      <tr><td><code>^PW / ^LL</code></td><td>Largura e comprimento do papel em dots.</td></tr>
+                      <tr><td><code>^FO</code></td><td>Posição (X, Y) de cada elemento na etiqueta.</td></tr>
+                      <tr><td><code>^A0N / ^FB</code></td><td>Fonte escalável e bloco de texto (multilinha com alinhamento).</td></tr>
+                      <tr><td><code>^CI28</code></td><td>Acentos: diz à impressora para interpretar UTF-8.</td></tr>
+                      <tr><td><code>^BC ^BQ ^BR ^BS</code></td><td>Código de barras 128/GS1-128, QR, família DataBar e add-ons EAN/UPC.</td></tr>
+                      <tr><td><code>^GB ^GF ^GFA</code></td><td>Molduras/linhas e imagens raster embutidas na etiqueta.</td></tr>
+                      <tr><td><code>^PQ</code></td><td>Quantidade de cópias — vai num único envio, sem rajadas.</td></tr>
+                      <tr><td><code>^MT ^MN ^MM ^MD ^PR</code></td><td>Calibração: ribbon, tipo de mídia, modo operacional, tonalidade e velocidade.</td></tr>
+                      <tr><td><code>^PM ^LR</code></td><td>Espelho de impressão e reverso branco-sobre-preto.</td></tr>
+                      <tr><td><code>~HS</code></td><td>Status da impressora: erros de cabeça/papel e o comprimento da bobada (usado pelo Conferir Mídia).</td></tr>
+                      <tr><td><code>~JA ^CV ^JZ</code></td><td>Cancelar tudo, validação de código de barras e reimpressão após erro.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tec 2: WYSIWYG -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-2"><i class="bi bi-eye text-primary me-2"></i>WYSIWYG — o que você vê é o que imprime</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <ul class="small text-muted mb-0 ps-3">
+                  <li><strong>Simbologias por módulos reais</strong> — o desenho na tela usa as mesmas regras de largura da simbologia (módulos do Code 128, magnificação do QR, segmentos do DataBar) que o ZPL usa no papel; por isso o código impresso tem exatamente o tamanho do preview.</li>
+                  <li><strong>Modo automático por orientação</strong> — etiqueta <strong>horizontal</strong> sai como <strong>imagem raster</strong> fiel ao desenho; etiqueta <strong>vertical</strong> sai como <strong>ZPL vetorial nativo</strong> (texto e códigos de verdade, giráveis). O app decide sozinho — sem botão para ligar/desligar.</li>
+                  <li><strong>Textos</strong> — a fonte na tela é calculada com a mesma métrica (bounding box) do <code>^A0N</code> da impressora; acentos via <code>^CI28</code>.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tec 3: Caminhos de impressão -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-3"><i class="fas fa-print text-primary me-2"></i>Caminhos de impressão (como a etiqueta chega à impressora)</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <div class="row g-3">
+                  <div class="col-lg-6">
+                    <ul class="small text-muted mb-0 ps-3">
+                      <li><strong>HTTPS Direct</strong> — o navegador envia o ZPL ao serviço <code>/pstprnt</code> da impressora, na sua rede. Recomendado em firmwares Link-OS 7.5+.</li>
+                      <li><strong>HTTP Direct</strong> — mesmo serviço sem criptografia; vem <strong>desligado de fábrica</strong> nos Link-OS recentes (dá para religar no painel da impressora).</li>
+                      <li><strong>TCP 9100 / FTP</strong> — envio "cru" pela porta raw, feito pela <strong>ponte local</strong> (veja abaixo).</li>
+                      <li><strong>Nuvem / Webhook</strong> — um endereço https seu recebe o ZPL e repassa para impressoras em outra rede (Cloud Connect).</li>
+                      <li><strong>USB (WebUSB) e Bluetooth (Low Energy)</strong> — direto do navegador, sem IP; séries ZQ/Link-OS no Bluetooth.</li>
+                    </ul>
+                  </div>
+                  <div class="col-lg-6">
+                    <ul class="small text-muted mb-0 ps-3">
+                      <li><strong>Ponte local (print-server.js)</strong> — programinha Node opcional que roda no computador que imprime e faz o que o navegador não pode: abrir a porta TCP 9100, tolerar certificados, varrer a rede (<code>/descobrir</code> com mDNS), consultar bancos ODBC, conferir a bobada (<code>/midia</code>) e imprimir por HTTPS (<code>/print-https</code>).</li>
+                      <li><strong>Impressão em streaming</strong> — lotes grandes saem <strong>uma etiqueta por vez</strong>, cada impressão validada pelo odômetro da impressora antes da próxima (janela com progresso e botão Cancelar).</li>
+                      <li><strong>Intervalo de segurança de 8 s</strong> — o app espaça os envios de etiqueta inteira: impressoras térmicas descartam etiquetas enviadas em rajadas curtas, mesmo respondendo "OK".</li>
+                      <li><strong>Extensão Zebra Printing</strong> — opção do Chrome para enviar sem servidor local; o app detecta e avisa quando ela está ativa.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tec 4: Regras reais -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-4"><i class="bi bi-journal-check text-primary me-2"></i>Regras aprendidas em impressoras reais</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <p class="small text-muted">Descobertas medidas em unidades de frota (ZT411/ZQ630, Link-OS 7.x) — o app já foi construído em cima delas:</p>
+                <ul class="small text-muted mb-0 ps-3">
+                  <li><strong>HTTP 200 não é prova de impressão.</strong> A impressora responde "OK" até para comandos que descarta — a prova é a etiqueta na bandeja (ou os contadores do painel/EWS).</li>
+                  <li><strong>Rajadas descartam etiquetas.</strong> Dois envios em menos de ~8 s: o segundo pode sumir — por isso o espaçamento automático.</li>
+                  <li><strong>HTTP vem desligado de fábrica</strong> no Link-OS 7.5+ (norma europeia EU RED) — HTTPS é o caminho moderno.</li>
+                  <li><strong>Modo Protegido</strong> (segurança do firmware) bloqueia consultas de configuração (SGD <code>! U1</code> responde <code>?</code>), mas o status <code>~HS</code> continua funcionando — é assim que o <strong>Conferir Mídia</strong> lê a bobada.</li>
+                  <li><strong>Etiqueta maior que a bobada "atravessa" etiquetas em silêncio</strong> — sem erro algum. O Conferir Mídia compara o tamanho antes de você gastar o rolo.</li>
+                  <li><strong>Largura maior que a cabeça de impressão corta em silêncio</strong> — por isso os tamanhos prontos da paleta.</li>
+                  <li><strong>Certificado autoassinado da impressora</strong> — o navegador aceita por sessão (Avançado → Prosseguir, uma vez) ou a ponte local tolera para você (fallback automático).</li>
+                  <li><strong>Página HTTPS não fala com impressora HTTP local</strong> (Mixed Content do navegador) — para o caminho HTTP use o app via localhost/rede ou a ponte; o HTTPS Direct funciona direto.</li>
+                  <li><strong>Chrome 142+: aviso de "rede local"</strong> na primeira impressão para impressoras na sua rede — é o navegador pedindo permissão (uma vez só;permita).</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tec 5: Privacidade -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-5"><i class="bi bi-shield-lock text-primary me-2"></i>Dados e privacidade</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <ul class="small text-muted mb-0 ps-3">
+                  <li><strong>O que fica salvo no seu navegador</strong> — etiqueta e configurações (24 h de sessão de recuperação, em IndexedDB), modelos salvos, IP/protocolo da impressora, tema e unidade. Nada disso vai para servidor algum.</li>
+                  <li><strong>Credenciais nunca são salvas</strong> — senha de banco e token Google ficam somente em memória, durante o uso; a sessão de lote gravada exclui esses campos de propósito.</li>
+                  <li><strong>Login com Google (planilhas privadas)</strong> — feito pelo próprio Google (OAuth); o app só recebe um token de leitura e nunca vê sua senha.</li>
+                  <li><strong>Consentimento LGPD/GDPR</strong> — o banner pergunta antes de carregar Google Tag Manager e AdSense; a escolha vale para o app e para o SerieScan (mesma origem). Sem aceite, nada de rastreio roda — só o essencial para o editor.</li>
+                  <li><strong>Anúncios</strong> — um bloco do Google AdSense; sem anúncio disponível, o espaço simplesmente fica vazio (sem erro).</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tec 6: Fontes de dados -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-6"><i class="fas fa-cloud-arrow-down text-primary me-2"></i>De onde os dados vêm (importação)</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <ul class="small text-muted mb-0 ps-3">
+                  <li><strong>Excel/CSV/TXT</strong> — lidos no próprio navegador (biblioteca SheetJS para .xlsx; nada é enviado à internet).</li>
+                  <li><strong>Google Sheets</strong> — planilhas públicas via link (gviz) e privadas com login Google (Sheets API v4).</li>
+                  <li><strong>Webhook</strong> — qualquer endereço que responda JSON; quando o CORS bloqueia, o app tenta JSONP automaticamente.</li>
+                  <li><strong>Banco/API</strong> — APIs REST que devolvem JSON (Supabase, PostgREST, Firebase REST...).</li>
+                  <li><strong>Pasta local</strong> — leitura de todos os .csv/.txt/.xlsx de uma pasta escolhida (File System Access do navegador).</li>
+                  <li><strong>ODBC/MySQL/PostgreSQL/SQL Server</strong> — pela ponte local (o navegador não abre esses bancos; a ponte consulta por você).</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tec 7: Conceitos -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-7"><i class="bi bi-book text-primary me-2"></i>Conceitos rápidos</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm">
+                <div class="row g-3">
+                  <div class="col-lg-6">
+                    <ul class="small text-muted mb-0 ps-3">
+                      <li><strong>Dots</strong> — o "pixel" da impressora. 203 dpi = 8 dots por milímetro (mm × 8 = dots); 300 dpi = 12; 600 dpi = 24.</li>
+                      <li><strong>Bobada</strong> — o rolo carregado na impressora; o comprimento detectado dela precisa casar com a altura da etiqueta.</li>
+                      <li><strong>TEAR OFF</strong> — ponto em que a etiqueta fica pronta para arrancar; gap é o vão entre etiquetas (ou marca preta/ranhura).</li>
+                      <li><strong>Odômetro</strong> — contador interno de etiquetas impressas; usado para validar cada peça do streaming.</li>
+                    </ul>
+                  </div>
+                  <div class="col-lg-6">
+                    <ul class="small text-muted mb-0 ps-3">
+                      <li><strong>/pstprnt</strong> — serviço de impressão por HTTP/HTTPS das Zebra (o "envelope" do ZPL).</li>
+                      <li><strong>EWS</strong> — painel web da impressora (abra o IP dela no navegador: status, contadores, configurações).</li>
+                      <li><strong>mDNS</strong> — descoberta por nome na rede local (é como o app "acha" as impressoras).</li>
+                      <li><strong>GS1, AI e FNC1</strong> — padrão mundial de identificação (AI = código do campo, ex.: <code>(01)</code> GTIN); o app monta o separador sozinho.</li>
+                      <li><strong>Correção do QR (L/M/Q/H)</strong> — quanto maior o nível, mais "arranhões" o código tolera sem parar de ler.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tec 8: Em desenvolvimento -->
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-3" id="ajuda-tec-8"><i class="bi bi-cone-striped text-warning me-2"></i>Em desenvolvimento (transparente e sem prazo prometido)</h5>
+              <div class="card p-3 p-lg-4 border-0 shadow-sm border-start border-4 border-warning">
+                <ul class="small text-muted mb-0 ps-3">
+                  <li><strong>Impressão de origem pública guiada</strong> — fluxo "1 clique, zero instalação" com aceitação assistida do certificado e auto-impressão; um protótipo está em comissão de testes de campo em uma frota real.</li>
+                  <li><strong>Envio por navegação + sonda de rede local determinística</strong> — uma evolução do envio direto que depende da validação de campo em andamento.</li>
+                  <li><strong>Acentos 100% garantidos</strong> — escape hexadecimal (<code>^FH</code>) para fontes que não cobrem todos os acentos.</li>
+                  <li><strong>Moldura de seleção profissional</strong> — 8 alças de redimensionamento e rotação direto no palco, com atalhos de ação rápida.</li>
+                  <li><strong>Fontes do Windows no Editor de Elementos</strong> (como no Zebra Designer 3).</li>
+                  <li><strong>Validação física das simbologias</strong> — bateria de 26 etiquetas de teste para conferência em impressora real (GS1, DataBar, MicroQR, WYSIWYG).</li>
+                  <li><strong>Indexação no Google (Search Console)</strong> — sitemap enviado; aguardando processamento.</li>
+                </ul>
+                <p class="small text-muted mt-3 mb-0">Quer influenciar a ordem? Fale com o dono do projeto — o PIX da aba <strong>1. Funções</strong> também ajuda a manter tudo gratuito. <i class="bi bi-heart-fill text-danger"></i></p>
+              </div>
+            </div>
+          </div><!-- /#ajuda-pane-tecnologias -->
+          </div><!-- /#ajuda-tabs-conteudo -->
 
 <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
           <span class="small text-muted ajuda-so-pc"><i class="bi bi-info-circle me-1"></i> Pressione <kbd>F1</kbd> em qualquer momento para abrir esta ajuda.</span>
