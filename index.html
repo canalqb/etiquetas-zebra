@@ -2756,15 +2756,16 @@
               <div class="mb-1">
                 <label class="form-label small fw-semibold mb-1" for="input-protocolo-modal">Protocolo de Impressao:</label>
                 <select id="input-protocolo-modal" class="form-select form-select-sm">
-                  <option value="http" selected>HTTP Direct (POST /pstprnt - Sem Instalacao)</option>
-                  <option value="https">HTTPS Direct (POST /pstprnt - Link-OS 7.6+)</option>
+                  <option value="http" selected>HTTP Direct (POST /pstprnt - desligado de fabrica no Link-OS 7.5+)</option>
+                  <option value="https">HTTPS Direct (POST /pstprnt - recomendado no Link-OS 7.5+)</option>
                   <option value="cloud">Nuvem / Webhook (Cloud Connect API HTTPS)</option>
-                  <option value="ftp">FTP (Porta 21 - Servidor Local node print-server.js)</option>
+                  <option value="ftp">FTP (Porta 21 - Servidor Local; desligado de fabrica no Link-OS recente)</option>
                   <option value="tcp">TCP 9100 (Porta Raw - Servidor Local node print-server.js)</option>
                 </select>
               </div>
               <div class="form-text small mt-1 d-none" id="hint-cert-https">
-                Link-OS 7.6+ so atende HTTPS com certificado autoassinado. Caminho automatico:
+                Link-OS 7.5+ vem com o serviço HTTP <strong>desligado de fábrica</strong> (norma europeia EU RED —
+                religável no EWS da impressora), então o caminho é o /pstprnt por HTTPS, com certificado autoassinado. Caminho automático:
                 com o <strong>print-server.js local rodando</strong>, o app imprime via HTTPS pela ponte
                 (fallback automatico, certificado tolerado — nao precisa aceitar nada).
                 Caminho manual, sem a ponte:
@@ -2854,9 +2855,14 @@
           </div>
         </div>
         <div class="modal-footer py-2 d-flex justify-content-between">
-          <button type="button" class="btn btn-sm btn-outline-info fw-semibold" id="btn-testar-ip-modal" title="Testar status da impressora e do servidor de impressao">
-            <i class="bi bi-activity me-1"></i> Testar Conexao
-          </button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-info fw-semibold" id="btn-testar-ip-modal" title="Testar status da impressora e do servidor de impressao">
+              <i class="bi bi-activity me-1"></i> Testar Conexao
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" id="btn-conferir-midia" title="Ler o comprimento da bobada na impressora (via ~HS pela ponte local) e comparar com a etiqueta atual">
+              <i class="bi bi-rulers me-1"></i> Conferir Mídia
+            </button>
+          </div>
           <div>
             <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-sm btn-primary" id="btn-salvar-ip-modal">Salvar</button>
@@ -4390,7 +4396,8 @@
       if (typeof syncMobileState === "function") syncMobileState();
     }
 
-    /* Pedido 1.150: Link-OS 7.6+ so atende HTTPS (pstprnt) — helper de URL
+    /* Pedido 1.150: Link-OS 7.5+ vem com HTTP desligado de fabrica (EU RED) —
+       HTTPS e o caminho (pstprnt). Corrigido em 1.231 pelo corpus ZT411 — helper de URL
        e fluxo de aceitacao do certificado autoassinado no navegador. */
     function pstprntUrl(ip, proto) {
       var schemeP = (proto || getProtocolo()) === "https" ? "https" : "http";
@@ -4578,7 +4585,7 @@
                 if (j.ok) {
                   notify("✅ Impressora respondeu HTTPS via ponte local — certificado tolerado, sem aceitar nada no navegador!", "success");
                 } else {
-                  notify("⚠️ HTTPS falhou também pela ponte: " + (j.error || "erro") + ". Confira o firmware (Link-OS 7.6+) e o IP " + testIp + ".", "danger");
+                  notify("⚠️ HTTPS falhou também pela ponte: " + (j.error || "erro") + ". Confira o firmware (Link-OS 7.5+) e o IP " + testIp + ".", "danger");
                 }
               })
               .catch(function () {
@@ -4604,6 +4611,91 @@
           });
       }
     });
+
+    /* ---------------- Conferir Midia (pedido 1.231 — corpus ZT411) ----------------
+       A ponte local le o ~HS na porta raw (POST /midia): o 4o campo da 1a
+       linha e o comprimento detectado da bobada em dots — e o ~HS NAO e
+       bloqueado pelo Modo Protegido (diferente do SGD ! U1). Compara com o
+       ^LL que sera enviado: ^LL maior que a bobada atravessa etiquetas EM
+       SILENCIO (medido na ZT411, rodada 8) — a causa n.1 de "tamanho errado".
+       Emuladores sem status (ex.: Virtual ZPL Printer) caem no erro claro. */
+    function compararMidia(midiaDots, etiquetaDots, dpmm) {
+      dpmm = dpmm || 8;
+      if (!isFinite(midiaDots) || midiaDots <= 0) {
+        return { nivel: "erro", msg: "comprimento de mídia ilegível" };
+      }
+      var tol = Math.max(1, Math.round(dpmm)); /* ~1 mm de tolerância de calibração */
+      var mmMid = Math.round((midiaDots / dpmm) * 10) / 10;
+      var mmEtq = Math.round((etiquetaDots / dpmm) * 10) / 10;
+      if (etiquetaDots > midiaDots + tol) {
+        return {
+          nivel: "atravessa",
+          msg: "bobada de " + mmMid + " mm (" + midiaDots + " dots) é MENOR que a etiqueta de " +
+               mmEtq + " mm (" + etiquetaDots + " dots) — cada impressão avança " +
+               Math.ceil(etiquetaDots / midiaDots) + "× a mídia, em silêncio"
+        };
+      }
+      if (etiquetaDots < midiaDots - tol) {
+        return {
+          nivel: "sobra",
+          msg: "bobada de " + mmMid + " mm (" + midiaDots + " dots); etiqueta de " +
+               mmEtq + " mm (" + etiquetaDots + " dots) — sobram " +
+               (Math.round(((midiaDots - etiquetaDots) / dpmm) * 10) / 10) + " mm por etiqueta"
+        };
+      }
+      return { nivel: "ok", msg: "bobada de " + mmMid + " mm (" + midiaDots + " dots) casa com a etiqueta atual" };
+    }
+
+    function conferirMidia(ip) {
+      var zplAtual = (modoImpressaoImagem() || temTextoGirado())
+        ? gerarZPLImagem()
+        : gerarZPLBloco(elements, tamAtualKey, rotAtual);
+      var ll = parseInt((/\^LL(\d+)/.exec(String(zplAtual || "")) || [])[1], 10);
+      if (!ll) ll = (SIZES[tamAtualKey] || SIZES["100x50"]).h;
+      return fetch("http://localhost:3001/midia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ip: ip })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) {
+          return { nivel: "erro", msg: (j && j.error) || "resposta inválida da ponte local", ll: ll };
+        }
+        var c = compararMidia(j.comprimentoDots, ll, activeDpmm);
+        c.comprimentoDots = j.comprimentoDots;
+        c.cabecaAberta = !!j.cabecaAberta;
+        c.semPapel = !!j.semPapel;
+        c.ll = ll;
+        return c;
+      })
+      .catch(function () {
+        return { nivel: "erro", msg: "ponte local indisponível — rode: node print-server.js", ll: ll };
+      });
+    }
+
+    (function () {
+      var btnMidia = $("btn-conferir-midia");
+      if (!btnMidia) return;
+      btnMidia.addEventListener("click", function () {
+        var ipMidia = $("input-ip-modal").value.trim() || localStorage.getItem(CHAVE_IP);
+        if (!ipMidia) { notify("Digite o IP da impressora Zebra na rede local.", "warning"); return; }
+        var rotuloDescanso = btnMidia.innerHTML;
+        btnMidia.disabled = true;
+        btnMidia.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Consultando…';
+        conferirMidia(ipMidia).then(function (c) {
+          btnMidia.disabled = false;
+          btnMidia.innerHTML = rotuloDescanso;
+          if (c.cabecaAberta || c.semPapel) {
+            notify("⚠️ Hardware: " + (c.cabecaAberta ? "cabeça de impressão aberta" : "sem papel") + " na " + ipMidia + ".", "danger");
+          }
+          if (c.nivel === "ok") notify("✅ " + c.msg, "success");
+          else if (c.nivel === "sobra") notify("ℹ️ " + c.msg, "info");
+          else if (c.nivel === "atravessa") notify("⚠️ " + c.msg + " — ajuste o tamanho da etiqueta antes de imprimir.", "warning");
+          else notify("❌ Conferência de mídia: " + c.msg, "danger");
+        });
+      });
+    })();
 
     var btnConfigIp = $("btn-config-ip");
     if (btnConfigIp) btnConfigIp.addEventListener("click", abrirModalIp);
@@ -13228,6 +13320,31 @@
     }
 
     /* ---------------- Impressão Híbrida (HTTP Direct, Cloud & Local Server) ---------------- */
+    /* Pedido 1.231 (corpus ZT411, rodadas 5-6): envios seguidos com menos de
+       ~8 s fazem a impressora DESCARTAR etiquetas mesmo respondendo HTTP 200.
+       Vale para todo caminho que entrega uma etiqueta inteira por envio:
+       fetch direto (/pstprnt), HTTPS pela ponte e TCP/FTP pela ponte. O
+       carimbo só entra quando a etiqueta sai de verdade — o HTTPS direto que
+       falha no handshake não enviou nada, então o fallback pela ponte não
+       pode ser bloqueado pelo próprio carimbo. O streaming 1.130 (/print-one)
+       tem o próprio ritmo (validação por odômetro) e fica fora disto. */
+    var COOLDOWN_IMPRESSAO_MS = 8000;
+    var _ultimoEnvioImpressora = 0;
+    function cooldownRestanteMs(agora) {
+      agora = agora || Date.now();
+      var passado = agora - _ultimoEnvioImpressora;
+      return passado >= COOLDOWN_IMPRESSAO_MS ? 0 : COOLDOWN_IMPRESSAO_MS - passado;
+    }
+    function cooldownBloquear(mostrarAviso) {
+      var restante = cooldownRestanteMs();
+      if (restante > 0) {
+        if (mostrarAviso) notify("⏳ Aguarde " + Math.ceil(restante / 1000) + " s para imprimir de novo — a impressora descarta etiquetas enviadas com menos de ~8 s de intervalo (teste físico na ZT411).", "warning");
+        return true;
+      }
+      return false;
+    }
+    function cooldownRegistrar() { _ultimoEnvioImpressora = Date.now(); }
+
     function enviarImpressao(ip, zpl) {
       if (btChar && btDevice && btDevice.gatt && btDevice.gatt.connected) {
         notify("Enviando etiqueta diretamente para a impressora Bluetooth...", "dark");
@@ -13277,6 +13394,7 @@
         });
       } else if (proto === "http" || proto === "https") {
         var schemeZ = proto === "https" ? "https" : "http";
+        if (cooldownBloquear(true)) return;
         notify(isExtensionDetected
           ? "Enviando ZPL via Extensão Chrome (" + schemeZ + "://" + ip + "/pstprnt)..."
           : "Enviando ZPL via " + schemeZ.toUpperCase() + " direto (" + schemeZ + "://" + ip + "/pstprnt)...", "dark");
@@ -13286,6 +13404,7 @@
           mode: "no-cors"
         })
         .then(function () {
+          cooldownRegistrar();
           notify("✅ Comando ZPL transmitido com sucesso para " + ip + "!", "success");
         })
         .catch(function () {
@@ -13315,6 +13434,7 @@
        rejeita o fetch ANTES de enviar (handshake), então a etiqueta nunca
        saiu — chamar depois não duplica. */
     function enviarHttpsViaServidorLocal(ip, zpl) {
+      if (cooldownBloquear(true)) return;
       fetch("http://localhost:3001/print-https", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -13323,6 +13443,7 @@
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (j.ok) {
+          cooldownRegistrar();
           notify("✅ Etiqueta enviada via HTTPS pela ponte local — sem precisar aceitar o certificado!", "success");
         } else {
           notify("HTTPS pela ponte local falhou: " + (j.error || "erro") + ". Alternativa manual: aceitar o certificado em https://" + ip + " (Avançado → Prosseguir).", "danger");
@@ -13334,6 +13455,7 @@
     }
 
     function enviarViaServidorLocal(ip, zpl, proto) {
+      if (cooldownBloquear(true)) return;
       notify("Enviando ZPL via servidor local (" + proto.toUpperCase() + ")...", "dark");
       fetch("http://localhost:3001/print", {
         method: "POST",
@@ -13343,6 +13465,7 @@
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (j.ok) {
+          cooldownRegistrar();
           notify("✅ Etiqueta enviada com sucesso para " + ip + " (" + proto.toUpperCase() + ")!", "success");
         } else {
           notify("Erro na impressão: " + j.error, "danger");
@@ -16099,7 +16222,14 @@
       parseZPLToElements: parseZPLToElements,
       gerarZPLBloco: gerarZPLBloco,
       gerarZPLImagem: gerarZPLImagem,
-      verificarImpressoraIp: verificarImpressoraIp
+      verificarImpressoraIp: verificarImpressoraIp,
+      compararMidia: compararMidia,
+      conferirMidia: conferirMidia,
+      cooldownRestanteMs: cooldownRestanteMs,
+      cooldownRegistrar: cooldownRegistrar,
+      cooldownBloquear: cooldownBloquear,
+      COOLDOWN_IMPRESSAO_MS: COOLDOWN_IMPRESSAO_MS,
+      get ultimoEnvioImpressora() { return _ultimoEnvioImpressora; }
     };
 
   })();
@@ -16516,7 +16646,7 @@
               <div class="col-md-4">
                 <div class="card p-3 h-100 border-0 shadow-sm">
                   <h6 class="fw-bold text-primary mb-2"><i class="fas fa-network-wired me-1"></i>Rede (IP)</h6>
-                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.6 ou mais novo?</strong> O /pstprnt só funciona em <strong>HTTPS</strong>: com o <strong>print-server.js local rodando</strong> o app imprime via HTTPS pela ponte automaticamente (certificado autoassinado tolerado — nada para aceitar); a ponte precisa rodar <strong>no computador que imprime</strong> — instale-a para ligar sozinha com o Windows com <code>powershell -ExecutionPolicy Bypass -File instalar-ponte.ps1</code>; usando o app publicado no GitHub, o navegador pede na primeira vez <strong>acesso à rede local</strong> — permita (é uma vez só); sem a ponte, aceite o certificado uma vez por sessão (Avançado — Prosseguir) — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
+                  <p class="small text-muted mb-0">O jeito mais comum. Na tela <strong>Configurar Impressora</strong>, digite o número de IP da impressora (ex.: 192.168.0.50) e toque em <strong>Testar</strong>. O pontinho verde confirma que ela respondeu. <strong>Link-OS 7.5 ou mais novo?</strong> O serviço HTTP vem <strong>desligado de fábrica</strong> (norma europeia EU RED — dá para religar no painel/EWS da impressora), então o caminho é o /pstprnt em <strong>HTTPS</strong>: com o <strong>print-server.js local rodando</strong> o app imprime via HTTPS pela ponte automaticamente (certificado autoassinado tolerado — nada para aceitar); a ponte precisa rodar <strong>no computador que imprime</strong> — instale-a para ligar sozinha com o Windows com <code>powershell -ExecutionPolicy Bypass -File instalar-ponte.ps1</code>; usando o app publicado no GitHub, o navegador pede na primeira vez <strong>acesso à rede local</strong> — permita (é uma vez só); sem a ponte, aceite o certificado uma vez por sessão (Avançado — Prosseguir) — firmwares 7.4 ou mais antigos ficam no HTTP Direct normal.</p>
                 </div>
               </div>
               <div class="col-md-4">

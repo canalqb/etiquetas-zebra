@@ -42,7 +42,7 @@ var net = require("net");
 var os = require("os");
 var dgram = require("dgram");
 
-var PORTA = 3001;            // porta do servidor HTTP local
+var PORTA = parseInt(process.env.PORTA, 10) || 3001; // porta do servidor HTTP local (env p/ testes)
 var FTP_PORTA = parseInt(process.env.FTP_PORT, 10) || 21; // porta FTP da Zebra (padrão 21)
 var TIMEOUT_FTP = 12000; // ms por etapa do diálogo FTP
 var TIMEOUT_TCP_ENVIO = parseInt(process.env.TCP_SEND_TIMEOUT, 10) || 10000; // ms sem progresso enviando ZPL (auditoria A7)
@@ -745,7 +745,7 @@ var servidor = http.createServer(function (req, res) {
   }
 
   if (req.method === "GET" && req.url === "/") {
-    responder(res, 200, { ok: true, servico: "print-server Zebra (FTP porta 21, TCP porta 9100, consultas /query-odbc e /query-db)" });
+    responder(res, 200, { ok: true, servico: "print-server Zebra (FTP porta 21, TCP porta 9100, conferencia de midia POST /midia, consultas /query-odbc e /query-db)" });
     return;
   }
 
@@ -817,8 +817,42 @@ var servidor = http.createServer(function (req, res) {
     return;
   }
 
+  /* Pedido 1.231 (corpus testeemzebrareal, secao 9.5): conferir a bobada da
+     impressora via ~HS na porta raw. O 4o campo da 1a linha do ~HS e o
+     comprimento detectado da midia em dots (o mesmo LABEL LENGTH que o EWS
+     reporta) e o ~HS NAO e bloqueado pelo Modo Protegido (diferente do SGD
+     ! U1). Com isso o app confere o ^LL da etiqueta com a bobada carregada
+     antes de imprimir — ^LL maior que a midia atravessa etiquetas em
+     silencio (medido na ZT411). */
+  if (req.method === "POST" && req.url === "/midia") {
+    lerCorpo(req, 1e6, function (corpoM) {
+      var dadosM;
+      try { dadosM = JSON.parse(corpoM || "{}"); }
+      catch (e) { responder(res, 400, { ok: false, error: "JSON inválido" }); return; }
+      var ipM = String(dadosM.ip || "").trim();
+      var ipValidoM = /^(\d{1,3}\.){3}\d{1,3}$/.test(ipM) || /^[\w.-]+$/.test(ipM);
+      if (!ipM || !ipValidoM) { responder(res, 400, { ok: false, error: "IP da impressora inválido ou ausente" }); return; }
+      var portaM = parseInt(process.env.TCP_PORT, 10) || 9100;
+      consultarZebra(ipM, portaM, "~HS\r\n", function (txt) {
+        if (!txt) { responder(res, 200, { ok: false, error: "sem resposta ao ~HS em " + ipM + ":" + portaM + " — impressora desligada, porta 9100 fechada ou emulador sem status (a conferência de mídia usa a porta raw)" }); return; }
+        var l1 = String(txt).split(/\r?\n/)[0] || "";
+        var campos = l1.split(",");
+        var comprimento = parseInt(campos[3], 10);
+        if (!comprimento || comprimento <= 0) { responder(res, 200, { ok: false, error: "~HS respondeu sem comprimento de mídia legível (linha 1: " + l1.slice(0, 60) + ")" }); return; }
+        responder(res, 200, {
+          ok: true,
+          comprimentoDots: comprimento,
+          cabecaAberta: String(campos[1] || "").trim() === "1",
+          semPapel: String(campos[2] || "").trim() === "1",
+          porta: portaM
+        });
+      });
+    });
+    return;
+  }
+
   if (req.method !== "POST" || req.url !== "/print") {
-    responder(res, 404, { ok: false, error: "Use POST /print ou /print-one com {ip, zpl, protocol} ou POST /query-odbc|/query-db com {sql}" });
+    responder(res, 404, { ok: false, error: "Use POST /print ou /print-one com {ip, zpl, protocol}, POST /midia com {ip}, ou POST /query-odbc|/query-db com {sql}" });
     return;
   }
 
@@ -871,7 +905,7 @@ if (require.main === module) {
   servidor.listen(PORTA, "127.0.0.1", function () {
     console.log("print-server Zebra escutando em http://localhost:" + PORTA);
     console.log("Suporta impressao via FTP (porta " + FTP_PORTA + "), TCP (porta 9100), HTTPS Direct com certificado proprio (POST /print-https, 1.169g), validacao por odometro (POST /print-one)");
-    console.log("e ponte de dados (POST /query-odbc, /query-db). Descoberta de impressoras: GET /descobrir (mDNS + varredura).");
+    console.log("conferencia de midia via ~HS (POST /midia, 1.231) e ponte de dados (POST /query-odbc, /query-db). Descoberta de impressoras: GET /descobrir (mDNS + varredura).");
     console.log("A impressao HTTP(S) Direct e feita pelo proprio navegador. Pedido 1.130: uma etiqueta por vez, validada pelo odometro (TCP).");
   });
 }
