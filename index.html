@@ -1685,7 +1685,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.034</span>
+        <span class="brand-ver">v1.035</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -8092,7 +8092,7 @@
         p.push("^LH" + lhX + "," + lhY);
       }
 
-      elementosList.forEach(function (it) {
+      elementosList.forEach(function (it, itIdx) {
         var vx = it.x;
         var vy = it.y;
         
@@ -8486,7 +8486,10 @@
            largura↔altura trocadas quando o conteúdo gira (prot 90/270). */
         if (it.texto && (it.tipo === "borda" || it.tipo === "elipse" || it.tipo === "raio")) {
           var fForma = it.fonte || 30;
-          if (it.fonteAuto !== false) {
+          /* Pedido 1.236: no lote a fonte da forma congela — sem o guard,
+             cada linha re-ajustava a fonte ao tamanho do SEU texto e as
+             etiquetas saíam com tamanhos diferentes entre si. */
+          if (it.fonteAuto !== false && !(loteCongelarAtivo && loteTamRef && loteTamRef[itIdx])) {
             fForma = Math.max(10, ajustarFonteParaCaber(it.texto, fForma, (it.w || 100) - 12));
           }
           var fbFormaW = Math.max(1, Math.round(((prot === 90 || prot === 270) ? vh : vw) - 6));
@@ -9383,9 +9386,11 @@
         var prep = prepararLoteLazy();
         if (!prep) { quandoPronta(null); return; }
         n = importDados.linhas.length;
+        loteGarantirTamRef(); /* pedido 1.236 */
         var idxAlvos = prep.alvos.map(function (a) { return a ? elements.indexOf(a) : -1; });
         gerarItem = function (i) {
           var cl = elements.map(function (el) { return Object.assign({}, el); });
+          loteAplicarTamanhosRef(cl); /* pedido 1.236: tamanhos congelados em todas as fatias */
           var linha = importDados.linhas[i] || [];
           prep.pares.forEach(function (par, j) {
             var k = idxAlvos[j];
@@ -9393,7 +9398,12 @@
             var v = linha[prep.idxCols[par.coluna]];
             cl[k].texto = (v != null) ? String(v) : "";
           });
-          return gerarZPLBloco(cl, tamAtualKey, rotAtual);
+          loteCongelarAtivo = true;
+          try {
+            return gerarZPLBloco(cl, tamAtualKey, rotAtual);
+          } finally {
+            loteCongelarAtivo = false;
+          }
         };
       }
       if (antes) { try { antes(); } catch (eAntes) {} }
@@ -10220,6 +10230,7 @@
       loteEspecialAtivo = false;
       loteEspecialBindings = null;
       loteZplBlocos = null; /* Pedido 1.140 */
+      loteTamRef = null; /* Pedido 1.236 */
       etiquetasMulti = []; /* Pedido 1.102: "Novo" zera as views do projeto também */
       renderSeletorEtiquetasMulti();
       importDados = { colunas: [], linhas: [] };
@@ -11312,6 +11323,7 @@
       loteZplBlocos = null;
       loteEspecialAtivo = false;
       loteEspecialBindings = null;
+      loteTamRef = null; /* Pedido 1.236: nova importação = novos tamanhos de referência */
       lotePaginaAtual = 0;
       if (tinhaZpl || tinhaEsp) {
         notify("Lote anterior (ZPL importado / especial) descartado — a nova importação assume o lugar.", "dark");
@@ -12430,6 +12442,7 @@
     function aplicarLinhaLoteNoEstudio(idxLinha, pares, idxCols) {
       var linha = importDados.linhas[idxLinha] || [];
       var alvos = garantirAlvosLote(pares);
+      loteGarantirTamRef(); /* pedido 1.236: primeiro bind congela os tamanhos de referência */
       pares.forEach(function (par, i) {
         if (alvos[i]) {
           var v = linha[idxCols[par.coluna]];
@@ -12438,6 +12451,12 @@
         }
       });
       renderStudio();
+      /* Pedido 1.236: o preview snapa w/h de QR/barcode no dado da linha
+         exibida (1.164); devolve os tamanhos congelados ao modelo para a
+         próxima linha/navegação começar do MESMO tamanho — sem isto, navegar
+         o lote fazia as caixas sofrerem deriva acumulada e cada etiqueta
+         gerada saía com um tamanho diferente. */
+      loteAplicarTamanhosRef(elements);
       return alvos;
     }
 
@@ -12678,6 +12697,30 @@
       return { pares: pares, idxCols: idxCols, alvos: alvos, idxAlvos: idxAlvos };
     }
 
+    /* Pedido 1.236: tamanhos CONGELADOS do lote de importação.
+       O preview do Estúdio snapa a caixa de QR/barcode nos módulos reais do
+       DADO de cada linha (pedido 1.164) e escreve de volta em el.w/el.h —
+       navegando o lote, cada etiqueta começava da caixa snapada da linha
+       ANTERIOR: os tamanhos sofriam deriva acumulada e cada etiqueta gerada
+       saía com um tamanho diferente. Agora o primeiro bind captura os
+       tamanhos de referência (w/h) e TODAS as etiquetas do lote — preview,
+       campo #zpl, Imprimir e Download — usam exatamente esses tamanhos. */
+    var loteTamRef = null;
+    var loteCongelarAtivo = false; /* gerarZPLBloco: fonte de forma congela no lote */
+    function loteGarantirTamRef() {
+      if (loteTamRef) return;
+      loteTamRef = elements.map(function (el) { return { w: el.w, h: el.h }; });
+    }
+    function loteAplicarTamanhosRef(arr) {
+      if (!loteTamRef || !arr) return;
+      arr.forEach(function (el, i) {
+        var r = loteTamRef[i];
+        if (!r || !el) return;
+        el.w = r.w;
+        el.h = r.h;
+      });
+    }
+
     /* Núcleo compartilhado entre o botão "Gerar Todas as Linhas" e o "Imprimir":
        devolve {zpl, total, pares, idxCols} com uma etiqueta por linha — todas
        no formato/posições da etiqueta do projeto, apenas trocando os dados.
@@ -12694,6 +12737,7 @@
       /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho */
       if (!elements.length && !garantirEtiquetaLote()) return null;
       var idxCols = obterIdxColsLote();
+      loteGarantirTamRef(); /* pedido 1.236: primeira geração congela os tamanhos */
 
       var alvos = garantirAlvosLote(pares);
       /* Binding por ÍNDICE (clone é elements.map — posições 1:1): imune a
@@ -12703,13 +12747,20 @@
       var blocos = [];
       importDados.linhas.forEach(function (linha) {
         var clone = elements.map(function (el) { return Object.assign({}, el); });
+        loteAplicarTamanhosRef(clone); /* pedido 1.236: toda linha nasce com os tamanhos congelados */
         pares.forEach(function (par, i) {
           var k = idxAlvos[i];
           if (!(k >= 0) || k >= clone.length) return; /* pedido 1.177: undefined/NaN/-1 seguros */
           var v = linha[idxCols[par.coluna]];
           clone[k].texto = (v != null) ? String(v) : "";
         });
-        var bloco = gerarZPLBloco(clone, tamAtualKey, rotAtual);
+        var bloco = null;
+        loteCongelarAtivo = true;
+        try {
+          bloco = gerarZPLBloco(clone, tamAtualKey, rotAtual);
+        } finally {
+          loteCongelarAtivo = false;
+        }
         if (bloco) blocos.push(bloco);
       });
 
@@ -12741,9 +12792,23 @@
            rodapé — só Fechar e Criar Etiquetas) — salva silenciosamente. */
         try { localStorage.setItem(IMPORT_MAP_STORAGE_KEY, JSON.stringify(importObterMapeamento())); } catch (errSalvar) {}
 
-        /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho
-           (textos empilhados, uma coluna por elemento, sem sobreposição) */
-        if (!elements.length && !garantirEtiquetaLote()) { notify("Não foi possível criar a etiqueta — verifique o mapeamento.", "danger"); return; }
+        /* Pedido 1.236: importar SEMPRE monta uma etiqueta NOVA — nunca
+           aplica o mapeamento sobre uma etiqueta já existente (antes, os
+           dados iam para cima do desenho aberto e os campos sem alvo
+           ganhavam elementos extras empilhados sobre ele, com tamanhos
+           diferentes dos do usuário). O desenho anterior sai de cena:
+           guarde o Modelo .bin antes, se quiser mantê-lo. */
+        elements = [];
+        selectedElId = null;
+        selectedElIds = [];
+        loteEspecialAtivo = false;
+        loteEspecialBindings = null;
+        loteZplBlocos = null;
+        etiquetasMulti = [];
+        renderSeletorEtiquetasMulti();
+        loteTamRef = null; /* a etiqueta nova traz seus próprios tamanhos */
+        if (!garantirEtiquetaLote()) { notify("Não foi possível criar a etiqueta — verifique o mapeamento.", "danger"); return; }
+        loteGarantirTamRef(); /* pedido 1.236: congela os tamanhos da etiqueta nova */
 
         /* Pedido 1.235: LOTÃO (acima de LOTE_EXIBE_MAX) não gera ZPL nenhum
            aqui — antes, cada etiqueta da planilha era gerada de uma vez em
@@ -12763,7 +12828,7 @@
           loteZplBlocos = null; /* Pedido 1.140: lote de CSV assume o lugar do lote ZPL */
           importSessaoSalvar(); /* Pedido 1.191: o lote gerado sobrevive ao F5 */
           atualizarBarraStatusLote();
-          notify(importDados.linhas.length + " etiquetas prontas (lote grande): o campo ZPL mostra a etiqueta atual — Imprimir e Download ZPL geram todas na hora.", "success");
+          notify(importDados.linhas.length + " etiquetas prontas (lote grande, etiqueta nova): o campo ZPL mostra a etiqueta atual — Imprimir e Download ZPL geram todas na hora.", "success");
           return;
         }
 
@@ -12782,7 +12847,7 @@
         $("zpl").value = r.zpl;
         importSessaoSalvar(); /* Pedido 1.191: o lote gerado sobrevive ao F5 */
         atualizarBarraStatusLote();
-        notify(r.total + " etiquetas geradas (uma por linha). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
+        notify(r.total + " etiquetas geradas (uma por linha, em etiqueta nova — os tamanhos ficam iguais em todas). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
       });
     }
 
@@ -16547,7 +16612,17 @@
       LOTE_EXIBE_MAX: LOTE_EXIBE_MAX,
       LOTE_PROGRESSIVO_MIN: LOTE_PROGRESSIVO_MIN,
       LOTE_IMPORT_MAX_LINHAS: LOTE_IMPORT_MAX_LINHAS,
-      LOTE_SESSAO_MAX_LINHAS: LOTE_SESSAO_MAX_LINHAS
+      LOTE_SESSAO_MAX_LINHAS: LOTE_SESSAO_MAX_LINHAS,
+      /* Pedido 1.236: etiqueta nova na importação + tamanhos congelados */
+      adicionarElemento: adicionarElemento,
+      limparEtiqueta: limparEtiqueta,
+      loteNavegarPara: loteNavegarPara,
+      loteTamRefInfo: function () { return loteTamRef ? loteTamRef.length : 0; },
+      loteElementsInfo: function () {
+        return elements.map(function (el) {
+          return { tipo: el.tipo, w: el.w, h: el.h, fonte: el.fonte, texto: el.texto };
+        });
+      }
     };
 
   })();
@@ -16862,7 +16937,7 @@
                       <ul class="small text-muted mb-2 ps-3">
                         <li><strong>Mapeamento de colunas</strong> — para cada coluna da planilha, escolhe qual campo da etiqueta recebe aquele valor (uma coluna pode alimentar vários campos; com um elemento selecionado no Estúdio, marcar a coluna vincula direto nele).</li>
                         <li><strong>Pré-visualização</strong> — as primeiras 3 linhas, para conferir antes de gerar.</li>
-                        <li><strong>Fechar</strong> / <strong>Criar Etiquetas</strong> — gera uma etiqueta por linha (o mapeamento fica salvo; sem nenhuma coluna vinculada a janela avisa e continua aberta).</li>
+                        <li><strong>Fechar</strong> / <strong>Criar Etiquetas</strong> — gera uma etiqueta por linha, sempre em uma <strong>etiqueta nova</strong> (o desenho aberto não é usado; guarde o Modelo .bin antes, se quiser mantê-lo) com os mesmos tamanhos em todas as etiquetas (o mapeamento fica salvo; sem nenhuma coluna vinculada a janela avisa e continua aberta).</li>
                       </ul>
                       <p class="small text-muted mb-0"><i class="bi bi-lightbulb-fill text-success me-1"></i><strong>Exemplo:</strong> planilha com Nome/Preço/QR de 25 produtos → Arquivo → escolher o .xlsx → mapear Nome→"Nome do Produto", Preço→Texto, QR→QR Code → Criar Etiquetas → "25 etiquetas serão geradas" → navegue pelas setas ‹ › e use <strong>Testar 1</strong> antes de imprimir tudo.</p>
                     </div>
@@ -17205,7 +17280,7 @@
                     <li>Importe <strong>planilhas do Excel</strong>, arquivos <strong>CSV/TXT</strong> e <strong>planilhas online do Google</strong> — ou fontes avançadas (webhook, banco de dados/API, pasta compartilhada e ponte local).</li>
                     <li><strong>As colunas são lidas sozinhas</strong>: ao escolher o arquivo, ou ao conectar com a origem (Enter no link/URL ou mudança de valor válido), o “Ler Colunas” roda automaticamente.</li>
                     <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
-                    <li><strong>Criar Etiquetas</strong> gera uma etiqueta por linha da planilha (o mapeamento é salvo no navegador sozinho) — a primeira fica no Estúdio como modelo e as setas ‹ › da barra de status navegam pelas demais.</li>
+                    <li><strong>Criar Etiquetas</strong> gera uma etiqueta por linha da planilha, sempre em uma <strong>etiqueta nova</strong> — nunca sobre um desenho já aberto — e todas as etiquetas do lote mantêm exatamente os mesmos tamanhos de elementos (o mapeamento é salvo no navegador sozinho) — a primeira fica no Estúdio como modelo e as setas ‹ › da barra de status navegam pelas demais.</li>
                     <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
                   </ul>
                 </div>
