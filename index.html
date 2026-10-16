@@ -1685,7 +1685,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.033</span>
+        <span class="brand-ver">v1.034</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -9259,6 +9259,33 @@
        as Linhas") > etiqueta atual; views guardadas (1.102) entram antes.
        Sem isso o Download de um lote gerado do Excel/CSV baixava só a
        etiqueta corrente e a reimportação voltava 1 etiqueta em vez de todas. */
+    /* Pedido 1.235 (planilha muito grande travava a aba): limites de memória.
+       Acima de LOTE_EXIBE_MAX o campo #zpl e a composição de TELA mostram
+       apenas a etiqueta atual (antes: cada render re-gerava o ZPL de TODAS
+       as linhas — O(linhas×elementos) por tecla, string gigante no textarea
+       e aba congelando). A geração completa passa a acontecer só em
+       Imprimir/Download — em fatias assíncronas com progresso acima de
+       LOTE_PROGRESSIVO_MIN. */
+    var LOTE_EXIBE_MAX = 300;          /* acima: tela mostra só a etiqueta atual */
+    var LOTE_PROGRESSIVO_MIN = 2000;    /* acima: geração completa sai em fatias */
+    var LOTE_FATIA = 1000;              /* etiquetas por fatia (setTimeout entre elas) */
+    var LOTE_IMPORT_MAX_LINHAS = 100000; /* teto de linhas importadas (proteção) */
+    var LOTE_SESSAO_MAX_LINHAS = 20000; /* acima: sessão F5 não persiste o lote */
+    var LOTE_SESSAO_ZPL_MAX = 2000000;  /* acima: não persiste o ZPL no snapshot */
+
+    /* Quantas etiquetas o lote ativo tem HOJE (lote ZPL 1.140 > lote
+       especial 1.102 > linhas importadas) — 0 quando só existe a etiqueta
+       atual. Barato: O(colunas), chamado a cada render. */
+    function loteContagemAtiva() {
+      if (loteZplBlocos && loteZplBlocos.length >= 2) return loteZplBlocos.length;
+      if (ehLoteEspecialNavegavel()) return loteEspecialBindings.length;
+      if (importDados && importDados.linhas && importDados.linhas.length) {
+        var v = importValidarMapeamento();
+        if (v && v.ok && obterParesMapeadosLote(v.mapa).length) return importDados.linhas.length;
+      }
+      return 0;
+    }
+
     function comporZplSaida(paraImpressao) {
       /* Guard de re-entrância: gerarZPLTodasLinhas → garantirAlvosLote pode
          chamar renderStudio → renderZPL → comporZplSaida de novo. O aninhado
@@ -9270,7 +9297,17 @@
       try {
       var zpl = null;
       var temLote = false;
-      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+      var nLoteExibir = loteContagemAtiva();
+      if (nLoteExibir > LOTE_EXIBE_MAX && !paraImpressao) {
+        /* Pedido 1.235: lote grande em TELA — só a etiqueta atual + nota.
+           A completa (todas as linhas) fica para Imprimir/Download, que
+           geram na hora via loteZplCompletaAssinc (fatias com progresso). */
+        zpl = gerarZPLBloco(elements, tamAtualKey, rotAtual);
+        if (zpl) {
+          zpl += "\n^FX lote de " + nLoteExibir + " etiquetas: exibindo so a atual — Imprimir/Download ZPL geram todas\n";
+          temLote = true;
+        }
+      } else if (loteZplBlocos && loteZplBlocos.length >= 2) {
         zpl = loteZplGerarZpl() || null;
         if (zpl) temLote = true;
       } else if (ehLoteEspecialNavegavel()) {
@@ -9303,6 +9340,93 @@
       } finally {
         comporZplSaida._rodando = false;
       }
+    }
+
+    /* Pedido 1.235: progresso da geração em fatias (div flutuante leve). */
+    var _progLoteEl = null;
+    function progressoLoteMostrar(total) {
+      progressoLoteFechar();
+      _progLoteEl = document.createElement("div");
+      _progLoteEl.setAttribute("role", "status");
+      _progLoteEl.style.cssText = "position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:2000;background:#0f172a;color:#e2e8f0;padding:10px 18px;border-radius:10px;font-size:0.85rem;box-shadow:0 6px 18px rgba(0,0,0,.35);white-space:nowrap";
+      _progLoteEl.textContent = "Gerando ZPL… 0 de " + total + " etiquetas";
+      document.body.appendChild(_progLoteEl);
+    }
+    function progressoLoteAtualizar(feitas, total) {
+      if (_progLoteEl) _progLoteEl.textContent = "Gerando ZPL… " + feitas + " de " + total + " etiquetas";
+    }
+    function progressoLoteFechar() {
+      if (_progLoteEl && _progLoteEl.parentNode) _progLoteEl.parentNode.removeChild(_progLoteEl);
+      _progLoteEl = null;
+    }
+
+    /* Pedido 1.235: geração COMPLETA do lote (todas as etiquetas) em fatias
+       assíncronas — a aba continua respondendo. Suporta as 3 origens do
+       lote (ZPL importado 1.140, lote especial 1.102, linhas importadas),
+       na mesma cascata do comporZplSaida. */
+    function loteZplCompletaAssinc(quandoPronta) {
+      var gerarItem = null, antes = null, n = 0;
+      if (loteZplBlocos && loteZplBlocos.length >= 2) {
+        n = loteZplBlocos.length;
+        antes = loteZplSincronizarPaginaAtual;
+        gerarItem = function (i) {
+          return gerarZPLBloco(JSON.parse(JSON.stringify(loteZplBlocos[i])), tamAtualKey, rotAtual);
+        };
+      } else if (ehLoteEspecialNavegavel()) {
+        n = loteEspecialBindings.length;
+        gerarItem = function (i) {
+          var cl = elements.map(function (el) { return Object.assign({}, el); });
+          aplicarStepMapEmArray(cl, loteEspecialBindings[i]);
+          return gerarZPLBloco(cl, tamAtualKey, rotAtual);
+        };
+      } else {
+        var prep = prepararLoteLazy();
+        if (!prep) { quandoPronta(null); return; }
+        n = importDados.linhas.length;
+        var idxAlvos = prep.alvos.map(function (a) { return a ? elements.indexOf(a) : -1; });
+        gerarItem = function (i) {
+          var cl = elements.map(function (el) { return Object.assign({}, el); });
+          var linha = importDados.linhas[i] || [];
+          prep.pares.forEach(function (par, j) {
+            var k = idxAlvos[j];
+            if (!(k >= 0) || k >= cl.length) return;
+            var v = linha[prep.idxCols[par.coluna]];
+            cl[k].texto = (v != null) ? String(v) : "";
+          });
+          return gerarZPLBloco(cl, tamAtualKey, rotAtual);
+        };
+      }
+      if (antes) { try { antes(); } catch (eAntes) {} }
+      var blocos = [];
+      progressoLoteMostrar(n);
+      function fatia(de) {
+        var ate = Math.min(n, de + LOTE_FATIA);
+        for (var i = de; i < ate; i++) {
+          var b = gerarItem(i);
+          if (b) blocos.push(b);
+        }
+        progressoLoteAtualizar(ate, n);
+        if (ate < n) { setTimeout(function () { fatia(ate); }, 0); }
+        else {
+          progressoLoteFechar();
+          quandoPronta(blocos.join("\n\n"));
+        }
+      }
+      setTimeout(function () { fatia(0); }, 0);
+    }
+
+    /* Pedido 1.235: saída COMPLETA para Imprimir/Download — pequenos lotes
+       seguem síncrono pelo comporZplSaida; grandes saem em fatias. */
+    function comporZplSaidaCompleta(quandoPronta) {
+      var nLote = loteContagemAtiva();
+      if (nLote > LOTE_PROGRESSIVO_MIN) {
+        loteZplCompletaAssinc(function (zpl) {
+          quandoPronta(zpl ? { zpl: zpl, temLote: true } : null);
+        });
+        return;
+      }
+      var saida = comporZplSaida(true);
+      quandoPronta(saida.zpl ? saida : null);
     }
 
     function renderZPL() {
@@ -9722,6 +9846,7 @@
     })();
     var IMPORT_SESSION_TTL = 24 * 60 * 60 * 1000; /* mesma janela de 24h da sessão do estúdio */
     var importSessaoAvisoFalha = false;
+    var importSessaoAvisoGrande = false; /* Pedido 1.235: avisa 1x que o lotão não persiste */
     function importSessaoSnapshot() {
       var conex = null;
       try {
@@ -9732,8 +9857,21 @@
         }
       } catch (eConex) {}
       var zplTxt = ($("zpl") && ($("zpl").value || "").indexOf("^XA") !== -1) ? $("zpl").value : "";
+      /* Pedido 1.235: lotes gigantes não vão para o snapshot — o structured
+         clone do IndexedDB (e o fallback JSON.stringify do localStorage)
+         de linhas demais congelavam a aba a cada gravação. Acima do limite,
+         a sessão F5 fica desativada para o lote (avisa 1x). */
+      var linhasLen = (importDados && importDados.linhas) ? importDados.linhas.length : 0;
+      if (linhasLen > LOTE_SESSAO_MAX_LINHAS) {
+        if (!importSessaoAvisoGrande) {
+          importSessaoAvisoGrande = true;
+          notify("Lote com " + linhasLen + " linhas não será restaurado após um F5 (limite de " + LOTE_SESSAO_MAX_LINHAS + " para a sessão) — exporte o Modelo .bin ou o ZPL para guardar.", "warning");
+        }
+        linhasLen = 0; /* não persiste importDados */
+      }
+      if (zplTxt.length > LOTE_SESSAO_ZPL_MAX) zplTxt = "";
       return {
-        importDados: (importDados && importDados.linhas && importDados.linhas.length) ? importDados : null,
+        importDados: (linhasLen > 0 && importDados && importDados.linhas && importDados.linhas.length) ? importDados : null,
         zpl: zplTxt,
         lotePaginaAtual: lotePaginaAtual || 0,
         conex: conex,
@@ -9741,8 +9879,16 @@
       };
     }
     var importRestaurando = false; /* Pedido 1.192: durante a restauração ninguém regrava a sessão */
+    var importSessaoTimer = null; /* Pedido 1.235: gravações agrupadas (debounce) */
     function importSessaoSalvar() {
       if (importRestaurando) return;
+      clearTimeout(importSessaoTimer);
+      importSessaoTimer = setTimeout(function () {
+        importSessaoTimer = null;
+        if (!importRestaurando) importSessaoSalvarAgora();
+      }, 1200);
+    }
+    function importSessaoSalvarAgora() {
       var snap = importSessaoSnapshot();
       try { localStorage.setItem("etiquetasZebra.lotePagina", String(snap.lotePaginaAtual || 0)); } catch (ePg) {}
       zebraIDB.put("import", snap).then(function () {
@@ -11124,7 +11270,7 @@
     function importParseXLSX(arrayBuffer) {
       if (typeof XLSX === "undefined") return null;
       try {
-        var wb = XLSX.read(arrayBuffer, { type: "array" });
+        var wb = XLSX.read(arrayBuffer, { type: "array", dense: true });
         var nome = wb.SheetNames[0];
         var matriz = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header: 1, raw: false });
         if (!matriz || !matriz.length) return null;
@@ -11173,6 +11319,13 @@
     }
     function importAplicarResposta(res, origemMsg) {
       if (!res || !res.colunas || !res.colunas.length) { notify("A origem não retornou colunas legíveis.", "danger"); return; }
+      /* Pedido 1.235: teto de proteção — planilhas gigantes (100k+ linhas)
+         estouravam a memória da aba; corta e avisa. */
+      if (res.linhas && res.linhas.length > LOTE_IMPORT_MAX_LINHAS) {
+        var totalOrig = res.linhas.length;
+        res = { colunas: res.colunas, linhas: res.linhas.slice(0, LOTE_IMPORT_MAX_LINHAS) };
+        notify("Planilha muito grande: " + totalOrig + " linhas — importadas as primeiras " + LOTE_IMPORT_MAX_LINHAS + " (limite de proteção de memória da aba).", "warning");
+      }
       importDescartarLotesAntigos();
       importDados = res;
       importRenderMapeamento();
@@ -12508,6 +12661,23 @@
     if (loteMapCols) loteMapCols.addEventListener("change", atualizarNavLote);
     atualizarNavLote();
 
+    /* Pedido 1.235: prepara o lote de importação SEM gerar ZPL nenhum —
+       valida o mapeamento, garante etiqueta/alvos e devolve pares/idxCols/
+       alvos. Base do caminho lazy (lotão) e da geração em fatias. */
+    function prepararLoteLazy() {
+      if (loteConstruindo > 0) return null;
+      if (!importDados.colunas.length || !importDados.linhas.length) return null;
+      var validacao = importValidarMapeamento();
+      if (!validacao.ok) return null;
+      var pares = obterParesMapeadosLote(validacao.mapa);
+      if (!pares.length) return null;
+      if (!elements.length && !garantirEtiquetaLote()) return null;
+      var idxCols = obterIdxColsLote();
+      var alvos = garantirAlvosLote(pares);
+      var idxAlvos = alvos.map(function (alvo) { return alvo ? elements.indexOf(alvo) : -1; });
+      return { pares: pares, idxCols: idxCols, alvos: alvos, idxAlvos: idxAlvos };
+    }
+
     /* Núcleo compartilhado entre o botão "Gerar Todas as Linhas" e o "Imprimir":
        devolve {zpl, total, pares, idxCols} com uma etiqueta por linha — todas
        no formato/posições da etiqueta do projeto, apenas trocando os dados.
@@ -12574,6 +12744,28 @@
         /* Pedido 1.93: sem etiqueta criada, o lote cria a etiqueta sozinho
            (textos empilhados, uma coluna por elemento, sem sobreposição) */
         if (!elements.length && !garantirEtiquetaLote()) { notify("Não foi possível criar a etiqueta — verifique o mapeamento.", "danger"); return; }
+
+        /* Pedido 1.235: LOTÃO (acima de LOTE_EXIBE_MAX) não gera ZPL nenhum
+           aqui — antes, cada etiqueta da planilha era gerada de uma vez em
+           memória (clone + ZPL por linha) e o resultado colava no campo #zpl:
+           string de dezenas de MB, textarea travado e aba sem memória. Agora:
+           valida/vincula, aplica a 1ª linha no Estúdio e o campo mostra só a
+           etiqueta atual; Imprimir/Download geram tudo na hora (em fatias). */
+        if (importDados.linhas.length > LOTE_EXIBE_MAX) {
+          var prep = prepararLoteLazy();
+          if (!prep) { notify("Não foi possível gerar as etiquetas.", "danger"); return; }
+          aplicarLinhaLoteNoEstudio(0, prep.pares, prep.idxCols);
+          lotePaginaAtual = 0;
+          ativarAbaStudio("tab-canvas");
+          atualizarNavLote();
+          loteEspecialAtivo = false;
+          loteEspecialBindings = null;
+          loteZplBlocos = null; /* Pedido 1.140: lote de CSV assume o lugar do lote ZPL */
+          importSessaoSalvar(); /* Pedido 1.191: o lote gerado sobrevive ao F5 */
+          atualizarBarraStatusLote();
+          notify(importDados.linhas.length + " etiquetas prontas (lote grande): o campo ZPL mostra a etiqueta atual — Imprimir e Download ZPL geram todas na hora.", "success");
+          return;
+        }
 
         var r = gerarZPLTodasLinhas();
         if (!r) { notify("Não foi possível gerar as etiquetas.", "danger"); return; }
@@ -14005,15 +14197,28 @@
           (mesma base do "Gerar Todas as Linhas"). Sem importação ativa, segue o
           caminho normal: imagem (^GF) ou ZPL da etiqueta atual. */
       /* Pedido 1.102: com Lote Especial gerado, "Imprimir" envia TODAS as
-         etiquetas do lote — regeneradas da etiqueta atual + combinações —
-         em vez de imprimir apenas a etiqueta corrente do Estúdio. */
+          etiquetas do lote — regeneradas da etiqueta atual + combinações —
+          em vez de imprimir apenas a etiqueta corrente do Estúdio. */
       /* Pedido 1.146: a cascata (lote ZPL 1.140 > lote especial 1.102 >
-         linhas importadas > etiqueta atual, com views guardadas antes e
-         modo imagem quando a etiqueta exige) agora vive em comporZplSaida —
-         Imprimir, campo #zpl e Download ZPL compartilham a mesma saida. */
+          linhas importadas > etiqueta atual, com views guardadas antes e
+          modo imagem quando a etiqueta exige) agora vive em comporZplSaida —
+          Imprimir, campo #zpl e Download ZPL compartilham a mesma saida. */
+      /* Pedido 1.235: lotes GRANDES saem de comporZplSaidaCompleta — geração
+          em fatias assíncronas com progresso, em vez do loop síncrono que
+          congelava a aba por minutos em planilhas com milhares de linhas. */
+      if (loteContagemAtiva() > LOTE_PROGRESSIVO_MIN) {
+        comporZplSaidaCompleta(function (saida) {
+          if (!saida || !saida.zpl) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
+          imprimirZplBase(saida.zpl, qtd);
+        });
+        return;
+      }
       var saida = comporZplSaida(true);
       if (!saida.zpl) { notify("Gere ou adicione elementos à etiqueta primeiro.", "danger"); return; }
-      var zpl = saida.zpl;
+      imprimirZplBase(saida.zpl, qtd);
+    }
+
+    function imprimirZplBase(zpl, qtd) {
       if (qtd && qtd > 1) zpl = injetarQuantidadeZPL(zpl, qtd);
 
       var ip = localStorage.getItem(CHAVE_IP);
@@ -14653,9 +14858,21 @@
       /* Pedido 1.146: baixa TODAS as etiquetas da saida (lote especial,
          linhas importadas, lote ZPL e views guardadas) — igual ao Imprimir,
          para o arquivo reimportar como lote completo. */
+      /* Pedido 1.235: lote grande gera em fatias assíncronas (progresso) —
+         antes, comporZplSaida síncrono congelava a aba. */
+      if (loteContagemAtiva() > LOTE_PROGRESSIVO_MIN) {
+        comporZplSaidaCompleta(function (saida) {
+          if (!saida || !saida.zpl) { notify("Nada para baixar — gere a etiqueta ou o lote primeiro.", "danger"); return; }
+          baixarZplTexto(saida.zpl);
+        });
+        return;
+      }
       var saida = comporZplSaida(false);
       var code = saida.zpl || $("zpl").value;
       if (!code) return;
+      baixarZplTexto(code);
+    }
+    function baixarZplTexto(code) {
       var name = getModelName() || "etiqueta-zebra";
       var fileBase = sanitizarFilename(name);
       var blob = new Blob([code], { type: "text/plain;charset=utf-8" });
@@ -16316,7 +16533,21 @@
       /* Pedido 1.234: TCP 9100 via navegador + streaming com sucesso parcial */
       enviarTcpNavegacao: enviarTcpNavegacao,
       imprimirStreaming: imprimirStreaming,
-      extrairFilaImpressao: extrairFilaImpressao
+      extrairFilaImpressao: extrairFilaImpressao,
+      /* Pedido 1.235: lote grande sem travar (tela lazy + geração em fatias) */
+      loteContagemAtiva: loteContagemAtiva,
+      comporZplSaida: comporZplSaida,
+      comporZplSaidaCompleta: comporZplSaidaCompleta,
+      prepararLoteLazy: prepararLoteLazy,
+      importAplicarResposta: importAplicarResposta,
+      importRenderMapeamento: importRenderMapeamento,
+      importParseXLSX: importParseXLSX,
+      importValidarMapeamento: importValidarMapeamento,
+      importSessaoSalvarAgora: importSessaoSalvarAgora,
+      LOTE_EXIBE_MAX: LOTE_EXIBE_MAX,
+      LOTE_PROGRESSIVO_MIN: LOTE_PROGRESSIVO_MIN,
+      LOTE_IMPORT_MAX_LINHAS: LOTE_IMPORT_MAX_LINHAS,
+      LOTE_SESSAO_MAX_LINHAS: LOTE_SESSAO_MAX_LINHAS
     };
 
   })();
