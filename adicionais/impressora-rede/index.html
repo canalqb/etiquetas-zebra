@@ -208,9 +208,9 @@
       <tr><th>Transporte</th><th>Resultado</th><th>Via navegador HTML/JS?</th></tr>
       <tr><td>HTTPS 443 · POST /pstprnt</td><td>Impresso (HTTP 200)</td><td class="ok-txt">SIM — é o caminho do botão Imprimir</td></tr>
       <tr><td>HTTP 80 · POST /pstprnt</td><td>Não testável (serviço desligado)</td><td>Sim, se habilitado (Link-OS recente vem com HTTP desligado por padrão)</td></tr>
-      <tr><td>RAW TCP 9100 (ZPL puro)</td><td>Impresso</td><td class="ruim-txt">NÃO — navegador não abre socket cru</td></tr>
+      <tr><td>RAW TCP 9100 (ZPL puro)</td><td>Impresso</td><td class="ok-txt">SIM — via form HTTP: a impressora ignora tudo antes do ^XA (comissão 15/10, Δ=1)</td></tr>
       <tr><td>LPR 6101 (RFC 1179)</td><td>Impresso (sem ACK)</td><td class="ruim-txt">NÃO — protocolo de socket</td></tr>
-      <tr><td>IPP 631</td><td>Sem resposta</td><td class="ruim-txt">NÃO</td></tr>
+      <tr><td>IPP 631</td><td>ATIVO (404 + Server: Zebra_Printer PAPPL/CUPS IPP/2.0 — comissão 15/10; antes constava "sem resposta")</td><td class="ruim-txt">NÃO — exige application/ipp binário (preflight morre)</td></tr>
     </table>
   </div>
 </details>

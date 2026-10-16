@@ -1685,7 +1685,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.032</span>
+        <span class="brand-ver">v1.033</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -2748,6 +2748,9 @@
               <div class="mb-2">
                 <label class="form-label small fw-semibold mb-1" for="input-ip-modal">IP Local ou URL da Nuvem (Cloud Connect):</label>
                 <input type="text" class="form-control form-control-sm" id="input-ip-modal" placeholder="Ex: 192.168.0.50 ou https://sua-api.com/print">
+                <div class="form-text small mt-1" id="hint-hostname-ip">
+                  <i class="fas fa-info-circle me-1"></i>O DHCP pode trocar o IP da impressora. Se o IP salvo parar de responder, confira no painel da impressora (ou no EWS) — e, se a sua rede resolver <code>.local</code>, prefira o hostname mDNS (ex.: <code>ZT411-99N253500376.local</code>), que sobrevive à mudança de IP.
+                </div>
               </div>
               <div class="mb-2">
                 <button type="button" class="btn btn-sm btn-outline-primary w-100" id="btn-descobrir-impressoras"><i class="fas fa-magnifying-glass me-1"></i>Procurar impressoras na rede</button>
@@ -2761,7 +2764,15 @@
                   <option value="cloud">Nuvem / Webhook (Cloud Connect API HTTPS)</option>
                   <option value="ftp">FTP (Porta 21 - Servidor Local; desligado de fabrica no Link-OS recente)</option>
                   <option value="tcp">TCP 9100 (Porta Raw - Servidor Local node print-server.js)</option>
+                  <option value="tcp-nav">TCP 9100 pelo navegador (form HTTP - sem certificado, experimental)</option>
                 </select>
+              </div>
+              <div class="form-text small mt-1 d-none" id="hint-tcp-nav">
+                <strong>Experimental (provado em comissão de campo na ZT411):</strong> a impressora aceita ZPL "embrulhado" em HTTP na porta 9100 —
+                ela ignora tudo antes do <code>^XA</code>. O app submete um formulário invisível para <code>http://IP:9100/</code>:
+                <strong>sem certificado e sem ponte local</strong>. A porta raw não devolve resposta — confira a etiqueta na bandeja.
+                Se o Chrome pedir permissão de <strong>rede local</strong>, permita. Origem <code>https://</code> pode bloquear
+                navegação para <code>http://</code> (mixed content): se não imprimir, abra o app por <code>http://localhost</code> ou use o TCP 9100 com a ponte.
               </div>
               <div class="form-text small mt-1 d-none" id="hint-cert-https">
                 Link-OS 7.5+ vem com o serviço HTTP <strong>desligado de fábrica</strong> (norma europeia EU RED —
@@ -2856,7 +2867,7 @@
         </div>
         <div class="modal-footer py-2 d-flex justify-content-between">
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-info fw-semibold" id="btn-testar-ip-modal" title="Testar status da impressora e do servidor de impressao">
+            <button type="button" class="btn btn-sm btn-outline-info fw-semibold" id="btn-testar-ip-modal" title="Testa o caminho de impressao com um formato vazio — a impressora pode avancar uma etiqueta em branco">
               <i class="bi bi-activity me-1"></i> Testar Conexao
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" id="btn-conferir-midia" title="Ler o comprimento da bobada na impressora (via ~HS pela ponte local) e comparar com a etiqueta atual">
@@ -4407,6 +4418,9 @@
       var hintHc = $("hint-cert-https");
       var selHc = $("input-protocolo-modal");
       if (hintHc && selHc) hintHc.classList.toggle("d-none", selHc.value !== "https");
+      /* Pedido 1.234: hint do TCP 9100 via navegador (form HTTP) */
+      var hintTn = $("hint-tcp-nav");
+      if (hintTn && selHc) hintTn.classList.toggle("d-none", selHc.value !== "tcp-nav");
     }
     function abrirModalIp() {
       if ($("input-ip-modal")) $("input-ip-modal").value = localStorage.getItem(CHAVE_IP) || "";
@@ -4563,7 +4577,7 @@
 
       if (proto === "http" || proto === "https") {
         var schemeT = proto === "https" ? "https" : "http";
-        notify("Testando conectividade " + schemeT.toUpperCase() + " Direct em " + schemeT + "://" + testIp + "/...", "info");
+        notify("Testando conectividade " + schemeT.toUpperCase() + " Direct em " + schemeT + "://" + testIp + "/... (envia um formato vazio — a impressora pode avançar uma etiqueta em branco)", "info");
         fetch(pstprntUrl(testIp, proto), { method: "POST", body: "^XA^XZ", mode: "no-cors" })
           .then(function () {
             notify("✅ Requisição " + schemeT.toUpperCase() + " Direct enviada para " + testIp + "! Impressora pronta.", "success");
@@ -4595,6 +4609,10 @@
               notify("⚠️ Requisição HTTP enviada. Verifique se o IP " + testIp + " está acessível na rede local.", "info");
             }
           });
+      } else if (proto === "tcp-nav") {
+        /* Pedido 1.234: teste do TCP 9100 via navegador — o próprio
+           enviarTcpNavegacao avisa (formato vazio avança etiqueta). */
+        enviarTcpNavegacao(testIp, "^XA^XZ");
       } else {
         notify("Testando servidor local de suporte (localhost:3001)...", "info");
         fetch("http://localhost:3001/")
@@ -13422,6 +13440,10 @@
               : "⚠️ ZPL enviado via HTTP direto para " + ip + " — sem confirmação da impressora (confira a etiqueta impressa).", "info");
           }
         });
+      } else if (proto === "tcp-nav") {
+        /* Pedido 1.234 (comissão de campo 15/10, achado 17): TCP 9100
+           via navegação — sem ponte, sem certificado. */
+        enviarTcpNavegacao(ip, zpl);
       } else {
         enviarViaServidorLocal(ip, zpl, proto);
       }
@@ -13452,6 +13474,45 @@
       .catch(function () {
         notify("HTTPS direto falhou (certificado não aceito) e a ponte local não está rodando. Rode: node print-server.js — ou instale-a para ligar sozinha: powershell -ExecutionPolicy Bypass -File instalar-ponte.ps1 — ou aceite o certificado em https://" + ip + " (Avançado → Prosseguir).", "danger");
       });
+    }
+
+    /* Pedido 1.234 (comissão de campo 15/10, achado 17): a impressora aceita
+       ZPL "embrulhado" em HTTP na porta 9100 — ela varre o stream até achar
+       o ^XA e ignora tudo antes (pacote HTTP de 249 bytes impresso na ZT411
+       real, contadores 182→183). Um <form> invisível com target=iframe
+       navega até http://IP:9100/ sem preflight e sem CORS: TCP raw pelo
+       navegador, sem ponte local e sem certificado. Ressalvas: mixed
+       content (origem https → alvo http pode ser bloqueado pelo Chrome),
+       LNA (permissão de rede local) e a porta raw nunca devolve resposta —
+       a prova é a etiqueta na bandeja (ou os contadores do EWS). */
+    function enviarTcpNavegacao(ip, zpl) {
+      if (cooldownBloquear(true)) return;
+      if (location.protocol === "https:") {
+        notify("A página é HTTPS e o destino é HTTP — o Chrome pode bloquear a navegação por mixed content. Se a etiqueta não sair, abra o app por http (localhost) ou use o TCP 9100 com a ponte local.", "warning");
+      }
+      notify("Enviando ZPL via TCP 9100 (navegação/form HTTP, sem certificado) para " + ip + "...", "dark");
+      var nome = "_zebraTcpNav";
+      if (!document.getElementsByName(nome).length) {
+        var frame = document.createElement("iframe");
+        frame.name = nome;
+        frame.style.display = "none";
+        document.body.appendChild(frame);
+      }
+      var form = document.createElement("form");
+      form.method = "POST";
+      form.action = "http://" + ip + ":9100/";
+      form.enctype = "text/plain";
+      form.target = nome;
+      var campo = document.createElement("input");
+      campo.type = "hidden";
+      campo.name = "zpl";
+      campo.value = zpl;
+      form.appendChild(campo);
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(function () { if (form.parentNode) form.parentNode.removeChild(form); }, 5000);
+      cooldownRegistrar();
+      notify("✅ Formulário submetido à porta 9100 de " + ip + " — a impressora ignora tudo antes do ^XA. A porta raw não devolve resposta (e um formato vazio avança uma etiqueta em branco): confira a bandeja.", "success");
     }
 
     function enviarViaServidorLocal(ip, zpl, proto) {
@@ -13502,7 +13563,7 @@
       var total = fila.reduce(function (s, f) { return s + f.esperado; }, 0);
       var modalEl = $("modal-print-stream");
       var bsModalStream = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
-      var feitos = 0, idx = 0, falha = null, terminado = false;
+      var feitos = 0, idx = 0, falha = null, terminado = false, naoConfirmadas = 0;
       streamCancelado = false;
       streamAtivo = true;
 
@@ -13524,7 +13585,13 @@
       }
       function proximo() {
         if (streamCancelado) { encerrar("⏹ Impressão interrompida — " + feitos + " de " + total + " etiquetas.", "warning"); return; }
-        if (idx >= fila.length) { encerrar("✅ " + total + " etiquetas impressas" + (proto === "tcp" ? " e validadas" : "") + "!", "success"); return; }
+        if (idx >= fila.length) {
+          var finalMsg = "✅ " + total + " etiquetas impressas";
+          if (naoConfirmadas) finalMsg += " (" + naoConfirmadas + " sem validação da impressora — Modo Protegido?)";
+          else if (proto === "tcp") finalMsg += " e validadas";
+          encerrar(finalMsg + "!", "success");
+          return;
+        }
         var item = fila[idx];
         setUI((feitos + 1) + " de " + total, Math.round((feitos / total) * 100),
               "Enviando etiqueta " + (feitos + 1) + (proto === "tcp" ? " e aguardando a impressora confirmar…" : "…"));
@@ -13537,6 +13604,22 @@
         .then(function (j) {
           if (streamCancelado) return;
           if (!j.ok) {
+            /* Pedido 1.234 (comissão de campo 15/10, C3): no Modo Protegido a
+               ponte não lê o odômetro e devolve {ok:false, validado:false,
+               error:"tempo esgotado..."} — mas a etiqueta SAIU (Δ=3/3 provado
+               nos contadores EWS). Trata como sucesso parcial: segue o
+               streaming e avisa 1 vez. Erro sem validado:false (falha real
+               de envio) continua interrompendo. */
+            if (j.validado === false) {
+              feitos += item.esperado;
+              idx++;
+              if (!naoConfirmadas) {
+                notify("⚠️ Impressora não confirmou a etiqueta (Modo Protegido? a etiqueta foi enviada) — o streaming continua sem validação.", "warning");
+              }
+              naoConfirmadas += item.esperado;
+              proximo();
+              return;
+            }
             falha = j.error || "erro desconhecido";
             encerrar("❌ Erro na etiqueta " + (feitos + 1) + " de " + total + ": " + falha + " — " + feitos + " etiqueta(s) já impressa(s).", "danger");
             return;
@@ -16229,7 +16312,11 @@
       cooldownRegistrar: cooldownRegistrar,
       cooldownBloquear: cooldownBloquear,
       COOLDOWN_IMPRESSAO_MS: COOLDOWN_IMPRESSAO_MS,
-      get ultimoEnvioImpressora() { return _ultimoEnvioImpressora; }
+      get ultimoEnvioImpressora() { return _ultimoEnvioImpressora; },
+      /* Pedido 1.234: TCP 9100 via navegador + streaming com sucesso parcial */
+      enviarTcpNavegacao: enviarTcpNavegacao,
+      imprimirStreaming: imprimirStreaming,
+      extrairFilaImpressao: extrairFilaImpressao
     };
 
   })();
@@ -16610,9 +16697,9 @@
                   <ul class="small text-muted mb-0 ps-3">
                     <li><strong>Aba Rede / Cloud</strong>:
                       <ul class="ps-3 mt-1">
-                        <li><strong>IP Local ou URL da Nuvem</strong> — ex.: <code>192.168.0.50</code> ou <code>https://sua-api.com/print</code>.</li>
+                        <li><strong>IP Local ou URL da Nuvem</strong> — ex.: <code>192.168.0.50</code> ou <code>https://sua-api.com/print</code>; hostnames mDNS (ex.: <code>ZT411-XXXX.local</code>) também funcionam quando a rede resolve — e sobrevivem à troca de IP pelo DHCP (dica abaixo do campo).</li>
                         <li><strong>Procurar impressoras na rede</strong> — varre a rede e lista as impressoras encontradas; um clique no item preenche o IP (usa a ponte local).</li>
-                        <li><strong>Protocolo de Impressão</strong> — HTTP Direct, <strong>HTTPS Direct (recomendado)</strong>, Nuvem/Webhook, FTP, TCP 9100 (ponte local).</li>
+                        <li><strong>Protocolo de Impressão</strong> — HTTP Direct, <strong>HTTPS Direct (recomendado)</strong>, Nuvem/Webhook, FTP, TCP 9100 (ponte local) e <strong>TCP 9100 pelo navegador</strong> (experimental: formulário HTTP direto à porta raw, sem certificado e sem ponte — o hint abaixo do select explica as ressalvas).</li>
                         <li><strong>Aviso do certificado</strong> (com HTTPS) — explica o caminho automático pela ponte e o manual (aceitar o certificado 1× por sessão, pelo link que abre a impressora).</li>
                         <li><strong>Instalar / Verificar Extensão Chrome</strong> — abre a loja.</li>
                       </ul>
@@ -16637,7 +16724,7 @@
                   <ul class="small text-muted mb-0 ps-3">
                     <li><strong>Rodapé da janela</strong>:
                       <ul class="ps-3 mt-1">
-                        <li><strong>Testar Conexão</strong> — consulta o status da impressora (é o ✅/❌ do pontinho).</li>
+                        <li><strong>Testar Conexão</strong> — submete um formato vazio (<code>^XA^XZ</code>) pelo caminho escolhido para provar que ele está aberto: <strong>a impressora pode avançar uma etiqueta em branco</strong> (não é um "ping" — o navegador não consegue ler a resposta da impressora; comprovado em campo).</li>
                         <li><strong>Conferir Mídia</strong> — lê pela ponte o comprimento da bobada carregada e compara com a altura da sua etiqueta: <strong>✅ casa</strong>, <strong>⚠️ sobra</strong> ou <strong>⚠️ atravessa</strong> (etiqueta maior que a bobada "atravessa" as etiquetas em silêncio — este aviso previne o erro nº 1 de tamanho); avisa também cabeça aberta / sem papel.</li>
                         <li><strong>Cancelar</strong> / <strong>Salvar</strong> — o IP e o protocolo ficam salvos no navegador.</li>
                       </ul>
@@ -17186,6 +17273,7 @@
                       <li><strong>HTTPS Direct</strong> — o navegador envia o ZPL ao serviço <code>/pstprnt</code> da impressora, na sua rede. Recomendado em firmwares Link-OS 7.5+.</li>
                       <li><strong>HTTP Direct</strong> — mesmo serviço sem criptografia; vem <strong>desligado de fábrica</strong> nos Link-OS recentes (dá para religar no painel da impressora).</li>
                       <li><strong>TCP 9100 / FTP</strong> — envio "cru" pela porta raw, feito pela <strong>ponte local</strong> (veja abaixo).</li>
+                      <li><strong>TCP 9100 pelo navegador (experimental)</strong> — a impressora aceita ZPL "embrulhado" em HTTP na porta raw (ignora tudo antes do <code>^XA</code> — provado em campo): o app submete um formulário invisível para <code>http://IP:9100/</code>, <strong>sem certificado e sem ponte</strong>. Pode ser bloqueado como mixed content quando o app roda em https.</li>
                       <li><strong>Nuvem / Webhook</strong> — um endereço https seu recebe o ZPL e repassa para impressoras em outra rede (Cloud Connect).</li>
                       <li><strong>USB (WebUSB) e Bluetooth (Low Energy)</strong> — direto do navegador, sem IP; séries ZQ/Link-OS no Bluetooth.</li>
                     </ul>
