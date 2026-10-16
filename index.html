@@ -1353,7 +1353,23 @@
     #import-mapping-container .import-map-row .import-map-campos .form-check-input { margin-top: 0; }
     #import-preview { max-height: 180px; overflow: auto; }
     #import-preview th, #import-preview td { white-space: nowrap; }
-    #import-mapping-container .import-map-colunas { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow: auto; }
+    /* Pedido 1.237: o mapeamento mostra 3 LINHAS antes de rolar (antes:
+       max-height fixo de 300px ≈ 8 linhas). O JS mede as 3 primeiras linhas
+       reais ao abrir o modal (importAjustarAlturaMapeamento) e trava a
+       altura com precisão; este valor é o fallback quando o modal está
+       fechado (offsetHeight = 0, nada para medir). */
+    #import-mapping-container .import-map-colunas { display: flex; flex-direction: column; gap: 6px; max-height: 114px; overflow: auto; }
+
+    /* Pedido 1.237: fontes do modal Importar Dados 20% menores — o usuário
+       pediu o modal mais compacto. Rem-based do Bootstrap ganham regra
+       própria (×0.8); tamanhos em em (.small, code, .form-check-label)
+       acompanham o font-size do container sozinhos. */
+    #modal-import-dados { font-size: 0.8rem; }
+    #modal-import-dados .fs-6 { font-size: 0.8rem !important; } /* título e legendas (1rem × 0.8; fs-* do Bootstrap é !important) */
+    #modal-import-dados .form-control { font-size: 0.8rem; }
+    #modal-import-dados .form-control-sm { font-size: 0.7rem; }
+    #modal-import-dados .btn { font-size: 0.8rem; }
+    #modal-import-dados .btn-sm { font-size: 0.7rem; }
 
     /* ===== FORMAS GEOMÉTRICAS ===== */
     .forma-texto {
@@ -1685,7 +1701,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.035</span>
+        <span class="brand-ver">v1.036</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -3378,7 +3394,7 @@
   </div>
 
   <!-- Importador Genérico de Fontes de Dados (Excel, CSV/TXT, Google Sheets) -->
-  <div class="modal fade" id="modal-import-dados" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalImportDadosLabel" aria-hidden="true">
+  <div class="modal fade" id="modal-import-dados" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalImportDadosLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <div class="modal-header py-2">
@@ -11664,7 +11680,24 @@
       if (nVinc) {
         notify("Mapeamento anterior reaplicado: " + nVinc + " de " + importDados.colunas.length + " coluna(s) com campo vinculado — confira abaixo antes de gerar.", "info");
       }
+      importAjustarAlturaMapeamento(); /* Pedido 1.237: 3 linhas antes de rolar */
     }
+
+    /* Pedido 1.237: trava a altura do mapeamento em exatamente 3 LINHAS —
+       mede as 3 primeiras linhas reais (fonte menor e label quebrada
+       contam) e soma o gap. Recalcula ao abrir o modal porque com ele
+       fechado offsetHeight é 0 (o fallback do CSS 114px segura a exibição
+       até lá). */
+    function importAjustarAlturaMapeamento() {
+      var lista = document.querySelector("#import-mapping-container .import-map-colunas");
+      if (!lista || !lista.children.length || !lista.children[0].offsetHeight) return;
+      var h = 0;
+      for (var i = 0; i < 3 && i < lista.children.length; i++) h += lista.children[i].offsetHeight;
+      h += (Math.min(3, lista.children.length) - 1) * 6; /* gap entre as linhas */
+      lista.style.maxHeight = h + "px";
+    }
+    var _mImportAlt = document.getElementById("modal-import-dados");
+    if (_mImportAlt) _mImportAlt.addEventListener("shown.bs.modal", importAjustarAlturaMapeamento);
 
     /* Pedido 1.181: resíduo de lote. Ao perder o vínculo com a coluna (o
        binding exclusivo desloca o antigo), o elemento costuma carregar o
