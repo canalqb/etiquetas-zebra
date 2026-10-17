@@ -1701,7 +1701,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.040</span>
+        <span class="brand-ver">v1.041</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -5573,8 +5573,17 @@
              ^FB do ZPL: quebra em várias linhas quando o texto é longo. */
           var medBc = barcodeMedidas(el.texto, el.simbologia);
           var refBcDom = el.loteBcRef || null;
+          /* Pedido 1.242: elemento de LOTE (ref congelada ou vinculado à
+             coluna) NÃO snapa el.w no padrão da linha exibida — a caixa fica
+             no tamanho de projeto em TODAS as linhas; só o comprimento das
+             barras acompanha o conteúdo (física do 1D: não dá para "esticar"
+             um código de barras sem quebrar a leitura). O snap por linha
+             fazia a caixa "respirar" a cada navegação e contaminava o
+             congelamento do loteBcRef (recalculado com a largura snapada da
+             linha anterior — barrasH/maxLin mudavam sozinhos). */
+          var ehLoteBc = !!(refBcDom || el.importColuna);
           var modW = refBcDom ? refBcDom.modW : Math.max(1, Math.min(10, Math.floor((el.w || 300) / medBc.mods)));
-          el.w = modW * medBc.mods;
+          if (!ehLoteBc) el.w = modW * medBc.mods;
           div.classList.add("canvas-el-bloco");
           div.style.display = "block";
           div.style.lineHeight = "0";
@@ -5594,12 +5603,22 @@
             div.innerHTML = bcHtml;
             var svgBc = div.querySelector("svg");
             if (svgBc) {
-              svgBc.setAttribute("width", "100%");
+              /* Pedido 1.242: no lote o padrão sai no TAMANHO REAL
+                 (modW × módulos da linha, ancorado à esquerda) dentro da
+                 caixa constante — WYSIWYG do ^BY impresso, sem esticar;
+                 avulso estica na caixa snapada (1.164, caixa = padrão). */
+              svgBc.setAttribute("width", (ehLoteBc ? dotsToMmPreciso(modW * medBc.mods) + "mm" : "100%"));
               /* barras ocupam SÓ a altura delas (o SVG sai sem texto) — o
                  texto vem no overlay abaixo */
               svgBc.setAttribute("height", dotsToMmPreciso(barrasBcDom) + "mm");
               svgBc.setAttribute("preserveAspectRatio", "none");
               svgBc.style.display = "block";
+            }
+            var imgBc = div.querySelector("img");
+            if (imgBc && ehLoteBc) {
+              /* bwip (Code 93 e cia): mesmo princípio — largura real do
+                 padrão dentro da caixa constante, sem esticar a <img> */
+              imgBc.style.width = dotsToMmPreciso(modW * medBc.mods) + "mm";
             }
             if (temLinhaBcDom && !infoBcDom.bwip) {
               div.style.position = "relative";
@@ -8170,13 +8189,17 @@
            var wQz = larguraQuebraTexto(it, dispW, dispH);
            vw = Math.min(Math.ceil(larguraTexto(it.texto || "", fQz)), wQz);
            vh = Math.round(fQz * 1.1 * Math.max(1, contarLinhasEnroladas(it.texto || "", fQz, wQz)));
-         } else if (it.tipo === "barcode") {
-            var _med1dVw = barcodeMedidas(it.texto, it.simbologia || "code128");
-            /* Pedido 1.241: módulo CONGELADO do lote (loteBcRef) — a pegada usa
-               o MESMO ^BY que vai ser impresso naquela linha */
-            var _modWvw = (it.loteBcRef && it.loteBcRef.modW) || Math.max(1, Math.min(10, Math.floor((it.w || 300) / _med1dVw.mods)));
-            vw = _modWvw * _med1dVw.mods;
-            vh = it.h || 80;
+          } else if (it.tipo === "barcode") {
+             var _med1dVw = barcodeMedidas(it.texto, it.simbologia || "code128");
+             /* Pedido 1.241: módulo CONGELADO do lote (loteBcRef) — a pegada usa
+                o MESMO ^BY que vai ser impresso naquela linha */
+             var _modWvw = (it.loteBcRef && it.loteBcRef.modW) || Math.max(1, Math.min(10, Math.floor((it.w || 300) / _med1dVw.mods)));
+             /* Pedido 1.242: no lote a pegada é a CAIXA congelada (it.w) — a
+                âncora ^FO fica IGUAL em todas as linhas (inclusive com
+                etiqueta girada, onde o mapeamento usa fx/vw); avulso segue o
+                padrão impresso (1.164). */
+             vw = it.loteBcRef ? (it.w || 300) : (_modWvw * _med1dVw.mods);
+             vh = it.h || 80;
         } else if (it.tipo === "qr") {
            vw = it.w || 200;
            vh = it.h || 200;
@@ -9034,11 +9057,12 @@
         vw = Math.max(1, Math.ceil(linhasTc.reduce(function (mx, l) { return Math.max(mx, ctx.measureText(l).width); }, 0)));
         vh = Math.round(f0 * 1.1 * Math.max(1, linhasTc.length));
       } else if (el.tipo === "barcode") {
-        /* Snap de largura idêntico ao renderPreview: modW * mods garante WYSIWYG
-           editor↔canvas — especialmente crítico no lote onde o clone tem el.w do
-           texto original mas el.texto já foi trocado para o dado da linha. */
+        /* Largura do desenho = padrão 1:1 do que imprime: modW (CONGELADO no
+           lote, pedido 1.242 — antes o canvas esticava o padrão no auto-
+           ajuste do avulso e cada linha saía com módulo "gordo"/fino) ×
+           módulos da linha; editor↔canvas WYSIWYG do ^BY. */
         var _medBcDim = barcodeMedidas(el.texto, el.simbologia || "code128");
-        var _modWdim = Math.max(1, Math.min(10, Math.floor((el.w || 300) / _medBcDim.mods)));
+        var _modWdim = (el.loteBcRef && el.loteBcRef.modW) || Math.max(1, Math.min(10, Math.floor((el.w || 300) / _medBcDim.mods)));
         vw = _modWdim * _medBcDim.mods;
         vh = el.h || 80;
       }
@@ -9130,7 +9154,8 @@
            do mesmo cálculo para não refazer a medição. */
         var medBcCv = _medBcDim;
         /* Pedido 1.241: módulo/fonte/área CONGELADOS do lote (loteBcRef) — o
-           canvas espelha o ZPL (^BY, barrasH, ^FB) em todas as linhas */
+           canvas espelha o ZPL (^BY, barrasH, ^FB) em todas as linhas;
+           vw (bloco inicial) já é o padrão 1:1 do módulo congelado */
         var modWb = (el.loteBcRef && el.loteBcRef.modW) || _modWdim;
         var infoBcPv = simbologiaInfo(el.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
         var temLinhaBcCv = !infoBcPv.bwip || !!infoBcPv.gs1;
@@ -9142,7 +9167,7 @@
         if (infoBcPv.bwip) {
           var cvBcBw = bwipCanvas(infoBcPv.chave, el.texto);
           /* bwip: o canvas interno tem largura proporcional ao conteúdo (3px/módulo);
-             esticar só até vw (já snapped) — sem exceder. */
+             desenho 1:1 — vw = modW × módulos (lote: módulo congelado). */
           if (cvBcBw) ctx.drawImage(cvBcBw, 0, 0, vw, vh);
         } else {
           function desenharJsBc(txt) {
@@ -17725,7 +17750,7 @@
                     <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
                     <li><strong>Criar Etiquetas</strong> gera uma etiqueta por linha da planilha, sempre em uma <strong>etiqueta nova</strong> — nunca sobre um desenho já aberto — e todas as etiquetas do lote mantêm exatamente os mesmos tamanhos de elementos (o mapeamento é salvo no navegador sozinho) — a primeira fica no Estúdio como modelo e as setas ‹ › da barra de status navegam pelas demais.</li>
                     <li><strong>QR Code de tamanho fixo no lote</strong>: o QR assume o tamanho do pior caso da planilha (maior conteúdo da coluna) e <strong>todas as etiquetas saem com o QR exatamente do mesmo tamanho</strong> — linhas com conteúdo menor saem como imagem no mesmo retângulo (o scanner lê o texto original) e linhas com texto acima do máximo do QR saem com moldura vazia no mesmo tamanho (reduza o texto delas). Redimensionar o QR no Estúdio muda o dele em todas as etiquetas de uma vez.</li>
-                    <li><strong>Código de barras de tamanho fixo no lote</strong>: o módulo (espessura das barras), a altura das barras e a área de texto são <strong>iguais em todas as etiquetas</strong>, travados pela linha mais longa da planilha — e o texto embaixo do código <strong>quebra em várias linhas</strong> quando é longo, em vez de estourar a etiqueta.</li>
+                    <li><strong>Código de barras de tamanho fixo no lote</strong>: o módulo (espessura das barras), a altura das barras, a área de texto e a própria caixa do elemento são <strong>iguais em todas as etiquetas</strong>, travados pela linha mais longa da planilha — e o texto embaixo do código <strong>quebra em várias linhas</strong> quando é longo, em vez de estourar a etiqueta. O comprimento das barras acompanha o tamanho do conteúdo de cada linha (limite físico do código de barras 1D: não é possível "esticar" o código sem quebrar a leitura) — para o barcode absolutamente idêntico linha a linha, mapeie uma coluna com dados do mesmo comprimento.</li>
                     <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
                   </ul>
                 </div>
