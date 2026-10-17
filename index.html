@@ -1701,7 +1701,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.039</span>
+        <span class="brand-ver">v1.040</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -5530,8 +5530,12 @@
             else div.textContent = "[" + ((simbologiaInfo(_qSimb) || {}).rotulo || "2D") + "]";
           } else {
             var _qSide = el.w || 200;
-            var _cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia));
-            var _qMods = _cachedQr ? _cachedQr.count : 33;
+            /* Pedido 1.241: o Estúdio espelha a impressão — versão CONGELADA do
+               lote em TODAS as linhas (o 1.240 só cobria o canvas de exportação:
+               navegando o lote, o preview do Estúdio ainda alternava o tamanho);
+               lib ausente → módulos pela tabela, nunca o chute 33. */
+            var _cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia), el.loteQrVersao || 0);
+            var _qMods = _cachedQr ? _cachedQr.count : (el.loteQrVersao ? 4 * el.loteQrVersao + 17 : 4 * (qrVersaoPorBytes(qrNivelDe(el.simbologia), qrUtf8Bytes(el.texto || "")) || 40) + 17);
             var _qMag = Math.max(1, Math.floor(_qSide / _qMods));
             /* Pedido 1.164 — snap da caixa no MODELO (não só no estilo): preview,
                canvas de exportação e ^BQ do ZPL passam a ver o mesmo tamanho */
@@ -5551,6 +5555,11 @@
                 svg.setAttribute("height", "100%");
                 svg.style.display = "block";
               }
+            } else if (el.texto && !qrVersaoPorBytes(qrNivelDe(el.simbologia), qrUtf8Bytes(el.texto))) {
+              /* Pedido 1.241: texto acima do máximo do QR (v40) — moldura vazia
+                 no retângulo de referência, igual ao ZPL (^GB) */
+              div.style.border = "2px solid #000";
+              div.style.boxSizing = "border-box";
             } else {
               div.textContent = "[QR]";
             }
@@ -5558,9 +5567,13 @@
         } else if (el.tipo === "barcode") {
           /* Pedido 1.164 — WYSIWYG por módulos reais: modW = floor(caixa/módulos da
              simbologia+dados) e caixa snapada para múltiplo exato — preview e
-             impressão (^BY) idênticos; floor = impresso nunca estoura o vizinho. */
+             impressão (^BY) idênticos; floor = impresso nunca estoura o vizinho.
+             Pedido 1.241 — módulo CONGELADO do lote (loteBcRef) em todas as
+             linhas + texto de interpretação MANUAL (overlay), espelhando o
+             ^FB do ZPL: quebra em várias linhas quando o texto é longo. */
           var medBc = barcodeMedidas(el.texto, el.simbologia);
-          var modW = Math.max(1, Math.min(10, Math.floor((el.w || 300) / medBc.mods)));
+          var refBcDom = el.loteBcRef || null;
+          var modW = refBcDom ? refBcDom.modW : Math.max(1, Math.min(10, Math.floor((el.w || 300) / medBc.mods)));
           el.w = modW * medBc.mods;
           div.classList.add("canvas-el-bloco");
           div.style.display = "block";
@@ -5569,15 +5582,42 @@
           var bcH = dotsToMmPreciso(el.h || 100);
           div.style.width = bcW + "mm";
           div.style.height = bcH + "mm";
-          var bcHtml = barcodeObter(el.texto, el.simbologia, el.h || 100, modW);
+          var infoBcDom = simbologiaInfo(el.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
+          var temLinhaBcDom = !infoBcDom.bwip || !!infoBcDom.gs1;
+          var fontBcDom = refBcDom ? refBcDom.fontH : barcodeLinhaH(el.h || 100);
+          var maxLinBcDom = refBcDom ? refBcDom.maxLin : Math.max(1, contarLinhasEnroladas(el.texto || "", fontBcDom, Math.max(20, Math.round(el.w || 300))));
+          var barrasBcDom = temLinhaBcDom
+            ? (refBcDom ? refBcDom.barrasH : Math.max(12, Math.round(el.h || 100) - maxLinBcDom * fontBcDom))
+            : Math.round(el.h || 100);
+          var bcHtml = barcodeObter(el.texto, el.simbologia, el.h || 100, modW, { fontH: fontBcDom, barrasH: barrasBcDom });
           if (bcHtml) {
             div.innerHTML = bcHtml;
             var svgBc = div.querySelector("svg");
             if (svgBc) {
               svgBc.setAttribute("width", "100%");
-              svgBc.setAttribute("height", "100%");
+              /* barras ocupam SÓ a altura delas (o SVG sai sem texto) — o
+                 texto vem no overlay abaixo */
+              svgBc.setAttribute("height", dotsToMmPreciso(barrasBcDom) + "mm");
               svgBc.setAttribute("preserveAspectRatio", "none");
               svgBc.style.display = "block";
+            }
+            if (temLinhaBcDom && !infoBcDom.bwip) {
+              div.style.position = "relative";
+              var txtOvBc = document.createElement("div");
+              txtOvBc.textContent = el.texto || "";
+              txtOvBc.style.position = "absolute";
+              txtOvBc.style.left = "0";
+              txtOvBc.style.top = dotsToMmPreciso(barrasBcDom) + "mm";
+              txtOvBc.style.width = bcW + "mm";
+              txtOvBc.style.height = dotsToMmPreciso(Math.max(1, maxLinBcDom * fontBcDom)) + "mm";
+              txtOvBc.style.overflow = "hidden";
+              txtOvBc.style.fontFamily = "Arial, Helvetica, sans-serif";
+              txtOvBc.style.fontWeight = "600";
+              txtOvBc.style.fontSize = dotsToMmPreciso(fontBcDom) + "mm";
+              txtOvBc.style.lineHeight = dotsToMmPreciso(fontBcDom) + "mm";
+              txtOvBc.style.color = "#000";
+              txtOvBc.style.whiteSpace = "normal";
+              div.appendChild(txtOvBc);
             }
           } else {
             div.textContent = "[BARCODE]";
@@ -6654,7 +6694,7 @@
                 avisoLimiteDado = true;
                 notify("Sem espaço até a borda da etiqueta para crescer mais — mova o elemento para o centro e tente de novo.", "warning");
               }
-              var modsQ = (qrObter(itemEl.texto, qrNivelDe(itemEl.simbologia)) || {}).count || 33;
+              var modsQ = (qrObter(itemEl.texto, qrNivelDe(itemEl.simbologia), itemEl.loteQrVersao || 0) || {}).count || 33; /* Pedido 1.241: versão congelada — o aviso segue o que vai imprimir */
               if (pedidoSz > (item.origW || 0) + 2 && Math.round(newSz / modsQ) >= 10 && !avisoMagDado) {
                 avisoMagDado = true;
                 notify("QR Code atingiu o tamanho máximo do modo vetorial (magnificação 10 do ZPL). Etiquetas na HORIZONTAL imprimem como imagem e aceitam um QR maior.", "warning");
@@ -7862,7 +7902,11 @@
          padding PADRÃO do QR (o scanner lê o conteúdo original);
          magLimite trava o lado no MESMO retângulo das linhas nativas. */
       var cachedQrGfa = qrObter(el.texto, qrNivelDe(el.simbologia), versaoFixa || 0);
-      var modsQrGfa = cachedQrGfa ? cachedQrGfa.count : 33;
+      /* Pedido 1.241: lib ausente/falha de encode — o retângulo continua
+         CERTO: módulos pela tabela (versão fixa do lote, ou a mínima do
+         conteúdo), nunca o chute 33 de tamanho errado. */
+      var modsQrGfa = cachedQrGfa ? cachedQrGfa.count
+        : (versaoFixa ? 4 * versaoFixa + 17 : 4 * (qrVersaoPorBytes(qrNivelDe(el.simbologia), qrUtf8Bytes(el.texto)) || 40) + 17);
       var sideBaseQr = Math.max(8, Math.round(Math.min(el.w || 200, el.h || 200)));
       var magQrGfa = Math.max(1, Math.floor(sideBaseQr / modsQrGfa));
       if (magLimite) magQrGfa = Math.max(1, Math.min(magLimite, magQrGfa));
@@ -8126,11 +8170,13 @@
            var wQz = larguraQuebraTexto(it, dispW, dispH);
            vw = Math.min(Math.ceil(larguraTexto(it.texto || "", fQz)), wQz);
            vh = Math.round(fQz * 1.1 * Math.max(1, contarLinhasEnroladas(it.texto || "", fQz, wQz)));
-        } else if (it.tipo === "barcode") {
-           var _med1dVw = barcodeMedidas(it.texto, it.simbologia || "code128");
-           var _modWvw = Math.max(1, Math.min(10, Math.floor((it.w || 300) / _med1dVw.mods)));
-           vw = _modWvw * _med1dVw.mods;
-           vh = it.h || 80;
+         } else if (it.tipo === "barcode") {
+            var _med1dVw = barcodeMedidas(it.texto, it.simbologia || "code128");
+            /* Pedido 1.241: módulo CONGELADO do lote (loteBcRef) — a pegada usa
+               o MESMO ^BY que vai ser impresso naquela linha */
+            var _modWvw = (it.loteBcRef && it.loteBcRef.modW) || Math.max(1, Math.min(10, Math.floor((it.w || 300) / _med1dVw.mods)));
+            vw = _modWvw * _med1dVw.mods;
+            vh = it.h || 80;
         } else if (it.tipo === "qr") {
            vw = it.w || 200;
            vh = it.h || 200;
@@ -8301,20 +8347,36 @@
                versão); linha menor → imagem ^GFA no mesmo tamanho. Sem
                lote, auto-ajuste de sempre (pedido 1.164). */
             var _qVersaoFixa = it.loteQrVersao || 0;
-            var _vLinhaQr = _qVersaoFixa ? qrVersaoPorBytes(_qNivZ, qrUtf8Bytes(it.texto || "")) : 0;
+            var _qUtf8Qr = qrUtf8Bytes(it.texto || "");
+            /* Pedido 1.241: acima da capacidade da v40 não existe QR (nem na
+               impressora) — o retângulo sai com MOLDURA VAZIA no tamanho de
+               referência: tamanho constante em todas as linhas + aviso no
+               congelamento do lote. */
+            var _qrOverCap = _qUtf8Qr && !qrVersaoPorBytes(_qNivZ, _qUtf8Qr) ? true : false;
+            var _vLinhaQr = _qVersaoFixa ? qrVersaoPorBytes(_qNivZ, _qUtf8Qr) : 0;
             var _qrImagemFixa = false;
-            if (_qVersaoFixa && _vLinhaQr && _vLinhaQr < _qVersaoFixa) _qrImagemFixa = true;
-            else if (_qVersaoFixa && _vLinhaQr > _qVersaoFixa) _qVersaoFixa = 0; /* defensivo: dado maior que a referência → auto */
+            if (!_qrOverCap) {
+              if (_qVersaoFixa && _vLinhaQr && _vLinhaQr < _qVersaoFixa) _qrImagemFixa = true;
+              else if (_qVersaoFixa && _vLinhaQr > _qVersaoFixa) _qVersaoFixa = 0; /* defensivo: dado maior que a referência → auto */
+            }
             var _qMods = 0;
             if (_qVersaoFixa) _qMods = 4 * _qVersaoFixa + 17; /* tabela: mesma contagem da lib e da impressora, sem custo de encode */
+            else if (_qrOverCap) _qMods = 177; /* v40: retângulo do maior QR que existe */
             if (!_qMods) {
               var _cachedQrZ = qrObter(it.texto, _qNivZ);
-              _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
+              /* Pedido 1.241: lib ausente → módulos pela tabela, não o chute 33 */
+              _qMods = _cachedQrZ ? _cachedQrZ.count : (4 * (qrVersaoPorBytes(_qNivZ, _qUtf8Qr) || 40) + 17);
             }
             /* Pedido 1.164: floor — impresso nunca estoura a caixa (com o snap
                do preview, floor × módulos é exatamente a caixa) */
             var mag = Math.max(1, Math.floor(_qSide / _qMods));
-            if (_qrImagemFixa) {
+            if (_qrOverCap) {
+              /* Pedido 1.241: moldura vazia no retângulo EXATO da referência
+                 (mag × módulos — a mesma conta da linha nativa): o layout não
+                 muda de etiqueta para etiqueta. */
+              var _ladoOver = mag * _qMods;
+              p.push("^FO" + px + "," + py + "^GB" + _ladoOver + "," + _ladoOver + ",2^FS");
+            } else if (_qrImagemFixa) {
               /* Pedido 1.240: linha menor que a referência — imagem ^GFA no
                  retângulo EXATO da referência, mesma origem ^FO do nativo. */
               gerarGFAQrCode(it, _qVersaoFixa, mag);
@@ -8425,7 +8487,12 @@
              mantém a linha (AIs legíveis: exigência GS1). */
           var info1dZ = simbologiaInfo(it.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
           var med1dZ = barcodeMedidas(it.texto, it.simbologia || "code128");
-          var modW = Math.max(1, Math.min(10, Math.floor((it.w || 300) / med1dZ.mods)));
+          /* Pedido 1.241 — barcode de tamanho FIXO no lote: módulo ^BY congelado
+             por elemento (loteBcRef, pior caso da coluna) — todas as linhas
+             imprimem com o MESMO módulo, altura de barras e área de texto;
+             sem lote, auto-ajuste de sempre (pedido 1.164). */
+          var _bcRefZ = it.loteBcRef || null;
+          var modW = _bcRefZ ? _bcRefZ.modW : Math.max(1, Math.min(10, Math.floor((it.w || 300) / med1dZ.mods)));
           var temLinha1d = !info1dZ.bwip || !!info1dZ.gs1;
           var bcH = barcodeBarrasH(it.h || 80, temLinha1d);
           var pre1d = (temLinha1d ? "^A0N" + barcodeLinhaH(it.h || 80) + ",0" : "") + "^BY" + modW;
@@ -8466,9 +8533,29 @@
                para o suplemento (^BE não tem parâmetro de add-on — confirmado
                na ZPL II Guide) → fallback gráfico ^GFA do compósito inteiro. */
             if (gerarGfaSimbologia(it)) p.push("^FO" + px + "," + py + gfaRotacaoElemento(it, rot) + "^FS");
+          } else if (rC === "N") {
+            /* Pedido 1.241 — linha de interpretação MANUAL: a firmware não quebra
+               texto longo (estourava a etiqueta). O texto sai num ^FB próprio
+               (até maxLin linhas na largura da caixa) e as barras recuam o
+               equivalente — barrasH CONSTANTE do lote (loteBcRef) ou calculada
+               da própria linha, sem lote. Módulo ^BY igual em todas as linhas. */
+            var fontH1d = _bcRefZ ? _bcRefZ.fontH : barcodeLinhaH(it.h || 80);
+            var wTxt1d = Math.max(20, Math.round(it.w || 300));
+            var maxLin1d = _bcRefZ ? _bcRefZ.maxLin : Math.max(1, contarLinhasEnroladas(it.texto || "", fontH1d, wTxt1d));
+            var bcH1d = temLinha1d
+              ? (_bcRefZ ? _bcRefZ.barrasH : Math.max(12, Math.round(it.h || 80) - maxLin1d * fontH1d))
+              : Math.round(it.h || 80);
+            var pars1dN = "," + bcH1d + ",N,N" + (info1dZ.n !== 4 ? ",N" : "");
+            p.push("^FO" + px + "," + py + "^BY" + modW + info1dZ.zpl + rC + pars1dN + "^FD" + sanitizar(it.texto) + "^FS");
+            if (temLinha1d) {
+              p.push("^FO" + px + "," + (py + bcH1d) + "^A0N" + fontH1d + ",0^FB" + wTxt1d + "," + maxLin1d + ",0,0,0^FD" + sanitizar(it.texto) + "^FS");
+            }
           } else {
             /* nº de parâmetros após a orientação: ^BC/^B3/^BA/^BU/^BM/^BK levam
-               altura,linha,acima,check; ^BE/^B8/^B2 levam altura,linha,acima */
+               altura,linha,acima,check; ^BE/^B8/^B2 levam altura,linha,acima.
+               rC≠N mantém a linha da FIRMWARE (o posicionamento manual da
+               interpretação em rotação não é documentado na ZPL II Guide —
+               VERIFICAR na impressora real; o módulo congelado vale igual). */
             var pars1dZ = "," + bcH + (temLinha1d ? ",Y,N" : ",N,N") + (info1dZ.n !== 4 ? ",N" : "");
             p.push("^FO" + px + "," + py + pre1d + info1dZ.zpl + rC + pars1dZ + "^FD" + sanitizar(it.texto) + "^FS");
           }
@@ -8868,21 +8955,24 @@
     }
 
     var _bcCache = {}, _bcCacheKeys = [];
-    function barcodeObter(texto, simbologia, elH, modW) {
+    function barcodeObter(texto, simbologia, elH, modW, opcoes) {
       var infoBc = simbologiaInfo(simbologia) || CATALOGO_SIMBOLOGIAS["1d"][0];
       if (infoBc.bwip) return bwipImgHtml(infoBc.chave, texto); /* Code 93 e cia via bwip-js (barras na caixa inteira — ZPL sai sem linha) */
       var fmtBc = infoBc.jsbarcode || "CODE128";
       /* 1.164: barras : linha na proporção correta — o SVG é esticado na caixa
-         (el.h = total), então só a proporção precisa casar com o ZPL */
-      var linhaBc = barcodeLinhaH(elH || 100);
-      var barrasBc = Math.max(12, Math.round(elH || 100) - linhaBc);
+         (el.h = total), então só a proporção precisa casar com o ZPL.
+         Pedido 1.241: opcoes {fontH, barrasH} (loteBcRef) — o SVG sai SEM o
+         texto da lib (displayValue:false): a linha de interpretação é desenhada
+         à parte (overlay/ctx), espelhando o ^FB do ZPL com quebra de linha. */
+      var linhaBc = (opcoes && opcoes.fontH) || barcodeLinhaH(elH || 100);
+      var barrasBc = (opcoes && opcoes.barrasH) || Math.max(12, Math.round(elH || 100) - linhaBc);
       var mWidth = Math.max(1, Math.min(10, parseInt(modW, 10) || 2));
-      var keyBc = infoBc.chave + "|" + ("" + texto) + "|" + barrasBc + "|" + mWidth;
+      var keyBc = infoBc.chave + "|" + ("" + texto) + "|" + barrasBc + "|" + mWidth + "|" + linhaBc;
       if (_bcCache[keyBc]) return _bcCache[keyBc];
       if (typeof JsBarcode !== "function") return null;
       function renderJsBc(txt) {
         var svgBc = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: true, margin: 0, height: barrasBc, fontSize: linhaBc, textMargin: 0, width: mWidth }); }
+        try { JsBarcode(svgBc, txt, { format: fmtBc, displayValue: false, margin: 0, height: barrasBc, textMargin: 0, width: mWidth }); }
         catch (eJs) { return ""; }
         svgBc.setAttribute("preserveAspectRatio", "none");
         var htmlBc = svgBc.outerHTML;
@@ -9021,33 +9111,57 @@
                 if (cachedQr.qr.isDark(rr, cc)) ctx.fillRect(cc * magQ, rr * magQ, magQ, magQ);
               }
             }
+          } else if (el.texto && !qrVersaoPorBytes(qrNivelDe(el.simbologia), qrUtf8Bytes(el.texto))) {
+            /* Pedido 1.241: texto acima do máximo do QR (v40) — moldura vazia
+               no retângulo de referência, igual ao ^GB do ZPL */
+            var modsQrPv = el.loteQrVersao ? 4 * el.loteQrVersao + 17 : 177;
+            var sideQPv = Math.min(vw, vh);
+            var magQPv = Math.max(1, Math.floor(sideQPv / modsQrPv));
+            var ladoQPv = magQPv * modsQrPv;
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, ladoQPv - 2, ladoQPv - 2);
           }
         }
       } else if (el.tipo === "barcode") {
         /* Pedido 1.164: módulos reais (mesma conta do preview/ZPL) e linha de
            interpretação na proporção correta (barras : linha = barrasH : linhaH) */
-        /* vw já está snapped (modW * mods) pelo bloco inicial — reusar _modWdim/_medBcDim
+        /* vw já está snapped (modW * mods) pelo bloco inicial — reusar _medBcDim/_modWdim
            do mesmo cálculo para não refazer a medição. */
         var medBcCv = _medBcDim;
-        var modWb = _modWdim;
+        /* Pedido 1.241: módulo/fonte/área CONGELADOS do lote (loteBcRef) — o
+           canvas espelha o ZPL (^BY, barrasH, ^FB) em todas as linhas */
+        var modWb = (el.loteBcRef && el.loteBcRef.modW) || _modWdim;
         var infoBcPv = simbologiaInfo(el.simbologia || "code128") || CATALOGO_SIMBOLOGIAS["1d"][0];
+        var temLinhaBcCv = !infoBcPv.bwip || !!infoBcPv.gs1;
+        var fontBcCv = (el.loteBcRef && el.loteBcRef.fontH) || barcodeLinhaH(vh);
+        var maxLinBcCv = (el.loteBcRef && el.loteBcRef.maxLin) || Math.max(1, contarLinhasEnroladas(el.texto || "", fontBcCv, Math.max(20, Math.round(el.w || 300))));
+        var barrasBcCv = temLinhaBcCv
+          ? ((el.loteBcRef && el.loteBcRef.barrasH) || Math.max(12, Math.round(vh) - maxLinBcCv * fontBcCv))
+          : Math.round(vh);
         if (infoBcPv.bwip) {
           var cvBcBw = bwipCanvas(infoBcPv.chave, el.texto);
           /* bwip: o canvas interno tem largura proporcional ao conteúdo (3px/módulo);
              esticar só até vw (já snapped) — sem exceder. */
           if (cvBcBw) ctx.drawImage(cvBcBw, 0, 0, vw, vh);
         } else {
-          var linhaBcCv = barcodeLinhaH(vh);
-          var barrasBcCv = Math.max(12, Math.round(vh) - linhaBcCv);
           function desenharJsBc(txt) {
             var tcvBc = document.createElement("canvas");
             /* width: modWb garante módulos inteiros; o canvas temporário tem exatamente
-               modWb*mods pixels — drawImage(…, vw, vh) estica para vw=modWb*mods, 1:1. */
-            JsBarcode(tcvBc, txt, { format: infoBcPv.jsbarcode || "CODE128", displayValue: true, margin: 0, height: barrasBcCv, fontSize: linhaBcCv, textMargin: 0, width: modWb, valid: function (okV) { if (!okV) throw new Error("conteudo invalido"); } });
-            ctx.drawImage(tcvBc, 0, 0, vw, vh);
+               modWb*mods pixels — drawImage(…, vw, barrasBcCv) estica para vw=modWb*mods, 1:1. */
+            JsBarcode(tcvBc, txt, { format: infoBcPv.jsbarcode || "CODE128", displayValue: false, margin: 0, height: barrasBcCv, textMargin: 0, width: modWb, valid: function (okV) { if (!okV) throw new Error("conteudo invalido"); } });
+            ctx.drawImage(tcvBc, 0, 0, vw, barrasBcCv);
           }
           try { desenharJsBc(el.texto || infoBcPv.demo); }
           catch (eBc1) { try { desenharJsBc(String(infoBcPv.demo)); } catch (eBc2) {} }
+          /* Pedido 1.241: texto de interpretação MANUAL quebrado — espelho do
+             ^FB do ZPL (mesma fonte, mesma área, quebra por palavras) */
+          var linhasBcTxt = quebrarTextoMultilinha(el.texto || "", Math.max(20, Math.round(el.w || 300)), ctx);
+          if (linhasBcTxt.length > maxLinBcCv) linhasBcTxt = linhasBcTxt.slice(0, maxLinBcCv);
+          ctx.fillStyle = "#000";
+          ctx.font = "600 " + fontBcCv + 'px Arial, Helvetica, sans-serif';
+          ctx.textBaseline = "top";
+          linhasBcTxt.forEach(function (lineBc, iLinBc) { ctx.fillText(lineBc, 0, barrasBcCv + iLinBc * fontBcCv); });
         }
       } else if (el.tipo === "linha") {
         var espL = el.espessura || el.h || 3;
@@ -11484,7 +11598,7 @@
       loteEspecialAtivo = false;
       loteEspecialBindings = null;
       loteTamRef = null; /* Pedido 1.236: nova importação = novos tamanhos de referência */
-      elements.forEach(function (elDescQr) { if (elDescQr) delete elDescQr.loteQrVersao; }); /* Pedido 1.240: nova importação = nova referência de QR */
+      elements.forEach(function (elDescQr) { if (elDescQr) { delete elDescQr.loteQrVersao; delete elDescQr.loteBcRef; } }); /* Pedidos 1.240/1.241: nova importação = novas referências de QR/barcode */
       lotePaginaAtual = 0;
       if (tinhaZpl || tinhaEsp) {
         notify("Lote anterior (ZPL importado / especial) descartado — a nova importação assume o lugar.", "dark");
@@ -12606,10 +12720,10 @@
            gerarZPLTodasLinhas → garantirAlvosLote → renderStudio → … */
         renderStudio();
       }
-      /* Pedido 1.240: congela a versão de referência do QR de cada alvo QR
-         (pior caso da coluna) — TODOS os QRs do lote imprimem no mesmo
-         retângulo, independente do comprimento de cada linha. */
-      try { loteCongelarQrRefs(pares, alvos); } catch (eQrRef) {}
+      /* Pedidos 1.240/1.241: congela as referências do lote — a versão do QR
+         (pior caso da coluna) e o módulo/área de texto do barcode: TODOS os
+         elementos de código imprimem no MESMO tamanho em todas as linhas. */
+      try { loteCongelarRefs(pares, alvos); } catch (eQrRef) {}
       return alvos;
     }
     /* Pedido 1.240: versão de referência por coluna+nível — varre o pior
@@ -12620,6 +12734,7 @@
        mesmo navegando/gerando 124k linhas em fatias. */
     var _qrRefScan = { ger: -1, porColuna: {} };
     var _qrRefAvisoGer = -1;
+    var _qrRefOverAvisoGer = -1;
     function loteQrVersaoDaColuna(colIdx, niv) {
       if (_qrRefScan.ger !== importDadosGeracao) _qrRefScan = { ger: importDadosGeracao, porColuna: {} };
       var kScan = colIdx + "|" + niv;
@@ -12630,42 +12745,120 @@
           nbScan = (vScan == null || vScan === "") ? 0 : qrUtf8Bytes(String(vScan));
           if (nbScan > maxB) maxB = nbScan;
         }
-        var versaoScan = maxB ? qrVersaoPorBytes(niv, maxB) : 0;
-        var imgsScan = 0;
+        /* Pedido 1.241: acima da v40 não existe versão — congela na v40 (a
+           maior que existe) para manter o tamanho constante; as linhas acima
+           da capacidade saem com moldura vazia (contadas como "over"). */
+        var versaoScan = maxB ? (qrVersaoPorBytes(niv, maxB) || 40) : 0;
+        var imgsScan = 0, overScan = 0, vLinhaScan;
         if (versaoScan) {
           for (rScan = 0; rScan < importDados.linhas.length; rScan++) {
             vScan = importDados.linhas[rScan][colIdx];
             nbScan = (vScan == null || vScan === "") ? 0 : qrUtf8Bytes(String(vScan));
-            if (nbScan && qrVersaoPorBytes(niv, nbScan) < versaoScan) imgsScan++;
+            if (!nbScan) continue;
+            vLinhaScan = qrVersaoPorBytes(niv, nbScan);
+            if (!vLinhaScan) overScan++;
+            else if (vLinhaScan < versaoScan) imgsScan++;
           }
         }
-        _qrRefScan.porColuna[kScan] = { versao: versaoScan, imagens: imgsScan };
+        _qrRefScan.porColuna[kScan] = { versao: versaoScan, imagens: imgsScan, over: overScan };
       }
       return _qrRefScan.porColuna[kScan];
     }
-    function loteCongelarQrRefs(pares, alvos) {
+    /* Pedido 1.241: referência do barcode por coluna+simbologia+caixa — amostra
+       as K strings mais longas da coluna (medir 124k linhas na lib seria
+       inviável; os módulos crescem com o comprimento, a amostra cobre o pior
+       caso real), mede os módulos e a quebra do texto e devolve o loteBcRef
+       CONSTANTE: módulo ^BY, fonte, nº de linhas e altura de barras. Cache por
+       geração dos dados (importDadosGeracao do 1.239): varredura única por
+       importação, mesmo navegando/gerando 124k linhas em fatias. */
+    var _bcRefScan = { ger: -1, porColuna: {} };
+    var _bcRefAvisoGer = -1;
+    function loteBcRefDaColuna(colIdx, simbologia, elW, elH, txtAtual) {
+      if (_bcRefScan.ger !== importDadosGeracao) _bcRefScan = { ger: importDadosGeracao, porColuna: {} };
+      var kBc = colIdx + "|" + (simbologia || "code128") + "|" + Math.round(elW || 300) + "x" + Math.round(elH || 80);
+      if (!_bcRefScan.porColuna[kBc]) {
+        var kAmBc = 8, amostrasBc = [], rBc, sBc, lnBc, iBc, jaTemBc;
+        for (rBc = 0; rBc < importDados.linhas.length; rBc++) {
+          sBc = importDados.linhas[rBc][colIdx];
+          sBc = (sBc == null) ? "" : String(sBc);
+          if (!sBc) continue;
+          lnBc = sBc.length;
+          if (amostrasBc.length < kAmBc || lnBc > amostrasBc[amostrasBc.length - 1].len) {
+            jaTemBc = false;
+            for (iBc = 0; iBc < amostrasBc.length; iBc++) { if (amostrasBc[iBc].s === sBc) { jaTemBc = true; break; } }
+            if (!jaTemBc) {
+              if (amostrasBc.length < kAmBc) amostrasBc.push({ len: lnBc, s: sBc });
+              else amostrasBc[kAmBc - 1] = { len: lnBc, s: sBc };
+              amostrasBc.sort(function (a1Bc, a2Bc) { return a2Bc.len - a1Bc.len; });
+            }
+          }
+        }
+        var fontHBc = barcodeLinhaH(elH || 80);
+        var wTxtBc = Math.max(20, Math.round(elW || 300));
+        var modsMaxBc = 0, maxLinBc = 1;
+        function medirAmostraBc(sM) {
+          modsMaxBc = Math.max(modsMaxBc, barcodeMedidas(sM, simbologia || "code128").mods);
+          maxLinBc = Math.max(maxLinBc, Math.max(1, contarLinhasEnroladas(sM, fontHBc, wTxtBc)));
+        }
+        for (iBc = 0; iBc < amostrasBc.length; iBc++) medirAmostraBc(amostrasBc[iBc].s);
+        if (txtAtual) medirAmostraBc(String(txtAtual));
+        if (importDados.linhas.length) {
+          sBc = importDados.linhas[0][colIdx];
+          if (sBc != null && sBc !== "") medirAmostraBc(String(sBc));
+        }
+        var modWBc = Math.max(1, Math.min(10, Math.floor(wTxtBc / Math.max(1, modsMaxBc))));
+        var cabemLinBc = Math.max(1, Math.floor(((elH || 80) - 12) / fontHBc));
+        var cortaBc = maxLinBc > cabemLinBc;
+        if (cortaBc) maxLinBc = cabemLinBc;
+        var barrasHBc = Math.max(12, Math.round(elH || 80) - maxLinBc * fontHBc);
+        _bcRefScan.porColuna[kBc] = { modW: modWBc, fontH: fontHBc, maxLin: maxLinBc, barrasH: barrasHBc, mods: modsMaxBc, estoura: modsMaxBc > wTxtBc, corta: cortaBc };
+      }
+      return _bcRefScan.porColuna[kBc];
+    }
+    function loteCongelarRefs(pares, alvos) {
       /* reset primeiro: elementos que saírem do lote (nova importação,
          coluna trocada) voltam ao auto-ajuste */
-      elements.forEach(function (elReset) { if (elReset) delete elReset.loteQrVersao; });
+      elements.forEach(function (elReset) { if (elReset) { delete elReset.loteQrVersao; delete elReset.loteBcRef; } });
       var idxColsQr = obterIdxColsLote();
-      var nImgTotal = 0, temQrRef = false;
+      var nImgTotal = 0, temQrRef = false, nOverTotal = 0;
+      var avisoBcEstoura = false, avisoBcCorta = false;
       pares.forEach(function (par, i) {
         var alvo = alvos[i];
-        if (!alvo || alvo.tipo !== "qr") return;
-        var infoQrRef = simbologiaInfo(alvo.simbologia);
-        if (!(infoQrRef && infoQrRef.zpl === "^BQ" && !infoQrRef.gs1)) return; /* GS1/2D seguem os seus caminhos */
-        var colIdxQr = idxColsQr[par.coluna];
-        if (colIdxQr == null) return;
-        var scanQr = loteQrVersaoDaColuna(colIdxQr, qrNivelDe(alvo.simbologia));
-        if (scanQr.versao) {
-          alvo.loteQrVersao = scanQr.versao;
-          temQrRef = true;
-          nImgTotal += scanQr.imagens;
+        if (!alvo) return;
+        if (alvo.tipo === "qr") {
+          var infoQrRef = simbologiaInfo(alvo.simbologia);
+          if (!(infoQrRef && infoQrRef.zpl === "^BQ" && !infoQrRef.gs1)) return; /* GS1/2D seguem os seus caminhos */
+          var colIdxQr = idxColsQr[par.coluna];
+          if (colIdxQr == null) return;
+          var scanQr = loteQrVersaoDaColuna(colIdxQr, qrNivelDe(alvo.simbologia));
+          if (scanQr.versao) {
+            alvo.loteQrVersao = scanQr.versao;
+            temQrRef = true;
+            nImgTotal += scanQr.imagens;
+            nOverTotal += scanQr.over;
+          }
+        } else if (alvo.tipo === "barcode") {
+          /* Pedido 1.241: congela módulo/área de texto — ^BY, altura de
+             barras e fonte IGUAIS em todas as linhas do lote */
+          var colIdxBc = idxColsQr[par.coluna];
+          if (colIdxBc == null) return;
+          var refBc = loteBcRefDaColuna(colIdxBc, alvo.simbologia || "code128", alvo.w || 300, alvo.h || 80, alvo.texto);
+          alvo.loteBcRef = refBc;
+          if (refBc.estoura) avisoBcEstoura = true;
+          if (refBc.corta) avisoBcCorta = true;
         }
       });
       if (temQrRef && nImgTotal > 2000 && _qrRefAvisoGer !== importDadosGeracao) {
         _qrRefAvisoGer = importDadosGeracao;
         notify("QR de tamanho fixo: " + nImgTotal + " linha(s) com conteúdo menor que a referência sairão como imagem no MESMO tamanho — a geração completa (Imprimir/Download) pode levar alguns minutos.", "info");
+      }
+      if (temQrRef && nOverTotal > 0 && _qrRefOverAvisoGer !== importDadosGeracao) {
+        _qrRefOverAvisoGer = importDadosGeracao;
+        notify("QR de tamanho fixo: " + nOverTotal + " linha(s) com texto acima do máximo do QR (v40) sairão com moldura vazia no MESMO tamanho — reduza o texto dessas linhas.", "warning");
+      }
+      if ((avisoBcEstoura || avisoBcCorta) && _bcRefAvisoGer !== importDadosGeracao) {
+        _bcRefAvisoGer = importDadosGeracao;
+        notify("Barcode de tamanho fixo: " + (avisoBcEstoura ? "há linhas mais largas que a caixa (o código passa da largura da etiqueta); " : "") + (avisoBcCorta ? "o texto de algumas linhas quebra em mais linhas do que cabe (as últimas ficam cortadas); " : "") + "ajuste a caixa ou o texto.", "warning");
       }
     }
     /* Aplica uma linha do lote aos elementos REAIS do Estúdio (a etiqueta
@@ -13078,7 +13271,7 @@
         $("zpl").value = r.zpl;
         importSessaoSalvar(); /* Pedido 1.191: o lote gerado sobrevive ao F5 */
         atualizarBarraStatusLote();
-        notify(r.total + " etiquetas geradas (uma por linha, em etiqueta nova — os tamanhos ficam iguais em todas, inclusive o QR Code: o tamanho dele é travado pelo maior conteúdo da planilha; linhas menores saem com a mesma cara). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
+        notify(r.total + " etiquetas geradas (uma por linha, em etiqueta nova — os tamanhos ficam iguais em todas, inclusive QR Code e código de barras: o tamanho deles é travado pelo maior conteúdo da planilha; linhas menores saem com a mesma cara e o texto do código de barras quebra em várias linhas quando é longo). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
       });
     }
 
@@ -16856,13 +17049,23 @@
       loteTamRefInfo: function () { return loteTamRef ? loteTamRef.length : 0; },
       loteElementsInfo: function () {
         return elements.map(function (el) {
-          return { tipo: el.tipo, w: el.w, h: el.h, fonte: el.fonte, texto: el.texto, simbologia: el.simbologia || "", loteQrVersao: el.loteQrVersao || 0 };
+          return {
+            tipo: el.tipo, w: el.w, h: el.h, fonte: el.fonte, texto: el.texto, simbologia: el.simbologia || "",
+            loteQrVersao: el.loteQrVersao || 0,
+            loteBcModW: (el.loteBcRef && el.loteBcRef.modW) || 0,
+            loteBcFontH: (el.loteBcRef && el.loteBcRef.fontH) || 0,
+            loteBcMaxLin: (el.loteBcRef && el.loteBcRef.maxLin) || 0,
+            loteBcBarrasH: (el.loteBcRef && el.loteBcRef.barrasH) || 0
+          };
         });
       },
       /* Pedido 1.240: QR de tamanho fixo no lote */
       qrVersaoPorBytes: qrVersaoPorBytes,
       qrUtf8Bytes: qrUtf8Bytes,
-      qrObter: qrObter
+      qrObter: qrObter,
+      /* Pedido 1.241: barcode de tamanho fixo no lote */
+      barcodeMedidas: barcodeMedidas,
+      contarLinhasEnroladas: contarLinhasEnroladas
     };
 
   })();
@@ -17521,7 +17724,8 @@
                     <li><strong>As colunas são lidas sozinhas</strong>: ao escolher o arquivo, ou ao conectar com a origem (Enter no link/URL ou mudança de valor válido), o “Ler Colunas” roda automaticamente.</li>
                     <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
                     <li><strong>Criar Etiquetas</strong> gera uma etiqueta por linha da planilha, sempre em uma <strong>etiqueta nova</strong> — nunca sobre um desenho já aberto — e todas as etiquetas do lote mantêm exatamente os mesmos tamanhos de elementos (o mapeamento é salvo no navegador sozinho) — a primeira fica no Estúdio como modelo e as setas ‹ › da barra de status navegam pelas demais.</li>
-                    <li><strong>QR Code de tamanho fixo no lote</strong>: o QR assume o tamanho do pior caso da planilha (maior conteúdo da coluna) e <strong>todas as etiquetas saem com o QR exatamente do mesmo tamanho</strong> — linhas com conteúdo menor saem como imagem no mesmo retângulo (o scanner lê o texto original). Redimensionar o QR no Estúdio muda o dele em todas as etiquetas de uma vez.</li>
+                    <li><strong>QR Code de tamanho fixo no lote</strong>: o QR assume o tamanho do pior caso da planilha (maior conteúdo da coluna) e <strong>todas as etiquetas saem com o QR exatamente do mesmo tamanho</strong> — linhas com conteúdo menor saem como imagem no mesmo retângulo (o scanner lê o texto original) e linhas com texto acima do máximo do QR saem com moldura vazia no mesmo tamanho (reduza o texto delas). Redimensionar o QR no Estúdio muda o dele em todas as etiquetas de uma vez.</li>
+                    <li><strong>Código de barras de tamanho fixo no lote</strong>: o módulo (espessura das barras), a altura das barras e a área de texto são <strong>iguais em todas as etiquetas</strong>, travados pela linha mais longa da planilha — e o texto embaixo do código <strong>quebra em várias linhas</strong> quando é longo, em vez de estourar a etiqueta.</li>
                     <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
                   </ul>
                 </div>
