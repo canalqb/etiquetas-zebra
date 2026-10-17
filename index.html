@@ -1701,7 +1701,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.038</span>
+        <span class="brand-ver">v1.039</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -7856,13 +7856,18 @@
        mesmo pipeline WYSIWYG da curva/imagens. O bitmap embute vrot; as
        variantes cobrem o giro da etiqueta. Cache por texto|lado|rotação: o hex
        de um QR grande é caro de regerar a cada renderZPL. */
-    function gerarGFAQrCode(el) {
-      var cachedQrGfa = qrObter(el.texto, qrNivelDe(el.simbologia));
+    function gerarGFAQrCode(el, versaoFixa, magLimite) {
+      /* Pedido 1.240: versaoFixa (1-40) renderiza o QR na versão congelada
+         do lote — mesma contagem de módulos em todas as linhas, com o
+         padding PADRÃO do QR (o scanner lê o conteúdo original);
+         magLimite trava o lado no MESMO retângulo das linhas nativas. */
+      var cachedQrGfa = qrObter(el.texto, qrNivelDe(el.simbologia), versaoFixa || 0);
       var modsQrGfa = cachedQrGfa ? cachedQrGfa.count : 33;
       var sideBaseQr = Math.max(8, Math.round(Math.min(el.w || 200, el.h || 200)));
       var magQrGfa = Math.max(1, Math.floor(sideBaseQr / modsQrGfa));
+      if (magLimite) magQrGfa = Math.max(1, Math.min(magLimite, magQrGfa));
       var sideQrGfa = magQrGfa * modsQrGfa;
-      var chaveQrGfa = (el.texto || "") + "|" + sideQrGfa + "|" + (el.rotacao || 0);
+      var chaveQrGfa = (el.texto || "") + "|" + sideQrGfa + "|" + (el.rotacao || 0) + "|" + (versaoFixa || 0);
       if (el._gfaQrKey === chaveQrGfa && el.gfaZpl) return;
       var tmpQrGfa = {};
       for (var kQrGfa in el) tmpQrGfa[kQrGfa] = el[kQrGfa];
@@ -8287,31 +8292,56 @@
              H/M/L (mesma via ^BQ, 4º parâmetro muda) */
           var _qrNativoZ = _qSimbZ === "qr" || (_infoQ2dZ && _infoQ2dZ.zpl === "^BQ" && !_infoQ2dZ.gs1);
           if (_qrNativoZ) {
+            var _qNivZ = qrNivelDe(_qSimbZ);
             var _qSide = Math.min(it.w || 200, it.h || 200);
-            var _cachedQrZ = qrObter(it.texto, qrNivelDe(_qSimbZ));
-            var _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
+            /* Pedido 1.240: versão CONGELADA do lote (pior caso do import)
+               — todo QR do elemento imprime no MESMO retângulo, editável
+               (mudou a caixa, recalcula a magnificação). Linha na versão de
+               referência → ^BQ nativo (leve, a impressora escolhe a MESMA
+               versão); linha menor → imagem ^GFA no mesmo tamanho. Sem
+               lote, auto-ajuste de sempre (pedido 1.164). */
+            var _qVersaoFixa = it.loteQrVersao || 0;
+            var _vLinhaQr = _qVersaoFixa ? qrVersaoPorBytes(_qNivZ, qrUtf8Bytes(it.texto || "")) : 0;
+            var _qrImagemFixa = false;
+            if (_qVersaoFixa && _vLinhaQr && _vLinhaQr < _qVersaoFixa) _qrImagemFixa = true;
+            else if (_qVersaoFixa && _vLinhaQr > _qVersaoFixa) _qVersaoFixa = 0; /* defensivo: dado maior que a referência → auto */
+            var _qMods = 0;
+            if (_qVersaoFixa) _qMods = 4 * _qVersaoFixa + 17; /* tabela: mesma contagem da lib e da impressora, sem custo de encode */
+            if (!_qMods) {
+              var _cachedQrZ = qrObter(it.texto, _qNivZ);
+              _qMods = _cachedQrZ ? _cachedQrZ.count : 33;
+            }
             /* Pedido 1.164: floor — impresso nunca estoura a caixa (com o snap
                do preview, floor × módulos é exatamente a caixa) */
             var mag = Math.max(1, Math.floor(_qSide / _qMods));
-            if (mag <= 10) {
-              /* Faixa nativa: ^BQ aceita magnificação 1–10.
-                 Pedido 1.176: o nível de correção vai TAMBÉM no switch do
-                 ^FD (^FD<nível>A, — obrigatório no firmware). Antes era
-                 hardcoded "LA," e conflitava com o 4º parâmetro do ^BQ — a
-                 impressora real imprimia os dados entre colchetes. */
-              var _qNivZ = qrNivelDe(_qSimbZ);
-              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + "," + _qNivZ + "^FD" + _qNivZ + "A," + sanitizar(it.texto) + "^FS");
-            } else {
-              /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
-                 mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
-                 da caixa — mesmo pipeline WYSIWYG da curva/imagens. */
-              gerarGFAQrCode(it);
+            if (_qrImagemFixa) {
+              /* Pedido 1.240: linha menor que a referência — imagem ^GFA no
+                 retângulo EXATO da referência, mesma origem ^FO do nativo. */
+              gerarGFAQrCode(it, _qVersaoFixa, mag);
               var rotGfQr = (360 - rot) % 360;
               var gfaQr = rotGfQr === 90 ? (it.gfaZplR || it.gfaZpl)
                 : rotGfQr === 180 ? (it.gfaZplI || it.gfaZpl)
                 : rotGfQr === 270 ? (it.gfaZplB || it.gfaZpl)
                 : it.gfaZpl;
               if (gfaQr) p.push("^FO" + px + "," + py + gfaQr + "^FS");
+            } else if (mag <= 10) {
+              /* Faixa nativa: ^BQ aceita magnificação 1–10.
+                  Pedido 1.176: o nível de correção vai TAMBÉM no switch do
+                  ^FD (^FD<nível>A, — obrigatório no firmware). Antes era
+                  hardcoded "LA," e conflitava com o 4º parâmetro do ^BQ — a
+                  impressora real imprimia os dados entre colchetes. */
+              p.push("^FO" + px + "," + py + "^BQ" + rC + ",2," + mag + "," + _qNivZ + "^FD" + _qNivZ + "A," + sanitizar(it.texto) + "^FS");
+            } else {
+              /* Pedido 1.125: acima de 10 o ^BQ não cresce (o editor aumentava o
+                  mm e o QR parava em ~31mm). Fallback gráfico ^GFA no tamanho real
+                  da caixa — mesmo pipeline WYSIWYG da curva/imagens. */
+              gerarGFAQrCode(it);
+              var rotGfQr2 = (360 - rot) % 360;
+              var gfaQr2 = rotGfQr2 === 90 ? (it.gfaZplR || it.gfaZpl)
+                : rotGfQr2 === 180 ? (it.gfaZplI || it.gfaZpl)
+                : rotGfQr2 === 270 ? (it.gfaZplB || it.gfaZpl)
+                : it.gfaZpl;
+              if (gfaQr2) p.push("^FO" + px + "," + py + gfaQr2 + "^FS");
             }
           } else {
             if (!_infoQ2dZ) return;
@@ -8746,13 +8776,43 @@
     }
 
     var _qrCache = {}, _qrCacheKeys = [];
-    function qrObter(texto, nivel) {
-      var key = (nivel || "Q") + "|" + texto;
+    /* Pedido 1.240: QR de tamanho FIXO no lote. O ^BQ da Zebra escolhe a
+       versão do QR AUTOMÁTICA pelo volume de dados (não há parâmetro de
+       versão) — conteúdo de comprimentos diferentes = nº de módulos
+       diferente = tamanho impresso diferente (mag 3 numa etiqueta, 4 na
+       outra). A solução: congelar a versão de REFERÊNCIA de cada elemento
+       QR pelo pior caso do import (maior conteúdo da coluna) — linhas que
+       caibam nela saem nativas (^BQ leve) e linhas menores saem como
+       imagem ^GFA na MESMA contagem de dots (versão forçada com o padding
+       PADRÃO do QR — o scanner lê o conteúdo original). */
+    function qrUtf8Bytes(s) {
+      var t = String(s || "");
+      if (/^[\x00-\x7F]*$/.test(t)) return t.length; /* atalho ASCII: o caso real de chaves/séries */
+      try { return unescape(encodeURIComponent(t)).length; } catch (eU8) { return t.length; }
+    }
+    /* Capacidade do modo BYTE por versão (1-40) × nível de correção — a
+       mesma tabela que a impressora e a lib usam para escolher a versão
+       mínima. Módulos da versão v = 4v + 17. */
+    var QR_CAP_BYTES = {
+      H: [7,14,24,34,44,58,64,84,98,119,137,155,177,194,220,250,280,310,338,382,403,439,461,511,535,593,625,658,698,726,752,790,826,884,927,981,1029,1067,1119,1163],
+      Q: [11,20,32,46,60,74,86,108,130,151,177,203,241,253,285,323,364,394,442,482,509,565,611,661,707,756,807,879,911,1000,1071,1128,1203,1269,1341,1427,1501,1577,1661,1774],
+      M: [14,26,42,62,84,106,122,152,180,213,251,287,331,362,412,450,504,560,624,666,711,777,843,909,969,986,1054,1106,1228,1283,1351,1423,1499,1579,1663,1745,1821,1901,1991,2093],
+      L: [17,32,53,78,106,134,154,192,230,271,321,367,425,458,520,586,644,718,792,858,929,1003,1091,1171,1273,1367,1465,1528,1628,1722,1809,1911,1989,2099,2213,2331,2431,2563,2693,2809]
+    };
+    function qrVersaoPorBytes(nivel, nBytes) {
+      var caps = QR_CAP_BYTES[String(nivel || "Q").toUpperCase()] || QR_CAP_BYTES.Q;
+      for (var vQr = 1; vQr <= 40; vQr++) {
+        if (caps[vQr - 1] >= nBytes) return vQr;
+      }
+      return 0; /* acima da v40: sem versão fixa possível */
+    }
+    function qrObter(texto, nivel, versaoFixa) {
+      var key = (nivel || "Q") + "|" + (versaoFixa || 0) + "|" + texto;
       if (_qrCache[key]) return _qrCache[key];
       var out = null;
       if (typeof window.qrcode === "function") {
         try {
-          var qr = window.qrcode(0, nivel || "Q");
+          var qr = window.qrcode(versaoFixa || 0, nivel || "Q"); /* 0 = versão automática; 1-40 = versão fixa (padding padrão do QR) */
           qr.addData(texto || "123");
           qr.make();
           out = { count: qr.getModuleCount() || 33, qr: qr, svg: qr.createSvgTag({ cellSize: 2, margin: 0 }) };
@@ -8950,7 +9010,7 @@
           var cvQ2 = bwipCanvas(simbQ2, el.texto);
           if (cvQ2) ctx.drawImage(cvQ2, 0, 0, vw, vh);
         } else {
-          var cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia));
+          var cachedQr = qrObter(el.texto, qrNivelDe(el.simbologia), el.loteQrVersao || 0); /* Pedido 1.240: versão congelada do lote — o preview espelha a impressão */
           if (cachedQr && cachedQr.qr) {
             var sideQ = Math.min(vw, vh);
             var magQ = Math.max(1, Math.floor(sideQ / cachedQr.count));
@@ -11424,6 +11484,7 @@
       loteEspecialAtivo = false;
       loteEspecialBindings = null;
       loteTamRef = null; /* Pedido 1.236: nova importação = novos tamanhos de referência */
+      elements.forEach(function (elDescQr) { if (elDescQr) delete elDescQr.loteQrVersao; }); /* Pedido 1.240: nova importação = nova referência de QR */
       lotePaginaAtual = 0;
       if (tinhaZpl || tinhaEsp) {
         notify("Lote anterior (ZPL importado / especial) descartado — a nova importação assume o lugar.", "dark");
@@ -12545,7 +12606,67 @@
            gerarZPLTodasLinhas → garantirAlvosLote → renderStudio → … */
         renderStudio();
       }
+      /* Pedido 1.240: congela a versão de referência do QR de cada alvo QR
+         (pior caso da coluna) — TODOS os QRs do lote imprimem no mesmo
+         retângulo, independente do comprimento de cada linha. */
+      try { loteCongelarQrRefs(pares, alvos); } catch (eQrRef) {}
       return alvos;
+    }
+    /* Pedido 1.240: versão de referência por coluna+nível — varre o pior
+       caso (maior conteúdo em bytes UTF-8, a mesma contagem da impressora
+       com ^CI28) e conta quantas linhas ficarão ABAIXO da referência (essas
+       sairão como imagem ^GFA no mesmo tamanho). Cache por geração dos
+       dados (importDadosGeracao do 1.239): varredura única por importação,
+       mesmo navegando/gerando 124k linhas em fatias. */
+    var _qrRefScan = { ger: -1, porColuna: {} };
+    var _qrRefAvisoGer = -1;
+    function loteQrVersaoDaColuna(colIdx, niv) {
+      if (_qrRefScan.ger !== importDadosGeracao) _qrRefScan = { ger: importDadosGeracao, porColuna: {} };
+      var kScan = colIdx + "|" + niv;
+      if (!_qrRefScan.porColuna[kScan]) {
+        var maxB = 0, rScan, vScan, nbScan;
+        for (rScan = 0; rScan < importDados.linhas.length; rScan++) {
+          vScan = importDados.linhas[rScan][colIdx];
+          nbScan = (vScan == null || vScan === "") ? 0 : qrUtf8Bytes(String(vScan));
+          if (nbScan > maxB) maxB = nbScan;
+        }
+        var versaoScan = maxB ? qrVersaoPorBytes(niv, maxB) : 0;
+        var imgsScan = 0;
+        if (versaoScan) {
+          for (rScan = 0; rScan < importDados.linhas.length; rScan++) {
+            vScan = importDados.linhas[rScan][colIdx];
+            nbScan = (vScan == null || vScan === "") ? 0 : qrUtf8Bytes(String(vScan));
+            if (nbScan && qrVersaoPorBytes(niv, nbScan) < versaoScan) imgsScan++;
+          }
+        }
+        _qrRefScan.porColuna[kScan] = { versao: versaoScan, imagens: imgsScan };
+      }
+      return _qrRefScan.porColuna[kScan];
+    }
+    function loteCongelarQrRefs(pares, alvos) {
+      /* reset primeiro: elementos que saírem do lote (nova importação,
+         coluna trocada) voltam ao auto-ajuste */
+      elements.forEach(function (elReset) { if (elReset) delete elReset.loteQrVersao; });
+      var idxColsQr = obterIdxColsLote();
+      var nImgTotal = 0, temQrRef = false;
+      pares.forEach(function (par, i) {
+        var alvo = alvos[i];
+        if (!alvo || alvo.tipo !== "qr") return;
+        var infoQrRef = simbologiaInfo(alvo.simbologia);
+        if (!(infoQrRef && infoQrRef.zpl === "^BQ" && !infoQrRef.gs1)) return; /* GS1/2D seguem os seus caminhos */
+        var colIdxQr = idxColsQr[par.coluna];
+        if (colIdxQr == null) return;
+        var scanQr = loteQrVersaoDaColuna(colIdxQr, qrNivelDe(alvo.simbologia));
+        if (scanQr.versao) {
+          alvo.loteQrVersao = scanQr.versao;
+          temQrRef = true;
+          nImgTotal += scanQr.imagens;
+        }
+      });
+      if (temQrRef && nImgTotal > 2000 && _qrRefAvisoGer !== importDadosGeracao) {
+        _qrRefAvisoGer = importDadosGeracao;
+        notify("QR de tamanho fixo: " + nImgTotal + " linha(s) com conteúdo menor que a referência sairão como imagem no MESMO tamanho — a geração completa (Imprimir/Download) pode levar alguns minutos.", "info");
+      }
     }
     /* Aplica uma linha do lote aos elementos REAIS do Estúdio (a etiqueta
        exibida passa a ser a da linha idxLinha — o padrão visível do lote). */
@@ -12957,7 +13078,7 @@
         $("zpl").value = r.zpl;
         importSessaoSalvar(); /* Pedido 1.191: o lote gerado sobrevive ao F5 */
         atualizarBarraStatusLote();
-        notify(r.total + " etiquetas geradas (uma por linha, em etiqueta nova — os tamanhos ficam iguais em todas). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
+        notify(r.total + " etiquetas geradas (uma por linha, em etiqueta nova — os tamanhos ficam iguais em todas, inclusive o QR Code: o tamanho dele é travado pelo maior conteúdo da planilha; linhas menores saem com a mesma cara). A primeira está no Estúdio e é o padrão para as demais — use as setas na barra de status para navegar. \"Imprimir\" envia todas de uma vez.", "success");
       });
     }
 
@@ -16735,9 +16856,13 @@
       loteTamRefInfo: function () { return loteTamRef ? loteTamRef.length : 0; },
       loteElementsInfo: function () {
         return elements.map(function (el) {
-          return { tipo: el.tipo, w: el.w, h: el.h, fonte: el.fonte, texto: el.texto };
+          return { tipo: el.tipo, w: el.w, h: el.h, fonte: el.fonte, texto: el.texto, simbologia: el.simbologia || "", loteQrVersao: el.loteQrVersao || 0 };
         });
-      }
+      },
+      /* Pedido 1.240: QR de tamanho fixo no lote */
+      qrVersaoPorBytes: qrVersaoPorBytes,
+      qrUtf8Bytes: qrUtf8Bytes,
+      qrObter: qrObter
     };
 
   })();
@@ -17396,6 +17521,7 @@
                     <li><strong>As colunas são lidas sozinhas</strong>: ao escolher o arquivo, ou ao conectar com a origem (Enter no link/URL ou mudança de valor válido), o “Ler Colunas” roda automaticamente.</li>
                     <li><strong>Mapeie as colunas</strong>: diga qual coluna alimenta cada campo da etiqueta (uma mesma coluna pode alimentar vários campos).</li>
                     <li><strong>Criar Etiquetas</strong> gera uma etiqueta por linha da planilha, sempre em uma <strong>etiqueta nova</strong> — nunca sobre um desenho já aberto — e todas as etiquetas do lote mantêm exatamente os mesmos tamanhos de elementos (o mapeamento é salvo no navegador sozinho) — a primeira fica no Estúdio como modelo e as setas ‹ › da barra de status navegam pelas demais.</li>
+                    <li><strong>QR Code de tamanho fixo no lote</strong>: o QR assume o tamanho do pior caso da planilha (maior conteúdo da coluna) e <strong>todas as etiquetas saem com o QR exatamente do mesmo tamanho</strong> — linhas com conteúdo menor saem como imagem no mesmo retângulo (o scanner lê o texto original). Redimensionar o QR no Estúdio muda o dele em todas as etiquetas de uma vez.</li>
                     <li>A barra de status mostra o total; use <strong>Testar 1</strong> e as setas ‹ › para conferir antes de imprimir.</li>
                   </ul>
                 </div>
