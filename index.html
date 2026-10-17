@@ -1701,7 +1701,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.036</span>
+        <span class="brand-ver">v1.037</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -9289,7 +9289,6 @@
     var LOTE_PROGRESSIVO_MIN = 2000;    /* acima: geração completa sai em fatias */
     var LOTE_FATIA = 1000;              /* etiquetas por fatia (setTimeout entre elas) */
     var LOTE_IMPORT_MAX_LINHAS = 100000; /* teto de linhas importadas (proteção) */
-    var LOTE_SESSAO_MAX_LINHAS = 20000; /* acima: sessão F5 não persiste o lote */
     var LOTE_SESSAO_ZPL_MAX = 2000000;  /* acima: não persiste o ZPL no snapshot */
 
     /* Quantas etiquetas o lote ativo tem HOJE (lote ZPL 1.140 > lote
@@ -9872,7 +9871,6 @@
     })();
     var IMPORT_SESSION_TTL = 24 * 60 * 60 * 1000; /* mesma janela de 24h da sessão do estúdio */
     var importSessaoAvisoFalha = false;
-    var importSessaoAvisoGrande = false; /* Pedido 1.235: avisa 1x que o lotão não persiste */
     function importSessaoSnapshot() {
       var conex = null;
       try {
@@ -9883,26 +9881,44 @@
         }
       } catch (eConex) {}
       var zplTxt = ($("zpl") && ($("zpl").value || "").indexOf("^XA") !== -1) ? $("zpl").value : "";
-      /* Pedido 1.235: lotes gigantes não vão para o snapshot — o structured
-         clone do IndexedDB (e o fallback JSON.stringify do localStorage)
-         de linhas demais congelavam a aba a cada gravação. Acima do limite,
-         a sessão F5 fica desativada para o lote (avisa 1x). */
-      var linhasLen = (importDados && importDados.linhas) ? importDados.linhas.length : 0;
-      if (linhasLen > LOTE_SESSAO_MAX_LINHAS) {
-        if (!importSessaoAvisoGrande) {
-          importSessaoAvisoGrande = true;
-          notify("Lote com " + linhasLen + " linhas não será restaurado após um F5 (limite de " + LOTE_SESSAO_MAX_LINHAS + " para a sessão) — exporte o Modelo .bin ou o ZPL para guardar.", "warning");
-        }
-        linhasLen = 0; /* não persiste importDados */
-      }
       if (zplTxt.length > LOTE_SESSAO_ZPL_MAX) zplTxt = "";
+      /* Pedido 1.238: os DADOS IMPORTADOS saíram do snapshot leve — agora
+         vivem no registro próprio "import-dados" (JSON único, gravado no
+         momento da importação). Antes o snapshot cortava lotes acima de
+         20k linhas: a importação de 120k+ se perdia no F5 e sobrava só a
+         etiqueta que estava na tela. */
       return {
-        importDados: (linhasLen > 0 && importDados && importDados.linhas && importDados.linhas.length) ? importDados : null,
         zpl: zplTxt,
         lotePaginaAtual: lotePaginaAtual || 0,
         conex: conex,
         timestamp: Date.now()
       };
+    }
+    /* Pedido 1.238: registro PESADO dos dados importados — um JSON string
+       ÚNICO (o structured clone de uma string é barato, diferente de 120k
+       arrays) gravado NA HORA da importação e nas trocas de dados (Modelo
+       .bin, limpar), nunca a cada interação. É o que devolve o lote
+       inteiro após F5/Ctrl+F5. */
+    var importDadosSujo = false;
+    function importDadosPersistir() {
+      importDadosSujo = false;
+      if (!importDados || !importDados.colunas || !importDados.colunas.length ||
+          !importDados.linhas || !importDados.linhas.length) {
+        zebraIDB.del("import-dados")["catch"](function () {});
+        try { localStorage.removeItem("etiquetasZebra.sessionImportDados"); } catch (eRmD) {}
+        return;
+      }
+      try {
+        var rec = { colunas: importDados.colunas, linhasJson: JSON.stringify(importDados.linhas), timestamp: Date.now() };
+        zebraIDB.put("import-dados", rec).then(function () {
+          try { localStorage.removeItem("etiquetasZebra.sessionImportDados"); } catch (eRmLsD) {}
+        }, function () {
+          /* Fallback localStorage: dados pequenos cabem; lotões ficam sem
+             persistência se o IDB falhar (o Modelo .bin continua sendo a
+             garantia) — silencioso para não spammar toast em cada F5. */
+          try { localStorage.setItem("etiquetasZebra.sessionImportDados", JSON.stringify(rec)); } catch (eLsD) {}
+        });
+      } catch (eJsonD) {}
     }
     var importRestaurando = false; /* Pedido 1.192: durante a restauração ninguém regrava a sessão */
     var importSessaoTimer = null; /* Pedido 1.235: gravações agrupadas (debounce) */
@@ -9915,6 +9931,7 @@
       }, 1200);
     }
     function importSessaoSalvarAgora() {
+      if (importDadosSujo) importDadosPersistir(); /* pedido 1.238: pesado só quando os dados mudaram */
       var snap = importSessaoSnapshot();
       try { localStorage.setItem("etiquetasZebra.lotePagina", String(snap.lotePaginaAtual || 0)); } catch (ePg) {}
       zebraIDB.put("import", snap).then(function () {
@@ -9933,7 +9950,7 @@
       });
     }
     function importSessaoRestaurar() {
-      return zebraIDB.get("import").then(function (snapIdb) {
+      var pLeve = zebraIDB.get("import").then(function (snapIdb) {
         if (snapIdb) return snapIdb;
         try {
           var rawLs = localStorage.getItem("etiquetasZebra.sessionImport");
@@ -9944,10 +9961,41 @@
           var rawLs3 = localStorage.getItem("etiquetasZebra.sessionImport");
           return rawLs3 ? JSON.parse(rawLs3) : null;
         } catch (eLs3) { return null; }
-      }).then(function (snap) {
-        if (!snap || !snap.timestamp || (Date.now() - snap.timestamp) > IMPORT_SESSION_TTL) {
+      });
+      /* Pedido 1.238: registro pesado dos dados, em paralelo ao leve */
+      var pDados = zebraIDB.get("import-dados").then(function (rec) {
+        if (rec) return rec;
+        try {
+          var rawLsD = localStorage.getItem("etiquetasZebra.sessionImportDados");
+          return rawLsD ? JSON.parse(rawLsD) : null;
+        } catch (eLsD2) { return null; }
+      }, function () {
+        try {
+          var rawLsD3 = localStorage.getItem("etiquetasZebra.sessionImportDados");
+          return rawLsD3 ? JSON.parse(rawLsD3) : null;
+        } catch (eLsD3) { return null; }
+      });
+      return Promise.all([pLeve, pDados]).then(function (par) {
+        var snap = par[0], recDados = par[1];
+        var fresco = !!(snap && snap.timestamp && (Date.now() - snap.timestamp) <= IMPORT_SESSION_TTL);
+        var dados = null;
+        if (recDados && Array.isArray(recDados.colunas) && recDados.colunas.length &&
+            typeof recDados.linhasJson === "string" && recDados.linhasJson.length) {
+          if (recDados.timestamp && (Date.now() - recDados.timestamp) <= IMPORT_SESSION_TTL) {
+            try { dados = { colunas: recDados.colunas, linhas: JSON.parse(recDados.linhasJson) }; } catch (eParseD) {}
+          }
+        }
+        /* Compat: sessões gravadas antes do 1.238 traziam importDados
+           dentro do snapshot leve — continua valendo. */
+        if (!dados && fresco && snap.importDados && Array.isArray(snap.importDados.colunas) && snap.importDados.colunas.length &&
+            Array.isArray(snap.importDados.linhas) && snap.importDados.linhas.length) {
+          dados = snap.importDados;
+        }
+        if (!fresco && !dados) {
           zebraIDB.del("import")["catch"](function () {});
+          zebraIDB.del("import-dados")["catch"](function () {});
           try { localStorage.removeItem("etiquetasZebra.sessionImport"); } catch (eRm2) {}
+          try { localStorage.removeItem("etiquetasZebra.sessionImportDados"); } catch (eRm3) {}
           return false;
         }
         importRestaurando = true;
@@ -9959,17 +10007,33 @@
              e só então o resto do estado. */
           var pgMini = -1;
           try { pgMini = parseInt(localStorage.getItem("etiquetasZebra.lotePagina") || "", 10); } catch (ePg2) {}
-          lotePaginaAtual = (typeof snap.lotePaginaAtual === "number" && snap.lotePaginaAtual >= 0) ? snap.lotePaginaAtual : 0;
+          lotePaginaAtual = (snap && typeof snap.lotePaginaAtual === "number" && snap.lotePaginaAtual >= 0) ? snap.lotePaginaAtual : 0;
           if (!isNaN(pgMini) && pgMini >= 0) lotePaginaAtual = pgMini;
-          if (snap.conex && snap.conex.tipo) {
+          if (snap && snap.conex && snap.conex.tipo) {
             try { aplicarConexoesImport(snap.conex); } catch (eApC) {}
           }
-          if (snap.importDados && Array.isArray(snap.importDados.colunas) && snap.importDados.colunas.length &&
-              Array.isArray(snap.importDados.linhas) && snap.importDados.linhas.length) {
-            importDados = snap.importDados;
-            importRenderMapeamento();
+          if (dados && dados.linhas.length) {
+            importDados = dados;
+            importRenderMapeamento(); /* reaplica o mapeamento salvo (localStorage) */
           }
-          if (snap.zpl && snap.zpl.indexOf("^XA") !== -1 && $("zpl")) $("zpl").value = snap.zpl;
+          if (snap && snap.zpl && snap.zpl.indexOf("^XA") !== -1 && $("zpl")) $("zpl").value = snap.zpl;
+          /* Pedido 1.238: recompõe o LOTE VISÍVEL — a etiqueta volta com a
+             página corrente aplicada; sem etiqueta (sessão do estúdio expirada),
+             o lote cria a etiqueta sozinho (pedido 1.93/1.236). O lote inteiro
+             volta a contar no Imprimir/Download, não só a da tela. */
+          if (importDados && importDados.linhas && importDados.linhas.length) {
+            var vEst = importValidarMapeamento();
+            if (vEst && vEst.ok) {
+              if (!elements.length) { try { garantirEtiquetaLote(); } catch (eGarEst) {} }
+              if (elements.length) {
+                try {
+                  aplicarLinhaLoteNoEstudio(Math.max(0, Math.min(lotePaginaAtual, importDados.linhas.length - 1)),
+                    obterParesMapeadosLote(vEst.mapa), obterIdxColsLote());
+                } catch (eApL) {}
+              }
+              notify("Lote restaurado: " + importDados.linhas.length + " linhas importadas — Imprimir e Download geram todas as etiquetas.", "info");
+            }
+          }
           atualizarBarraStatusLote();
           atualizarNavLote();
           return true;
@@ -10250,6 +10314,7 @@
       etiquetasMulti = []; /* Pedido 1.102: "Novo" zera as views do projeto também */
       renderSeletorEtiquetasMulti();
       importDados = { colunas: [], linhas: [] };
+      importDadosPersistir(); /* Pedido 1.238: limpar também apaga o registro do F5 */
       batchSpecialTree = JSON.parse(JSON.stringify(BATCH_TREE_PADRAO));
       $("tmpl-name-input").value = "";
       if ($("zpl")) $("zpl").value = "";
@@ -10577,6 +10642,7 @@
          modelo .bin os trouxer (modelos antigos seguem funcionando). */
       if (m.importDados && m.importDados.linhas && m.importDados.linhas.length) {
         importDados = m.importDados;
+        importDadosPersistir(); /* Pedido 1.238: dados do .bin também gravam na hora */
       }
       if (m.importMap) {
         try { localStorage.setItem(IMPORT_MAP_STORAGE_KEY, JSON.stringify(m.importMap)); } catch (e) {}
@@ -11356,6 +11422,7 @@
       }
       importDescartarLotesAntigos();
       importDados = res;
+      importDadosPersistir(); /* Pedido 1.238: gravado NA HORA — F5 logo após importar não perde mais o lote */
       importRenderMapeamento();
       atualizarBarraStatusLote();
       importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
@@ -16604,7 +16671,7 @@
       get tamAtualKey() { return tamAtualKey; },
       get rotAtual() { return rotAtual; },
       get importDados() { return importDados; },
-      set importDados(v) { importDados = v; },
+      set importDados(v) { importDados = v; importDadosSujo = true; },
       get lotePaginaAtual() { return lotePaginaAtual; },
       set lotePaginaAtual(v) { lotePaginaAtual = v; },
       get selectedElIds() { return selectedElIds.slice(); },
@@ -16645,7 +16712,8 @@
       LOTE_EXIBE_MAX: LOTE_EXIBE_MAX,
       LOTE_PROGRESSIVO_MIN: LOTE_PROGRESSIVO_MIN,
       LOTE_IMPORT_MAX_LINHAS: LOTE_IMPORT_MAX_LINHAS,
-      LOTE_SESSAO_MAX_LINHAS: LOTE_SESSAO_MAX_LINHAS,
+      /* Pedido 1.238: registro pesado do F5 */
+      importDadosPersistir: importDadosPersistir,
       /* Pedido 1.236: etiqueta nova na importação + tamanhos congelados */
       adicionarElemento: adicionarElemento,
       limparEtiqueta: limparEtiqueta,
