@@ -1701,7 +1701,7 @@
     <a class="navbar-brand" href="#" aria-label="CanalQb Impressão em Zebras">
       <span class="brand-icon"><i class="bi bi-printer-fill"></i></span>
       <span>CanalQb</span>
-        <span class="brand-ver">v1.037</span>
+        <span class="brand-ver">v1.038</span>
     </a>
 
     <!-- Menus dropdown -->
@@ -9288,7 +9288,7 @@
     var LOTE_EXIBE_MAX = 300;          /* acima: tela mostra só a etiqueta atual */
     var LOTE_PROGRESSIVO_MIN = 2000;    /* acima: geração completa sai em fatias */
     var LOTE_FATIA = 1000;              /* etiquetas por fatia (setTimeout entre elas) */
-    var LOTE_IMPORT_MAX_LINHAS = 100000; /* teto de linhas importadas (proteção) */
+    var LOTE_IMPORT_MAX_LINHAS = 200000; /* teto de linhas importadas (proteção; pedido 1.239: 100k cortava a importação real de 124.739 linhas do usuário) */
     var LOTE_SESSAO_ZPL_MAX = 2000000;  /* acima: não persiste o ZPL no snapshot */
 
     /* Quantas etiquetas o lote ativo tem HOJE (lote ZPL 1.140 > lote
@@ -9900,6 +9900,13 @@
        .bin, limpar), nunca a cada interação. É o que devolve o lote
        inteiro após F5/Ctrl+F5. */
     var importDadosSujo = false;
+    /* Pedido 1.239: geração dos dados importados — sobe a CADA troca de dados
+       (importação, limpar, .bin, restauração). A restauração do boot captura
+       a geração no início da leitura e ABORTA se os dados mudaram no meio:
+       antes, a leitura "vazia" de um boot novo resolvia depois de uma
+       importação rápida e APAGAVA o registro pesado recém-gravado (corrida
+       boot × importação — o lote se perdia no F5 seguinte). */
+    var importDadosGeracao = 0;
     function importDadosPersistir() {
       importDadosSujo = false;
       if (!importDados || !importDados.colunas || !importDados.colunas.length ||
@@ -9950,6 +9957,7 @@
       });
     }
     function importSessaoRestaurar() {
+      var geracaoLeitura = importDadosGeracao; /* Pedido 1.239: aborta se os dados mudarem durante a leitura */
       var pLeve = zebraIDB.get("import").then(function (snapIdb) {
         if (snapIdb) return snapIdb;
         try {
@@ -9977,6 +9985,10 @@
       });
       return Promise.all([pLeve, pDados]).then(function (par) {
         var snap = par[0], recDados = par[1];
+        /* Pedido 1.239: os dados mudaram enquanto a leitura corria (ex.:
+           importação logo após abrir o app) — o estado novo vence; NÃO
+           sobrescreve e NÃO apaga o registro recém-gravado. */
+        if (importDadosGeracao !== geracaoLeitura) return false;
         var fresco = !!(snap && snap.timestamp && (Date.now() - snap.timestamp) <= IMPORT_SESSION_TTL);
         var dados = null;
         if (recDados && Array.isArray(recDados.colunas) && recDados.colunas.length &&
@@ -9992,8 +10004,11 @@
           dados = snap.importDados;
         }
         if (!fresco && !dados) {
-          zebraIDB.del("import")["catch"](function () {});
-          zebraIDB.del("import-dados")["catch"](function () {});
+          /* Pedido 1.239: só apaga o registro que a leitura VIU vencido —
+             registro ausente não se apaga (a gravação pode estar chegando
+             de outra aba/importação). */
+          if (snap) zebraIDB.del("import")["catch"](function () {});
+          if (recDados) zebraIDB.del("import-dados")["catch"](function () {});
           try { localStorage.removeItem("etiquetasZebra.sessionImport"); } catch (eRm2) {}
           try { localStorage.removeItem("etiquetasZebra.sessionImportDados"); } catch (eRm3) {}
           return false;
@@ -10014,6 +10029,7 @@
           }
           if (dados && dados.linhas.length) {
             importDados = dados;
+            importDadosGeracao++; /* Pedido 1.239: a restauração também conta como troca */
             importRenderMapeamento(); /* reaplica o mapeamento salvo (localStorage) */
           }
           if (snap && snap.zpl && snap.zpl.indexOf("^XA") !== -1 && $("zpl")) $("zpl").value = snap.zpl;
@@ -10314,6 +10330,7 @@
       etiquetasMulti = []; /* Pedido 1.102: "Novo" zera as views do projeto também */
       renderSeletorEtiquetasMulti();
       importDados = { colunas: [], linhas: [] };
+      importDadosGeracao++; /* Pedido 1.239 */
       importDadosPersistir(); /* Pedido 1.238: limpar também apaga o registro do F5 */
       batchSpecialTree = JSON.parse(JSON.stringify(BATCH_TREE_PADRAO));
       $("tmpl-name-input").value = "";
@@ -10642,6 +10659,7 @@
          modelo .bin os trouxer (modelos antigos seguem funcionando). */
       if (m.importDados && m.importDados.linhas && m.importDados.linhas.length) {
         importDados = m.importDados;
+        importDadosGeracao++; /* Pedido 1.239 */
         importDadosPersistir(); /* Pedido 1.238: dados do .bin também gravam na hora */
       }
       if (m.importMap) {
@@ -11411,22 +11429,30 @@
         notify("Lote anterior (ZPL importado / especial) descartado — a nova importação assume o lugar.", "dark");
       }
     }
-    function importAplicarResposta(res, origemMsg) {
+    /* Pedido 1.239: TODO caminho de importação passa por aqui — teto de
+       proteção (1.235) + gravação pesada NA HORA (1.238). O Arquivo
+       (CSV/TXT/Excel) e o Google Sheets setavam importDados direto: o
+       registro "import-dados" nunca era gravado e o F5 perdia o lote
+       inteiro (relato do usuário com um TXT de 124.739 linhas) — e o
+       teto não valia para eles. */
+    function importAplicarDados(res, origemMsg) {
       if (!res || !res.colunas || !res.colunas.length) { notify("A origem não retornou colunas legíveis.", "danger"); return; }
-      /* Pedido 1.235: teto de proteção — planilhas gigantes (100k+ linhas)
-         estouravam a memória da aba; corta e avisa. */
       if (res.linhas && res.linhas.length > LOTE_IMPORT_MAX_LINHAS) {
         var totalOrig = res.linhas.length;
         res = { colunas: res.colunas, linhas: res.linhas.slice(0, LOTE_IMPORT_MAX_LINHAS) };
-        notify("Planilha muito grande: " + totalOrig + " linhas — importadas as primeiras " + LOTE_IMPORT_MAX_LINHAS + " (limite de proteção de memória da aba).", "warning");
+        notify("Importação muito grande: " + totalOrig + " linhas — mantidas as primeiras " + LOTE_IMPORT_MAX_LINHAS + " (limite de proteção de memória da aba).", "warning");
       }
       importDescartarLotesAntigos();
       importDados = res;
+      importDadosGeracao++; /* Pedido 1.239 */
       importDadosPersistir(); /* Pedido 1.238: gravado NA HORA — F5 logo após importar não perde mais o lote */
       importRenderMapeamento();
       atualizarBarraStatusLote();
-      importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
+      importSessaoSalvar(); /* Pedido 1.191: ZPL + página + conexões sobrevivem ao F5 */
       notify(importDados.colunas.length + " colunas encontradas (" + origemMsg + ").", "success");
+    }
+    function importAplicarResposta(res, origemMsg) {
+      importAplicarDados(res, origemMsg);
     }
 
     /* ---------- Webhook (100% no navegador) ----------
@@ -12043,12 +12069,7 @@
           if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error("privada"); /* resposta HTML = pedido de login */
           var res = importParseCSV(txt);
           if (!res || !res.colunas.length) throw new Error("CSV vazio");
-          importDescartarLotesAntigos(); /* Pedido 1.177 */
-          importDados = importGsheetsAplicar(res);
-          importRenderMapeamento();
-          atualizarBarraStatusLote();
-          importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
-          notify(importDados.colunas.length + " colunas encontradas (Google Sheets).", "success");
+          importAplicarDados(importGsheetsAplicar(res), "Google Sheets"); /* Pedido 1.239: teto + registro pesado */
         })
         .catch(function (err) {
           if (err && err.message === "privada") { importGsheetsOAuth(idPlan, gidPlan); return; }
@@ -12105,12 +12126,7 @@
           return colunas.map(function (_, i) { return row[i] == null ? "" : String(row[i]); });
         });
         if (!colunas.length) { notify("A primeira linha (cabeçalhos) da planilha está vazia.", "danger"); return; }
-        importDescartarLotesAntigos(); /* Pedido 1.177 */
-        importDados = importGsheetsAplicar({ colunas: colunas, linhas: linhas });
-        importRenderMapeamento();
-        atualizarBarraStatusLote();
-        importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
-        notify(importDados.colunas.length + " colunas encontradas (Google Sheets — sua conta Google).", "success");
+        importAplicarDados(importGsheetsAplicar({ colunas: colunas, linhas: linhas }), "Google Sheets — sua conta Google"); /* Pedido 1.239 */
       }
       function lerRange(range) {
         fetch("https://sheets.googleapis.com/v4/spreadsheets/" + idPlan + "/values/" + range + "?majorDimension=ROWS", { headers: headers })
@@ -12164,11 +12180,7 @@
               return (v == null) ? "" : String(v);
             });
           });
-          importDescartarLotesAntigos(); /* Pedido 1.177 */
-          importDados = importGsheetsAplicar({ colunas: colunas, linhas: linhas });
-          importRenderMapeamento();
-          atualizarBarraStatusLote();
-          importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
+          importAplicarDados(importGsheetsAplicar({ colunas: colunas, linhas: linhas }), "Google Sheets"); /* Pedido 1.239 */
           finalizar(importDados.colunas.length + " colunas encontradas (Google Sheets).");
         } catch (err) {
           /* Pedido 1.183: resposta sem dados COM conta conectada = planilha
@@ -12263,12 +12275,10 @@
           readerArq.onload = function (evt) {
             var res = ehXlsx ? importParseXLSX(evt.target.result) : importParseCSV(evt.target.result);
             if (!res) { notify("Não foi possível ler colunas do arquivo (CSV, TXT ou Excel).", "danger"); return; }
-            importDescartarLotesAntigos(); /* Pedido 1.177 */
-            importDados = res;
-            importRenderMapeamento();
-            atualizarBarraStatusLote();
-            importSessaoSalvar(); /* Pedido 1.191: dados + conexões sobrevivem ao F5 */
-            notify(res.colunas.length + " colunas encontradas.", "success");
+            /* Pedido 1.239: passa pelo importAplicarDados — teto de proteção
+               + gravação do registro pesado "import-dados" NA HORA (o F5
+               perdia o lote porque este caminho setava importDados direto). */
+            importAplicarDados(res, ehXlsx ? "arquivo Excel" : "arquivo CSV/TXT");
           };
           readerArq.onerror = function () { notify("Falha ao ler o arquivo.", "danger"); };
           if (ehXlsx) readerArq.readAsArrayBuffer(file);
@@ -15578,12 +15588,14 @@
     renderBatchSpecialTreeUI();
     /* Semeia o histórico com o estado carregado para o 1º Ctrl+Z funcionar */
     salvarHistorico();
-    /* Pedido 1.191: restaura o lote de importação (dados + ZPL gerado +
+    /* Pedido 1.191/1.239: restaura o lote de importação (dados + ZPL gerado +
        página + conexões) — sobrevive a F5/Ctrl+F5 em IndexedDB, que aguenta
        planilhas/bancos com milhares de linhas. Link #modelo= tem prioridade
-       (sobrepõe a sessão inteira); sem sessão do estúdio não há lote a
-       restaurar (mesma janela de 24h). */
-    if (sessionRestored && location.hash.indexOf("#modelo=") !== 0) importSessaoRestaurar();
+       (sobrepõe a sessão inteira). Desde o 1.239 a sessão do lote é
+       INDEPENDENTE da sessão do estúdio (24h): os dados vivem no registro
+       pesado "import-dados", então restaura mesmo sem a sessão do estúdio —
+       a etiqueta do lote é recriada sozinha se preciso (1.93/1.236). */
+    if (location.hash.indexOf("#modelo=") !== 0) importSessaoRestaurar();
 
     /* Modelo compartilhado via URL (#modelo=BASE64URL) — sobrepõe a sessão */
     if (location.hash.indexOf("#modelo=") === 0) {
@@ -16671,7 +16683,7 @@
       get tamAtualKey() { return tamAtualKey; },
       get rotAtual() { return rotAtual; },
       get importDados() { return importDados; },
-      set importDados(v) { importDados = v; importDadosSujo = true; },
+      set importDados(v) { importDados = v; importDadosSujo = true; importDadosGeracao++; },
       get lotePaginaAtual() { return lotePaginaAtual; },
       set lotePaginaAtual(v) { lotePaginaAtual = v; },
       get selectedElIds() { return selectedElIds.slice(); },
@@ -16714,6 +16726,8 @@
       LOTE_IMPORT_MAX_LINHAS: LOTE_IMPORT_MAX_LINHAS,
       /* Pedido 1.238: registro pesado do F5 */
       importDadosPersistir: importDadosPersistir,
+      /* Pedido 1.239: caminho único de aplicação (teto + registro pesado) */
+      importAplicarDados: importAplicarDados,
       /* Pedido 1.236: etiqueta nova na importação + tamanhos congelados */
       adicionarElemento: adicionarElemento,
       limparEtiqueta: limparEtiqueta,
